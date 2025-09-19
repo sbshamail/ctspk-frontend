@@ -35,16 +35,16 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-slate-900 text-white">
+    <footer className="bg-slate-900 ">
       {/* Newsletter Section */}
-      <div className="bg-slate-800 py-12">
+      <div className="bg-muted py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
               <h3 className="text-2xl font-bold mb-2">
                 Subscribe to our newsletter
               </h3>
-              <p className="text-gray-300">
+              <p className="text-muted-foreground">
                 Get the latest updates on new products and upcoming sales
               </p>
             </div>
@@ -52,24 +52,23 @@ const Footer = () => {
               <Input
                 type="email"
                 placeholder="Enter your email"
-                className="bg-white text-slate-900 flex-1"
+                className=" flex-1"
               />
-              <Button className="bg-orange-500 hover:bg-orange-600">
-                Subscribe
-              </Button>
+              <Button>Subscribe</Button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Footer */}
-      <div className="py-12">
+      <div className="py-12 text-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             {/* Brand Section */}
             <div className="lg:col-span-2">
               <h2 className="text-2xl font-bold mb-4">
-                <span className="text-orange-400">Electra</span>Bay
+                <span className="text-primary">GHER &nbsp;</span>
+                <span className="text-gray-300">TAK</span>
               </h2>
               <p className="text-gray-300 mb-6 max-w-md">
                 Your premier destination for electronics from trusted vendors
@@ -79,15 +78,15 @@ const Footer = () => {
 
               <div className="space-y-2 mb-6">
                 <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2 text-orange-400" />
-                  <span className="text-gray-300">info@electrabay.com</span>
+                  <Mail className="w-4 h-4 mr-2 text-primary" />
+                  <span className="text-gray-300">info@ghertak.com</span>
                 </div>
                 <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2 text-orange-400" />
-                  <span className="text-gray-300">+1 234 567 890</span>
+                  <Phone className="w-4 h-4 mr-2 text-primary" />
+                  <span className="text-gray-300">+923305817334</span>
                 </div>
                 <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-2 text-orange-400" />
+                  <MapPin className="w-4 h-4 mr-2 text-primary" />
                   <span className="text-gray-300">
                     123 Tech Street, Digital City
                   </span>
@@ -98,28 +97,28 @@ const Footer = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-orange-400 p-2"
+                  className="text-gray-300 hover:text-primary p-2"
                 >
                   <Facebook className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-orange-400 p-2"
+                  className="text-gray-300 hover:text-primary p-2"
                 >
                   <Twitter className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-orange-400 p-2"
+                  className="text-gray-300 hover:text-primary p-2"
                 >
                   <Instagram className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-300 hover:text-orange-400 p-2"
+                  className="text-gray-300 hover:text-primary p-2"
                 >
                   <Youtube className="w-4 h-4" />
                 </Button>
@@ -135,7 +134,7 @@ const Footer = () => {
                     <li key={linkIndex}>
                       <a
                         href="#"
-                        className="text-gray-300 hover:text-orange-400 transition-colors"
+                        className="text-gray-300 hover:text-primary transition-colors"
                       >
                         {link}
                       </a>
@@ -153,16 +152,16 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-gray-300 text-sm">
-              © 2025 ElectraBay. All rights reserved.
+              © 2025 GHER TAK. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm mt-4 md:mt-0">
-              <a href="#" className="text-gray-300 hover:text-orange-400">
+              <a href="#" className="text-gray-300 hover:text-primary">
                 Privacy Policy
               </a>
-              <a href="#" className="text-gray-300 hover:text-orange-400">
+              <a href="#" className="text-gray-300 hover:text-primary">
                 Terms of Service
               </a>
-              <a href="#" className="text-gray-300 hover:text-orange-400">
+              <a href="#" className="text-gray-300 hover:text-primary">
                 Cookie Policy
               </a>
             </div>
