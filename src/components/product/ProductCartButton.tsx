@@ -19,7 +19,7 @@ export const ProductCartButton: FC<Props> = ({
       <div className="relative">
         <button
           onClick={handlePostCart}
-          className="relative inline-flex items-center justify-center text-primary hover:text-primary/80"
+          className="relative inline-flex cursor-pointer items-center justify-center text-primary hover:text-primary/80"
         >
           {children ? (
             children

@@ -1,4 +1,4 @@
-import CustomerLayout from "@/app/(customer)/components_customer/layout/CustomerLayout";
+import CustomerLayout from "@/components/customer/layout/CustomerLayout";
 import { ChildrenType } from "@/utils/reactTypes";
 type Props = {
   children: ChildrenType;

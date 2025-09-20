@@ -3,6 +3,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -146,4 +154,16 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide scrollbar arrows and make scrollbar thin */
+.CommandList::-webkit-scrollbar {
+  width: 6px;
+}
+.CommandList::-webkit-scrollbar-track {
+  background: transparent;
+}
+.CommandList::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.3);
+  border-radius: 4px;
 }

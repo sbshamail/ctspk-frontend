@@ -33,7 +33,7 @@ const ProductCard = ({
   return (
     <div>
       <Link href={link} className="z-0">
-        <Card className=" cursor-pointer">
+        <Card className=" cursor-pointer p-0">
           <div>
             <div className="relative transition duration-300">
               <Image
