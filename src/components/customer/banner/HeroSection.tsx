@@ -60,10 +60,6 @@ export default function HeroSection() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-
-            {/* Arrows */}
-            {/* <CarouselPrevious className="left-3 bg-white/70 hover:bg-white shadow rounded-full" />
-            <CarouselNext className="right-3 bg-white/70 hover:bg-white shadow rounded-full" /> */}
           </Carousel>
         </div>
       </section>
@@ -110,11 +106,11 @@ export default function HeroSection() {
                     alt="Fresh Products"
                     width={400}
                     height={500}
-                    className="w-full h-auto object-cover "
+                    className="w-full xl:h-[180px] h-auto object-cover  "
                   />
                   <div className="absolute inset-0 bg-black/20" />
                   <div className="absolute inset-0 p-6 flex flex-col justify-center text-black/70">
-                    <h4 className="lg:text-xl text-lg font-semibold mb-4">
+                    <h4 className="xl:text-xl text-lg font-semibold mb-4">
                       Everyday Fresh &amp; <br /> Clean with Our <br /> Products
                     </h4>
                     <div>
@@ -136,11 +132,11 @@ export default function HeroSection() {
                     alt="Fresh Products"
                     width={400}
                     height={500}
-                    className="w-full h-auto object-cover"
+                    className="w-full xl:h-[180px] h-auto object-cover"
                   />
                   <div className="absolute inset-0 bg-black/20" />
                   <div className="absolute inset-0 p-6 flex flex-col justify-center text-black/70">
-                    <h4 className="lg:text-xl text-lg font-semibold mb-4">
+                    <h4 className="xl:text-xl text-lg font-semibold mb-4">
                       Everyday Fresh &amp; <br /> Clean with Our <br /> Products
                     </h4>
                     <div>
