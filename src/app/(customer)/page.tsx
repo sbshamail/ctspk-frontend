@@ -153,7 +153,7 @@ const page = () => {
     },
     {
       id: 6,
-      name: "Organic Meat Selection",
+      name: "Organic Meat Selection sdfsd sdfsdf sdfsd",
       image: "/assets/imgs/p18.jpg",
       rating: 4.0,
       price: 100,

@@ -58,7 +58,9 @@ const ProductCard = ({
               </div>
             </div>
             <div className="p-2">
-              <h2 className="m-0 p-0 text-sm">{titleSubstring(title)}</h2>
+              <h2 className="m-0 p-0 text-sm font-medium line-clamp-1 h-5 ">
+                {titleSubstring(title)}
+              </h2>
               <div className="w-full flex items-center justify-between ">
                 <div className="w-full flex flex-col mt-2 space-y-2">
                   <div>
