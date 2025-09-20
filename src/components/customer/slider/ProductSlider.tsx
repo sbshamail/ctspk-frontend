@@ -72,11 +72,10 @@ const ProductSlider = ({
             transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
           }}
         >
-          {/* <div className=" mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 "> */}
           {products.map((item, index) => {
             return (
               <div
-                className="xl:w-1/5 lg:w-1/4 md:w:1/3 w:1/2 flex-shrink-0 px-2"
+                className="xl:w-1/5 lg:w-1/4 md:w-1/3 w-full  px-2"
                 key={index}
               >
                 <ProductCard
@@ -91,7 +90,6 @@ const ProductSlider = ({
               </div>
             );
           })}
-          {/* </div> */}
         </div>
       </div>
     </Screen>

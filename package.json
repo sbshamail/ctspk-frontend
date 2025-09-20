@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start",
+    "gitpush": "git add . && git commit -m \"update\" && git push origin main"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

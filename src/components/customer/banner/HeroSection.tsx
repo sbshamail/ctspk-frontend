@@ -35,13 +35,13 @@ export default function HeroSection() {
               {slides.map((slide, idx) => (
                 <CarouselItem key={idx}>
                   {/* Set height to show full banner */}
-                  <div className=" relative w-full h-[231px]   overflow-hidden">
+                  <div className=" relative w-full h-[201px]    overflow-hidden">
                     <Image
                       src={slide.image}
                       alt={slide.title}
                       fill
                       priority={idx === 0}
-                      className="w-full object-cover object-center"
+                      className="w-full object-fill object-center"
                     />
 
                     {/* Overlay (optional) */}
@@ -70,11 +70,11 @@ export default function HeroSection() {
       <Screen>
         <section className="relative ">
           <div className=" mx-auto">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 ">
+            <div className="grid grid-cols-1 xl:grid-cols-12 lg:gap-6 ">
               {/* Left Hero Slider */}
               <div className="xl:col-span-8 ">
                 <div
-                  className="relative h-[408px] mt-8 lg:mt-12  rounded-lg overflow-hidden bg-cover bg-center"
+                  className="relative h-[408px] mt-8 lg:mt-12  rounded-lg overflow-hidden bg-cover bg-no-repeat bg-center "
                   style={{
                     backgroundImage:
                       "url('/assets/imgs/home-side-banner3.jpg')",
@@ -85,7 +85,7 @@ export default function HeroSection() {
                     <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
                       Quality <br /> Freshness <br /> Guaranteed!
                     </h1>
-                    <p className="mb-6 text-lg">
+                    <p className="mb-6 text-lg ">
                       Save up to 50% off on <br /> your first order
                     </p>
                     <div>
@@ -102,7 +102,7 @@ export default function HeroSection() {
               </div>
 
               {/* Right Banners */}
-              <div className="xl:col-span-4 flex flex-col justify-between gap-6 mt-8 lg:mt-12 h-[408px]">
+              <div className="xl:col-span-4 flex flex-col lg:justify-between gap-6 mt-8 lg:mt-12 lg:h-[408px]">
                 {/* Banner 1 */}
                 <div className="relative rounded-lg overflow-hidden ">
                   <Image
@@ -110,17 +110,17 @@ export default function HeroSection() {
                     alt="Fresh Products"
                     width={400}
                     height={500}
-                    className="w-full h-auto object-cover"
+                    className="w-full h-auto object-cover "
                   />
                   <div className="absolute inset-0 bg-black/20" />
                   <div className="absolute inset-0 p-6 flex flex-col justify-center text-black/70">
-                    <h4 className="text-xl font-semibold mb-4">
+                    <h4 className="lg:text-xl text-lg font-semibold mb-4">
                       Everyday Fresh &amp; <br /> Clean with Our <br /> Products
                     </h4>
                     <div>
                       <Link
                         href="#"
-                        className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition"
+                        className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 lg:py-2 py-1 rounded-md text-sm font-medium hover:bg-primary/90 transition"
                       >
                         Shop Now
                         <MoveRight className="text-primary-foreground/80" />
@@ -140,13 +140,13 @@ export default function HeroSection() {
                   />
                   <div className="absolute inset-0 bg-black/20" />
                   <div className="absolute inset-0 p-6 flex flex-col justify-center text-black/70">
-                    <h4 className="text-xl font-semibold mb-4">
+                    <h4 className="lg:text-xl text-lg font-semibold mb-4">
                       Everyday Fresh &amp; <br /> Clean with Our <br /> Products
                     </h4>
                     <div>
                       <Link
                         href="#"
-                        className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition"
+                        className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 lg:py-2 py-1 rounded-md text-sm font-medium hover:bg-primary/90 transition"
                       >
                         Shop Now
                         <MoveRight className="text-primary-foreground/80" />
