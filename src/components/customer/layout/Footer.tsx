@@ -177,14 +177,15 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-slate-700 py-6">
+
+      <div className="border-t border-slate-700 fixed bottom-0 bg-slate-900    w-full h-6 py-6">
         <Screen>
           <div className=" mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-300 text-sm">
                 © 2025 GHER TAK. All rights reserved.
               </div>
-              <div className="flex space-x-6 text-sm mt-4 md:mt-0">
+              <div className="flex space-x-6 text-sm md:mt-0">
                 <a href="#" className="text-gray-300 hover:text-primary">
                   Privacy Policy
                 </a>
