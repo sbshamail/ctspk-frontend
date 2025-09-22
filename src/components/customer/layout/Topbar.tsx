@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { Phone, User, Heart, Truck, Store } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Screen } from "@/@core/layout";
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
+import { Store, Truck, User } from "lucide-react";
+import Link from "next/link";
 
 export default function Topbar() {
   return (
-    <div className="  bg-background text-foreground">
+    <div className="hidden lg:block  bg-background text-foreground">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-2 text-sm">
           {/* Left: Info links */}

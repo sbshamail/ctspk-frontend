@@ -29,7 +29,7 @@ const Header = () => {
       <header className="bg-background text-foreground sticky top-0 z-50 transition-all duration-300 ">
         {/* Top Bar */}
         <div
-          className={`hidden lg:block w-full transition-all duration-300 ${
+          className={` w-full transition-all duration-300 ${
             y > 0
               ? "w-10 -translate-y-24 opacity-0 h-0"
               : "translate-y-0 opacity-100"
@@ -41,7 +41,7 @@ const Header = () => {
           <Separator className="bg-border/80" />
 
           {/* Main Header */}
-          <div>
+          <div className="w-full">
             <Screen>
               <div
                 className={`transition-all duration-300 ${

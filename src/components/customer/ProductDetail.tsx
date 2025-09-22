@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Star,
-  Heart,
-  ShoppingCart,
-  Truck,
-  RotateCcw,
   Facebook,
+  Heart,
   Instagram,
+  RotateCcw,
+  ShoppingCart,
+  Star,
+  Truck,
   Twitter,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from "next/image";
+import { useState } from "react";
 
 interface Product {
   id: number;
@@ -45,175 +45,180 @@ export function ProductDetail({ product }: ProductDetailProps) {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+    <div className="">
       {/* Product Images */}
-      <div className="space-y-4">
-        {/* Main Image */}
-        <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-          <Image
-            src={product.images[selectedImage] || "/placeholder.svg"}
-            alt={product.title}
-            width={600}
-            height={600}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Thumbnail Images */}
-        <div className="flex gap-2">
-          {product.images.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedImage(index)}
-              className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                selectedImage === index ? "border-primary" : "border-muted"
-              }`}
-            >
+      <div className="grid grid-cols-1 lg:grid-cols-2  gap-8 lg:gap-12  justify-center">
+        <div className="w-full space-y-4 border rounded-lg p-2 ">
+          <div className="flex justify-center ">
+            {/* Main Image */}
+            <div className=" aspect-square max-h-[400px] lg:max-h-[calc(100vh-50%)]  rounded-lg overflow-hidden">
               <Image
-                src={image || "/placeholder.svg"}
-                alt={`${product.title} ${index + 1}`}
-                width={80}
-                height={80}
+                src={product.images[selectedImage] || "/placeholder.svg"}
+                alt={product.title}
+                width={600}
+                height={600}
                 className="w-full h-full object-cover"
               />
-            </button>
-          ))}
-        </div>
-      </div>
+            </div>
+          </div>
 
-      {/* Product Info */}
-      <div className="space-y-6">
-        {/* Price */}
-        <div className="flex items-center gap-3">
-          <span className="text-3xl font-bold text-foreground">
-            Rs {product.salePrice}.00
-          </span>
-          <span className="text-xl text-muted-foreground line-through">
-            Rs {product.price}.00
-          </span>
-          <Badge variant="destructive" className="text-sm">
-            {discountPercentage}% off
-          </Badge>
-        </div>
-
-        {/* Title */}
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-          {product.title}
-        </h1>
-
-        {/* Rating */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-5 h-5 ${
-                  i < Math.floor(product.rating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-muted-foreground"
+          {/* Thumbnail Images */}
+          <div className="flex gap-2">
+            {product.images.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedImage(index)}
+                className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                  selectedImage === index ? "border-primary" : "border-muted"
                 }`}
-              />
+              >
+                <Image
+                  src={image || "/placeholder.svg"}
+                  alt={`${product.title} ${index + 1}`}
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-cover"
+                />
+              </button>
             ))}
           </div>
-          <span className="text-muted-foreground">({product.reviews})</span>
         </div>
 
-        {/* Policies */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <RotateCcw className="w-4 h-4" />
-            <span>7 Days Return Policy</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Truck className="w-4 h-4" />
-            <span>Cash on Delivery available</span>
-          </div>
-        </div>
-
-        {/* Add to Cart */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center border rounded-lg">
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="px-3 py-2 hover:bg-muted transition-colors"
-            >
-              -
-            </button>
-            <span className="px-4 py-2 border-x">{quantity}</span>
-            <button
-              onClick={() => setQuantity(Math.min(product.quota, quantity + 1))}
-              className="px-3 py-2 hover:bg-muted transition-colors"
-            >
-              +
-            </button>
+        {/* Product Info */}
+        <div className="space-y-6">
+          {/* Price */}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-foreground">
+              Rs {product.salePrice}.00
+            </span>
+            <span className="text-xl text-muted-foreground line-through">
+              Rs {product.price}.00
+            </span>
+            <Badge variant="destructive" className="text-sm">
+              {discountPercentage}% off
+            </Badge>
           </div>
 
-          <Button className="flex-1 bg-primary hover:bg-primary/90">
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Add to Cart
-          </Button>
+          {/* Title */}
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+            {product.title}
+          </h1>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setIsWishlisted(!isWishlisted)}
-            className={isWishlisted ? "text-red-500 border-red-500" : ""}
-          >
-            <Heart
-              className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`}
-            />
-          </Button>
-        </div>
+          {/* Rating */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-5 h-5 ${
+                    i < Math.floor(product.rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-muted-foreground">({product.reviews})</span>
+          </div>
 
-        {/* Product Details */}
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Category:</span>
-            <span className="font-medium">{product.category.name}</span>
+          {/* Policies */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <RotateCcw className="w-4 h-4" />
+              <span>7 Days Return Policy</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Truck className="w-4 h-4" />
+              <span>Cash on Delivery available</span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Stock:</span>
-            <span className="font-medium text-green-600">In Stock</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Weight:</span>
-            <span className="font-medium">{product.weight}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">SKU:</span>
-            <span className="font-medium">{product.sku}</span>
-          </div>
-        </div>
 
-        {/* Social Share */}
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">Share:</span>
-          <div className="flex gap-2">
+          {/* Add to Cart */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center border rounded-lg">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="px-3 py-2 hover:bg-muted transition-colors"
+              >
+                -
+              </button>
+              <span className="px-4 py-2 border-x">{quantity}</span>
+              <button
+                onClick={() =>
+                  setQuantity(Math.min(product.quota, quantity + 1))
+                }
+                className="px-3 py-2 hover:bg-muted transition-colors"
+              >
+                +
+              </button>
+            </div>
+
+            <Button className="max-w-[200px] flex-1 bg-primary hover:bg-primary/90">
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Add to Cart
+            </Button>
+
             <Button
               variant="outline"
               size="icon"
-              className="w-8 h-8 bg-transparent"
+              onClick={() => setIsWishlisted(!isWishlisted)}
+              className={isWishlisted ? "text-red-500 border-red-500" : ""}
             >
-              <Facebook className="w-4 h-4" />
+              <Heart
+                className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`}
+              />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-8 h-8 bg-transparent"
-            >
-              <Instagram className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-8 h-8 bg-transparent"
-            >
-              <Twitter className="w-4 h-4" />
-            </Button>
+          </div>
+
+          {/* Product Details */}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground">Category:</span>
+              <span className="font-medium">{product.category.name}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground">Stock:</span>
+              <span className="font-medium text-green-600">In Stock</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground">Weight:</span>
+              <span className="font-medium">{product.weight}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground">SKU:</span>
+              <span className="font-medium">{product.sku}</span>
+            </div>
+          </div>
+
+          {/* Social Share */}
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">Share:</span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-8 h-8 bg-transparent"
+              >
+                <Facebook className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-8 h-8 bg-transparent"
+              >
+                <Instagram className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-8 h-8 bg-transparent"
+              >
+                <Twitter className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-
       {/* Product Description & Reviews */}
       <div className="lg:col-span-2 mt-12">
         <Tabs defaultValue="description" className="w-full">

@@ -1,15 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, Grid3X3, LayoutGrid, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChevronDown, LayoutGrid, Minus } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import MainSearchbar from "../searchbar/MainSearchbar";
 
 const categories = [
@@ -45,53 +45,55 @@ const navigationItems = ["Home", "Shop", "About", "Contact"];
 export default function HeaderNav({ y }: any) {
   return (
     <div className="hidden lg:block  rounded ">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-3">
+      <div className=" mx-auto px-4">
+        <div className="flex items-center gap-4 justify-between py-3">
           {/* Browse Categories */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size={"lg"}
-                className="flex items-center gap-2 rounded 
+          <div className="hidden xl:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size={"lg"}
+                  className="flex items-center gap-2 rounded 
                   "
-              >
-                <LayoutGrid className="h-4 w-4" />
-                <span className="font-medium text-base">
-                  Browse All Categories
-                </span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent
-              align="start"
-              className="w-[500px] p-4 bg-card text-card-foreground border rounded-lg shadow-lg"
-            >
-              {/* Categories grid */}
-              <div className="grid grid-cols-2 gap-8">
-                {categories.map((cat) => (
-                  <CategoryItem
-                    key={cat.title}
-                    title={cat.title}
-                    image={cat.image}
-                  />
-                ))}
-              </div>
-
-              {/* Footer */}
-              <div className="border-t mt-4 pt-4">
-                <button
-                  className="flex items-center gap-2 text-sm font-medium 
-        text-primary hover:text-primary/80 transition-colors"
                 >
-                  <div className="w-6 h-6 border-2 border-primary rounded-full flex items-center justify-center">
-                    <Minus className="h-3 w-3" />
-                  </div>
-                  <span>Show more...</span>
-                </button>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <LayoutGrid className="h-4 w-4" />
+                  <span className="font-medium text-base">
+                    Browse All Categories
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="start"
+                className="w-[500px] p-4 bg-card text-card-foreground border rounded-lg shadow-lg"
+              >
+                {/* Categories grid */}
+                <div className="grid grid-cols-2 gap-8">
+                  {categories.map((cat) => (
+                    <CategoryItem
+                      key={cat.title}
+                      title={cat.title}
+                      image={cat.image}
+                    />
+                  ))}
+                </div>
+
+                {/* Footer */}
+                <div className="border-t mt-4 pt-4">
+                  <button
+                    className="flex items-center gap-2 text-sm font-medium 
+        text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <div className="w-6 h-6 border-2 border-primary rounded-full flex items-center justify-center">
+                      <Minus className="h-3 w-3" />
+                    </div>
+                    <span>Show more...</span>
+                  </button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           {/* Search Bar */}
           <div
             className={cn(" max-w-2xl flex flex-1", y > 0 ? "block" : "hidden")}

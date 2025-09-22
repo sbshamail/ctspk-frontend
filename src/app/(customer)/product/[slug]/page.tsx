@@ -1,8 +1,5 @@
 import { Screen } from "@/@core/layout";
 import { ProductDetail } from "@/components/customer/ProductDetail";
-import { notFound } from "next/navigation";
-// import { Header } from "@/components/header"
-// import { Footer } from "@/components/footer"
 
 // Mock product data - in a real app, this would come from a database
 const products = [
