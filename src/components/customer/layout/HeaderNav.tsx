@@ -7,9 +7,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Grid3X3, Minus } from "lucide-react";
+import { ChevronDown, Grid3X3, LayoutGrid, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import MainSearchbar from "../searchbar/MainSearchbar";
 
 const categories = [
   {
@@ -41,57 +42,47 @@ const categories = [
 
 const navigationItems = ["Home", "Shop", "About", "Contact"];
 
-export default function HeaderNav() {
+export default function HeaderNav({ y }: any) {
   return (
-    <div className="hidden lg:block bg-muted rounded ">
+    <div className="hidden lg:block  rounded ">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-3">
           {/* Browse Categories */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost"
-                className="flex items-center gap-2 px-4 py-2 rounded-md 
-                  hover:bg-primary/10 transition-colors"
+                size={"lg"}
+                className="flex items-center gap-2 rounded 
+                  "
               >
-                <Grid3X3 className="h-4 w-4" />
-                <span className="font-medium">Browse All Categories</span>
+                <LayoutGrid className="h-4 w-4" />
+                <span className="font-medium text-base">
+                  Browse All Categories
+                </span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent
               align="start"
-              className="w-80 p-0 bg-card text-card-foreground border rounded-lg shadow-lg"
+              className="w-[500px] p-4 bg-card text-card-foreground border rounded-lg shadow-lg"
             >
-              <div className="grid grid-cols-2 divide-x divide-border">
-                {/* Left column */}
-                <div className="p-4 space-y-3">
-                  {categories.slice(0, 5).map((cat) => (
-                    <CategoryItem
-                      key={cat.title}
-                      title={cat.title}
-                      image={cat.image}
-                    />
-                  ))}
-                </div>
-                {/* Right column */}
-                <div className="p-4 space-y-3">
-                  {categories.slice(5, 10).map((cat) => (
-                    <CategoryItem
-                      key={cat.title}
-                      title={cat.title}
-                      image={cat.image}
-                    />
-                  ))}
-                </div>
+              {/* Categories grid */}
+              <div className="grid grid-cols-2 gap-8">
+                {categories.map((cat) => (
+                  <CategoryItem
+                    key={cat.title}
+                    title={cat.title}
+                    image={cat.image}
+                  />
+                ))}
               </div>
 
               {/* Footer */}
-              <div className="border-t p-4">
+              <div className="border-t mt-4 pt-4">
                 <button
                   className="flex items-center gap-2 text-sm font-medium 
-                    text-primary hover:text-primary/80 transition-colors"
+        text-primary hover:text-primary/80 transition-colors"
                 >
                   <div className="w-6 h-6 border-2 border-primary rounded-full flex items-center justify-center">
                     <Minus className="h-3 w-3" />
@@ -101,7 +92,12 @@ export default function HeaderNav() {
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
-
+          {/* Search Bar */}
+          <div
+            className={cn(" max-w-2xl flex flex-1", y > 0 ? "block" : "hidden")}
+          >
+            <MainSearchbar />
+          </div>
           {/* Navigation */}
           <nav className="flex items-center space-x-8">
             {navigationItems.map((item) => (

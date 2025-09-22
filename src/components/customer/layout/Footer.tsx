@@ -40,12 +40,17 @@ const Footer = () => {
   return (
     <footer className="bg-slate-900 mt-12">
       {/* Newsletter Section */}
-      <section className="bg-muted  py-10">
+      <section className="bg-muted ">
         <Screen>
-          <div className=" mx-auto mobile-banner-bg">
+          <div
+            className=" py-8 bg-contain bg-no-repeat bg-right"
+            style={{
+              backgroundImage: "url('/assets/imgs/mobile-banner-visual.jpg')",
+            }}
+          >
             <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
-              <div className="relative mt-10 lg:mt-16 max-w-xl">
-                <div className="newsletter-content">
+              <div className="relative">
+                <div className="newsletter-content max-w-lg">
                   <h2 className="mb-6 text-2xl md:text-3xl lg:text-4xl font-bold leading-snug">
                     Make your online shop experience easier with our mobile app
                   </h2>

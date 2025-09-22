@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 type OptionObject = { value: string | number; title: string };
 type Option = string | OptionObject;
 
-interface SimpleFilterableSelectProps {
+interface FilterableSelectProps {
   errorMessage?: string;
   label?: string;
   labelPosition?: "top" | "inside";
@@ -45,7 +45,7 @@ interface SimpleFilterableSelectProps {
 }
 
 // ---- Component ----
-export function SimpleFilterableSelect<T extends Option>({
+export function FilterableSelect<T extends Option>({
   errorMessage,
   label,
   labelPosition = "top",
@@ -61,7 +61,7 @@ export function SimpleFilterableSelect<T extends Option>({
   keyTitle = "title",
   keyValue = "value",
   align = "center",
-}: SimpleFilterableSelectProps) {
+}: FilterableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
   const commandListRef = React.useRef<HTMLDivElement>(null);

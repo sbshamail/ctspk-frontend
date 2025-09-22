@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/@core/theme/ThemeToggle";
 
 export default function Topbar() {
   return (
-    <div className="hidden lg:block border-b border-border bg-background text-foreground">
+    <div className="  bg-background text-foreground">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-2 text-sm">
           {/* Left: Info links */}
