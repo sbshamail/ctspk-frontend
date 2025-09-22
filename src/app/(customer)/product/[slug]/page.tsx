@@ -1,5 +1,7 @@
 import { Screen } from "@/@core/layout";
 import { ProductDetail } from "@/components/customer/ProductDetail";
+import ProductSlider from "@/components/customer/slider/ProductSlider";
+import { gherTakProducts } from "../../page";
 
 // Mock product data - in a real app, this would come from a database
 const products = [
@@ -37,9 +39,15 @@ export default function ProductPage({ params }: ProductPageProps) {
     <div className="min-h-screen bg-background">
       {/* <Header /> */}
       <Screen>
-        <main className="py-8">
+        <main className="py-10">
           <ProductDetail product={products[0]} />
         </main>
+        <div className="shadow p-4 rounded-lg">
+          <ProductSlider
+            title="You might also like"
+            products={gherTakProducts}
+          />
+        </div>
       </Screen>
       {/* <Footer /> */}
     </div>

@@ -1,13 +1,14 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, ShoppingCart } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useWindowScroll } from "react-use";
 import Topbar from "./Topbar";
 
 // Shad
+import HeartIcon from "@/components/icons/HeartIcon";
+import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Separator } from "@/components/ui/separator";
 import MainSearchbar from "../searchbar/MainSearchbar";
@@ -58,27 +59,9 @@ const Header = () => {
 
                     {/* Right Actions */}
                     <div className="flex items-center ">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="relative hover:text-primary"
-                      >
-                        <Heart className="w-5 h-5" />
-                        <Badge className="absolute -top-2 -right-2 bg-primary text-white text-xs min-w-[1.25rem] h-5 flex items-center justify-center p-0">
-                          0
-                        </Badge>
-                      </Button>
+                      <HeartIcon />
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="relative hover:text-primary"
-                      >
-                        <ShoppingCart className="w-5 h-5" />
-                        <Badge className="absolute -top-2 -right-2 bg-primary text-white text-xs min-w-[1.25rem] h-5 flex items-center justify-center p-0">
-                          3
-                        </Badge>
-                      </Button>
+                      <ShoppingCartIcon />
 
                       <Button variant="ghost" size="sm" className="md:hidden">
                         <Menu className="w-5 h-5" />

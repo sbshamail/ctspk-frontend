@@ -1,10 +1,11 @@
-import React, { useState } from "react";
 import { FilterableSelect } from "@/components/select/FilterableSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { ClassNameType } from "@/utils/reactTypes";
+import { Mic, Search } from "lucide-react";
+import { useState } from "react";
 interface MainSearchbarProps {
   className?: ClassNameType;
 }
@@ -31,7 +32,6 @@ const MainSearchbar = ({ className }: MainSearchbarProps) => {
           placeholder="Select category"
           value={category}
           className="border-none rounded-none"
-          // onChange={(item) => setCategory(item.value)}
         />
 
         <div className="relative flex-1">
@@ -39,9 +39,15 @@ const MainSearchbar = ({ className }: MainSearchbarProps) => {
             placeholder="Search for items..."
             className="border-none rounded-none pr-12 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
-          <Button size="sm" className="absolute right-1 top-1 h-8">
-            <Search className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1 absolute right-1 top-1 h-8">
+            <Button size="sm" variant={"ghost"}>
+              <Mic className="h-2 w-2" />
+            </Button>
+            <Separator orientation="vertical" />
+            <Button size="sm" variant={"ghost"}>
+              <Search className="h-2 w-2" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

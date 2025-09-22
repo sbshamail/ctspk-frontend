@@ -1,5 +1,7 @@
 "use client";
 
+import HeartIcon from "@/components/icons/HeartIcon";
+import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,7 +9,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ChevronDown, LayoutGrid, Minus } from "lucide-react";
+import {
+  ChevronDown,
+  Home,
+  Info,
+  LayoutGrid,
+  Minus,
+  Phone,
+  Store,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import MainSearchbar from "../searchbar/MainSearchbar";
@@ -40,7 +50,12 @@ const categories = [
   },
 ];
 
-const navigationItems = ["Home", "Shop", "About", "Contact"];
+const navigationItems = [
+  { name: "Home", href: "#", icon: Home },
+  { name: "Shop", href: "#", icon: Store },
+  { name: "About", href: "#", icon: Info },
+  { name: "Contact", href: "#", icon: Phone },
+];
 
 export default function HeaderNav({ y }: any) {
   return (
@@ -101,18 +116,51 @@ export default function HeaderNav({ y }: any) {
             <MainSearchbar />
           </div>
           {/* Navigation */}
-          <nav className="flex items-center space-x-8">
-            {navigationItems.map((item) => (
-              <Link
-                key={item}
-                href="#"
-                className={cn(
-                  " hover:text-primary transition-colors font-medium"
-                )}
-              >
-                {item}
-              </Link>
-            ))}
+          <nav className="flex items-center space-x-6">
+            {/* Desktop Nav */}
+            <div
+              className={`${
+                y > 0 ? "hidden" : " block "
+              } items-center space-x-8`}
+            >
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "hover:text-primary transition-colors font-medium"
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Nav (icons only) */}
+            <div
+              className={`${
+                y > 0 ? "block" : "hidden"
+              } flex  items-center space-x-4`}
+            >
+              {navigationItems.map((item) => (
+                <Button
+                  key={item.name}
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="hover:text-primary"
+                >
+                  <Link href={item.href}>
+                    <item.icon className="w-5 h-5" />
+                  </Link>
+                </Button>
+              ))}
+
+              {/* Heart Icon */}
+              <HeartIcon />
+              {/* Cart Icon */}
+              <ShoppingCartIcon />
+            </div>
           </nav>
         </div>
       </div>

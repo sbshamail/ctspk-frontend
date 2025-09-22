@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { Screen } from "@/@core/layout";
 import ProductCard from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -10,8 +9,10 @@ import {
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Autoplay from "embla-carousel-autoplay";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import * as React from "react";
 
 interface Product {
   id?: number;
@@ -53,7 +54,7 @@ const ProductSlider = ({
 
   return (
     <Screen>
-      <div className="flex justify-between items-center mb-4">
+      <div className={cn("flex justify-between items-center mb-4", className)}>
         <h3 className="text-2xl lg:text-3xl font-bold text-secondary-foreground">
           {title}
         </h3>
