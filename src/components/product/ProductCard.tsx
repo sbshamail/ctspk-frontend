@@ -2,7 +2,7 @@ import { titleSubstring } from "@/utils/helper";
 import Image from "next/image";
 import Link from "next/link";
 import StarRating from "../starRating";
-import { ProductTags } from "../tag/ProductTags";
+import { ProductTag } from "../tag/ProductTag";
 import { PriceAndSalePrice } from "../typography/PriceAndSalePrice";
 import { Card } from "../ui/card";
 import { ProductCartButton } from "./ProductCartButton";
@@ -46,7 +46,7 @@ const ProductCard = ({
               {/* Tags */}
 
               <div className="absolute  left-0 top-0 mt-3">
-                {Tags ? Tags() : <ProductTags title={"Sale"} />}
+                {Tags ? Tags() : <ProductTag title={"Sale"} />}
               </div>
 
               <div className="absolute right-0 top-0 m-2 z-10 ">

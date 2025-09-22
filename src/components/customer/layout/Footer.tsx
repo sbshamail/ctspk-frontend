@@ -1,44 +1,34 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Clock,
-  Facebook,
-  Instagram,
-  Mail,
-  MapPin,
-  Phone,
-  Twitter,
-  Youtube,
-} from "lucide-react";
+import SocialIcons from "@/components/icons/SocialIcons";
+import { MainLogo } from "@/components/logo/MainLogo";
+import { Clock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
 
 const Footer = () => {
   const footerSections = [
     {
-      title: "Company Info",
-      links: ["About Us", "Contact Us", "Careers", "Press", "Blog"],
+      title: "About Us",
+      links: ["About Us", "Contact Us", "About team", "Customer Support"],
     },
     {
-      title: "Customer Service",
+      title: "Information",
       links: [
-        "Help Center",
-        "Track Your Order",
-        "Returns & Exchanges",
-        "Shipping Info",
-        "Size Guide",
+        "Privacy Policy",
+        "Terms & Conditions",
+        "Returns Policy",
+        "Sitemap",
       ],
     },
     {
-      title: "Quick Links",
-      links: ["New Arrivals", "Best Sellers", "Sale", "Gift Cards", "Wishlist"],
+      title: "Account",
+      links: ["Sign In", "View Cart", "My Wishlist", "Track My Order"],
     },
   ];
 
   return (
-    <footer className="bg-slate-900 mt-12">
+    <footer className=" mt-12">
       {/* Newsletter Section */}
       <section className="bg-muted ">
         <Screen>
@@ -95,11 +85,9 @@ const Footer = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
               {/* Brand Section */}
               <div className="lg:col-span-2">
-                <h2 className="text-2xl font-bold mb-4">
-                  <span className="text-primary">GHER &nbsp;</span>
-                  <span className="text-gray-300">TAK</span>
-                </h2>
-                <p className="text-gray-300 mb-6 max-w-md">
+                {/* Logo */}
+                <MainLogo className="mb-4 max-w-full" />
+                <p className="text-foreground mb-6 max-w-md">
                   Your premier destination for electronics from trusted vendors
                   worldwide. Quality products, competitive prices, and
                   exceptional service.
@@ -108,66 +96,35 @@ const Footer = () => {
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 mr-2 text-primary" />
-                    <span className="text-gray-300">info@ghertak.com</span>
+                    <span className="text-foreground">info@ghertak.com</span>
                   </div>
                   <div className="flex items-center">
                     <Phone className="w-4 h-4 mr-2 text-primary" />
-                    <span className="text-gray-300">
+                    <span className="text-foreground">
                       (+92) - 540-025-124553
                     </span>
                   </div>
                   <div className="flex items-center">
                     <Clock className="w-4 h-4 mr-2 text-primary" />
-                    <span className="text-gray-300">
+                    <span className="text-foreground">
                       10:00 - 18:00, Mon - Sat
                     </span>
                   </div>
-                </div>
-
-                <div className="flex space-x-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-300 hover:text-primary p-2"
-                  >
-                    <Facebook className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-300 hover:text-primary p-2"
-                  >
-                    <Twitter className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-300 hover:text-primary p-2"
-                  >
-                    <Instagram className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-300 hover:text-primary p-2"
-                  >
-                    <Youtube className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
 
               {/* Footer Links */}
               {footerSections.map((section, index) => (
                 <div key={index}>
-                  <h4 className="font-semibold text-lg mb-4">
+                  <h4 className="font-semibold text-lg lg:text-xl mb-4 ">
                     {section.title}
                   </h4>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {section.links.map((link, linkIndex) => (
                       <li key={linkIndex}>
                         <a
                           href="#"
-                          className="text-gray-300 hover:text-primary transition-colors"
+                          className="text-base text-foreground hover:text-primary transition-colors"
                         >
                           {link}
                         </a>
@@ -183,23 +140,23 @@ const Footer = () => {
 
       {/* Bottom Bar */}
 
-      <div className="border-t border-slate-700 fixed bottom-0 bg-slate-900    w-full h-6 py-6">
+      <div className=" py-2  border-t border-border md:fixed md:bottom-0 w-full z-50 bg-background">
         <Screen>
-          <div className=" mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-gray-300 text-sm">
+          <div className="md:h-10  w-full flex items-center  mx-auto px-4 sm:px-6 lg:px-8 ">
+            <div className="w-full flex flex-col gap-6 md:flex-row justify-between items-center">
+              <div className="text-foreground text-sm">
                 © 2025 GHER TAK. All rights reserved.
               </div>
-              <div className="flex space-x-6 text-sm md:mt-0">
-                <a href="#" className="text-gray-300 hover:text-primary">
-                  Privacy Policy
-                </a>
-                <a href="#" className="text-gray-300 hover:text-primary">
-                  Terms of Service
-                </a>
-                <a href="#" className="text-gray-300 hover:text-primary">
-                  Cookie Policy
-                </a>
+              <div className="flex space-x-12 text-sm md:mt-0 flex-col md:flex-row gap-6">
+                <SocialIcons />
+                <div className=" h-full">
+                  <Image
+                    src="/assets/imgs/cards.png"
+                    alt="banks"
+                    height={200}
+                    width={200}
+                  />
+                </div>
               </div>
             </div>
           </div>

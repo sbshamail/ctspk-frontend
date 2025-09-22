@@ -1,21 +1,17 @@
 "use client";
 
-import { Heart, Menu, Search, ShoppingCart, User } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useWindowScroll } from "react-use";
-import Topbar from "./Topbar";
-import Image from "next/image";
 import { Screen } from "@/@core/layout";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Heart, Menu, ShoppingCart } from "lucide-react";
+import { useWindowScroll } from "react-use";
+import Topbar from "./Topbar";
 
-import { cn } from "@/lib/utils";
 // Shad
+import { MainLogo } from "@/components/logo/MainLogo";
 import { Separator } from "@/components/ui/separator";
-import HeaderNav from "./HeaderNav";
-import Link from "next/link";
 import MainSearchbar from "../searchbar/MainSearchbar";
+import HeaderNav from "./HeaderNav";
 
 const Header = () => {
   const { y } = useWindowScroll();
@@ -55,16 +51,7 @@ const Header = () => {
                 <div className="w-full   sm:px-6 ">
                   <div className=" flex items-center justify-between">
                     {/* Logo */}
-                    <div className="w-20">
-                      <Link href="/">
-                        <Image
-                          alt="logo"
-                          src="/assets/imgs/theme/logo.svg"
-                          height={100}
-                          width={100}
-                        />
-                      </Link>
-                    </div>
+                    <MainLogo />
 
                     {/* Search Bar */}
                     <MainSearchbar />

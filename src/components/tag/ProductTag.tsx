@@ -6,7 +6,7 @@ interface Props {
   title: string;
   className?: ClassNameType;
 }
-export const ProductTags: FC<Props> = ({ title, className }) => {
+export const ProductTag: FC<Props> = ({ title, className }) => {
   return (
     <div
       className={twMerge(
