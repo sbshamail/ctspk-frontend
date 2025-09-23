@@ -1,6 +1,12 @@
-import { ChildrenType } from "@/utils/reactTypes";
+import { ChildrenType, ClassNameType } from "@/utils/reactTypes";
 
-export const Screen = ({ children }: { children: ChildrenType }) => {
+export const Screen = ({
+  children,
+  className,
+}: {
+  children: ChildrenType;
+  className?: ClassNameType;
+}) => {
   return (
     <div>
       <div

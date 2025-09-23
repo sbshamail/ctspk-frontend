@@ -51,8 +51,8 @@ const categories = [
 ];
 
 const navigationItems = [
-  { name: "Home", href: "#", icon: Home },
-  { name: "Shop", href: "#", icon: Store },
+  { name: "Home", href: "/", icon: Home },
+  { name: "Shop", href: "/product", icon: Store },
   { name: "About", href: "#", icon: Info },
   { name: "Contact", href: "#", icon: Phone },
 ];
