@@ -1,3 +1,4 @@
+"use client";
 import { Screen } from "@/@core/layout";
 import { ProductDetail } from "@/components/customer/ProductDetail";
 import ProductSlider from "@/components/customer/slider/ProductSlider";
