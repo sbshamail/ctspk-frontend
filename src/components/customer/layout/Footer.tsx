@@ -149,14 +149,6 @@ const Footer = () => {
               </div>
               <div className="flex space-x-12 text-sm md:mt-0 flex-col md:flex-row gap-6">
                 <SocialIcons />
-                <div className=" h-full">
-                  <Image
-                    src="/assets/imgs/cards.png"
-                    alt="banks"
-                    height={200}
-                    width={200}
-                  />
-                </div>
               </div>
             </div>
           </div>

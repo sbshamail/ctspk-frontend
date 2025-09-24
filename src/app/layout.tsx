@@ -1,8 +1,7 @@
 import { ThemeProvider } from "@/@core/theme/theme-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-// import { Provider } from "react-redux";
-// import { store } from "../store";
+import StoreProvider from "./StoreProvider";
 import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,8 +34,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          {/* <Provider store={store}></Provider> */}
+          <StoreProvider>{children}</StoreProvider>
+          {/* {children} */}
         </ThemeProvider>
       </body>
     </html>

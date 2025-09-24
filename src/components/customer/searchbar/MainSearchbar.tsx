@@ -1,4 +1,3 @@
-import { FilterableSelect } from "@/components/select/FilterableSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -26,13 +25,13 @@ const MainSearchbar = ({ className }: MainSearchbarProps) => {
   return (
     <div className={cn("hidden lg:flex flex-1 max-w-2xl ", className)}>
       <div className="flex w-full border border-border rounded-md">
-        <FilterableSelect
+        {/* <FilterableSelect
           options={categories}
           setvalue={setCategory}
           placeholder="Select category"
           value={category}
           className="border-none rounded-none"
-        />
+        /> */}
 
         <div className="relative flex-1">
           <Input

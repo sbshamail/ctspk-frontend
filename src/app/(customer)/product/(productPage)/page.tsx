@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import ProductPageContent from "./PageContent";
 
 const page = () => {
   return (
     <div>
-      <ProductPageContent data={[]} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <ProductPageContent data={[]} />
+      </Suspense>
     </div>
   );
 };
