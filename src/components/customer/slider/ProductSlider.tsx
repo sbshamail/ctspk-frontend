@@ -99,7 +99,7 @@ const ProductSlider = ({
               className="basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 "
             >
               <ProductCard
-                title={item.name}
+                name={item.name}
                 link={item.link ?? "/product/2"}
                 image={item.image}
                 rating={item.rating}

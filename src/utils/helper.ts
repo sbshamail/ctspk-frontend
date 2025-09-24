@@ -50,7 +50,7 @@ export const titleSubstring = (
   length: number = 35,
   max: number = 25
 ) => {
-  if (title.length > length) {
+  if (title && title.length > length) {
     return title.substring(0, max) + "...";
   }
   return title;

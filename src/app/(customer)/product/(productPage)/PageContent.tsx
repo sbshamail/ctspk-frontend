@@ -1,19 +1,18 @@
 "use client";
 import { Screen } from "@/@core/layout";
 import ProductFilterSidebar from "@/components/product/ProductFilterSidebar";
+import ProductInfiniteScroll from "@/components/product/ProductInfiniteScroll";
 import { Separator } from "@/components/ui/separator";
+import { useGetProductsQuery } from "@/store/services/product";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const defaultLimit = 10;
-const ProductPageContent = ({ data }: { data: any }) => {
+const ProductPageContent = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // ---------------------------
-  // State
-  // ---------------------------
   const [filters, setFilters] = useState({
     limit: defaultLimit,
     page: 0,
@@ -22,7 +21,7 @@ const ProductPageContent = ({ data }: { data: any }) => {
   });
 
   const { page, limit, categories, searchTerm } = filters;
-
+  const { data, error, isLoading, isFetching } = useGetProductsQuery();
   // ---------------------------
   // Helpers to manage query params
   // ---------------------------
@@ -45,8 +44,10 @@ const ProductPageContent = ({ data }: { data: any }) => {
   // ---------------------------
   // Data fallbacks
   // ---------------------------
-  const result = data?.result ?? [];
-  const count = data?.count ?? 0;
+  // @ts-ignore
+  const result = data?.data ?? [];
+  // @ts-ignore
+  const total = data?.total ?? 0;
 
   // ---------------------------
   // Sync filters with URL params
@@ -70,6 +71,7 @@ const ProductPageContent = ({ data }: { data: any }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriesList, searchTermQuery]);
+
   return (
     <>
       <Separator />
@@ -84,6 +86,20 @@ const ProductPageContent = ({ data }: { data: any }) => {
               />
             </div>
             <div className="absolute right-0 h-full border border-border"></div>
+          </div>
+          <div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <ProductInfiniteScroll
+                data={result}
+                isFetching={isFetching}
+                error={error}
+                isLoading={isLoading}
+                setPage={setPage}
+                count={total}
+                page={page}
+                limit={limit}
+              />
+            </div>
           </div>
         </div>
       </Screen>

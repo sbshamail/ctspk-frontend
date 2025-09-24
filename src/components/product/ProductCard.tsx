@@ -9,7 +9,7 @@ import { ProductCartButton } from "./ProductCartButton";
 import { ProductFavorite } from "./ProductFavorite";
 
 interface Props {
-  title: string;
+  name: string;
   link?: string;
   image: string;
   rating?: number;
@@ -20,7 +20,7 @@ interface Props {
   CartButton?: () => React.ReactNode;
 }
 const ProductCard = ({
-  title,
+  name,
   price,
   link = "#",
   image,
@@ -29,6 +29,7 @@ const ProductCard = ({
   showPercentage,
   Tags,
   CartButton,
+  ...props
 }: Props) => {
   return (
     <div>
@@ -38,8 +39,9 @@ const ProductCard = ({
             <div className="relative transition duration-300">
               <Image
                 className="mx-auto rounded-lg m-0"
-                src={image}
-                alt={title}
+                // @ts-ignore
+                src={image?.original ? image.original : image}
+                alt={name}
                 width={500}
                 height={500}
               />
@@ -59,7 +61,7 @@ const ProductCard = ({
             </div>
             <div className="p-2">
               <h2 className="m-0 p-0 text-sm font-medium line-clamp-1 h-5 ">
-                {titleSubstring(title)}
+                {titleSubstring(name)}
               </h2>
               <div className="w-full flex items-center justify-between ">
                 <div className="w-full flex flex-col mt-2 space-y-2">
