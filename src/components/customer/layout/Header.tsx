@@ -2,7 +2,7 @@
 
 import { Screen } from "@/@core/layout";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { HomeIcon, Menu } from "lucide-react";
 import { useWindowScroll } from "react-use";
 import Topbar from "./Topbar";
 
@@ -12,7 +12,9 @@ import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Separator } from "@/components/ui/separator";
 import MainSearchbar from "../searchbar/MainSearchbar";
-import HeaderNav from "./HeaderNav";
+import { HeaderNav } from "./HeaderNav";
+import Link from "next/link";
+import { Suspense } from "react";
 
 const Header = () => {
   const { y } = useWindowScroll();
@@ -58,10 +60,16 @@ const Header = () => {
                     <MainSearchbar />
 
                     {/* Right Actions */}
-                    <div className="flex items-center ">
-                      <HeartIcon />
-
-                      <ShoppingCartIcon />
+                    <div className="flex items-center gap-4 text-base  ">
+                      <Link
+                        href="/product"
+                        className="hover:underline Transition"
+                      >
+                        Shop
+                      </Link>
+                      <Link href="#" className="hover:underline Transition">
+                        <h3>About Us</h3>
+                      </Link>
 
                       <Button variant="ghost" size="sm" className="md:hidden">
                         <Menu className="w-5 h-5" />
@@ -78,7 +86,9 @@ const Header = () => {
 
         <div className={`transition-all duration-500 `}>
           <Screen>
-            <HeaderNav y={y} />
+            <Suspense fallback={<div>Loading navigation...</div>}>
+              <HeaderNav y={y} />
+            </Suspense>
           </Screen>
         </div>
       </header>

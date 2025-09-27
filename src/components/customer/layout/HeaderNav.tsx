@@ -1,190 +1,301 @@
 "use client";
 
-import HeartIcon from "@/components/icons/HeartIcon";
-import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
-import { Button } from "@/components/ui/button";
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { richCategories } from "@/utils/temp_categories";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import {
-  ChevronDown,
-  Home,
-  Info,
-  LayoutGrid,
-  Minus,
-  Phone,
-  Store,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import MainSearchbar from "../searchbar/MainSearchbar";
+import HeartIcon from "@/components/icons/HeartIcon";
+import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
+import { Screen } from "@/@core/layout";
 
-const categories = [
-  {
-    title: "Milks and Dairies",
-    image: "/assets/imgs/theme/icons/category-1.svg",
-  },
-  {
-    title: "Clothing & Beauty",
-    image: "/assets/imgs/theme/icons/category-2.svg",
-  },
-  {
-    title: "Pet Foods & Toys",
-    image: "/assets/imgs/theme/icons/category-3.svg",
-  },
-  {
-    title: "Baking Material",
-    image: "/assets/imgs/theme/icons/category-4.svg",
-  },
-  { title: "Fresh Fruit", image: "/assets/imgs/theme/icons/category-5.svg" },
-  { title: "Wines & Drinks", image: "/assets/imgs/theme/icons/category-6.svg" },
-  { title: "Fresh Seafood", image: "/assets/imgs/theme/icons/category-7.svg" },
-  { title: "Fast Food", image: "/assets/imgs/theme/icons/category-8.svg" },
-  { title: "Vegetables", image: "/assets/imgs/theme/icons/category-9.svg" },
-  {
-    title: "Bread and Juice",
-    image: "/assets/imgs/theme/icons/category-10.svg",
-  },
-];
-
-const navigationItems = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Shop", href: "/product", icon: Store },
-  { name: "About", href: "#", icon: Info },
-  { name: "Contact", href: "#", icon: Phone },
-];
-
-export default function HeaderNav({ y }: any) {
-  return (
-    <div className="hidden lg:block  rounded ">
-      <div className=" mx-auto px-4">
-        <div className="flex items-center gap-4 justify-between py-3">
-          {/* Browse Categories */}
-          <div className="hidden xl:block">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size={"lg"}
-                  className="flex items-center gap-2 rounded 
-                  "
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                  <span className="font-medium text-base">
-                    Browse All Categories
-                  </span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent
-                align="start"
-                className="w-[500px] p-4 bg-card text-card-foreground border rounded-lg shadow-lg"
-              >
-                {/* Categories grid */}
-                <div className="grid grid-cols-2 gap-8">
-                  {categories.map((cat) => (
-                    <CategoryItem
-                      key={cat.title}
-                      title={cat.title}
-                      image={cat.image}
-                    />
-                  ))}
-                </div>
-
-                {/* Footer */}
-                <div className="border-t mt-4 pt-4">
-                  <button
-                    className="flex items-center gap-2 text-sm font-medium 
-        text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <div className="w-6 h-6 border-2 border-primary rounded-full flex items-center justify-center">
-                      <Minus className="h-3 w-3" />
-                    </div>
-                    <span>Show more...</span>
-                  </button>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          {/* Search Bar */}
-          <div
-            className={cn(" max-w-2xl flex flex-1", y > 0 ? "block" : "hidden")}
-          >
-            <MainSearchbar />
-          </div>
-          {/* Navigation */}
-          <nav className="flex items-center space-x-6">
-            {/* Desktop Nav */}
-            <div
-              className={`${
-                y > 0 ? "hidden" : " block "
-              } items-center space-x-8`}
-            >
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "hover:text-primary transition-colors font-medium"
-                  )}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-
-            {/* Mobile Nav (icons only) */}
-            <div
-              className={`${
-                y > 0 ? "block" : "hidden"
-              } flex  items-center space-x-4`}
-            >
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.name}
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="hover:text-primary"
-                >
-                  <Link href={item.href}>
-                    <item.icon className="w-5 h-5" />
-                  </Link>
-                </Button>
-              ))}
-
-              {/* Heart Icon */}
-              <HeartIcon />
-              {/* Cart Icon */}
-              <ShoppingCartIcon />
-            </div>
-          </nav>
-        </div>
-      </div>
-    </div>
-  );
+interface Category {
+  name: string;
+  image?: string;
+  children?: Category[];
 }
 
-function CategoryItem({
-  title,
-  image,
-}: {
-  title: string;
-  image?: string | null;
-}) {
+export function HeaderNav({ y }: any) {
+  const [open, setOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeSubCategory, setActiveSubCategory] = useState<string | null>(
+    null
+  );
+  const [visibleCategories, setVisibleCategories] = useState<number>(
+    richCategories.length
+  );
+  const navRef = useRef<HTMLDivElement>(null);
+  const categoriesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const calculateVisibleCategories = () => {
+      if (navRef.current && categoriesRef.current) {
+        const containerWidth = navRef.current.offsetWidth;
+        const iconsWidth = 120; // reserve space for icons
+        const moreButtonWidth = 90; // reserve space for "MORE" button
+        const availableWidth = containerWidth - iconsWidth - moreButtonWidth;
+
+        let totalWidth = 0;
+        let maxVisible = 0;
+
+        // get all rendered buttons inside categoriesRef
+        const buttons = categoriesRef.current.querySelectorAll("button");
+
+        for (let i = 0; i < buttons.length; i++) {
+          const btnWidth = (buttons[i] as HTMLButtonElement).offsetWidth + 8; // include spacing
+          if (totalWidth + btnWidth <= availableWidth) {
+            totalWidth += btnWidth;
+            maxVisible++;
+          } else {
+            break;
+          }
+        }
+
+        setVisibleCategories(Math.max(1, maxVisible)); // at least 1 always visible
+      }
+    };
+
+    calculateVisibleCategories();
+    window.addEventListener("resize", calculateVisibleCategories);
+    return () =>
+      window.removeEventListener("resize", calculateVisibleCategories);
+  }, [richCategories]);
+
+  const handleCategoryHover = (category: Category) => {
+    setActiveSubCategory(null);
+    if (!category?.children || category?.children?.length === 0) {
+      return setActiveCategory(null);
+    }
+    setActiveCategory(category.name);
+  };
+
+  const handleSubCategoryHover = (subCategoryName: string) => {
+    setActiveSubCategory(subCategoryName);
+  };
+
+  const handleMouseLeave = () => {
+    setActiveCategory(null);
+    setActiveSubCategory(null);
+  };
+
+  const getActiveCategory = () => {
+    return richCategories.find((cat) => cat.name === activeCategory);
+  };
+
+  const getActiveSubCategory = () => {
+    const category = getActiveCategory();
+    if (!category?.children) return null;
+    return category.children.find((sub) => sub.name === activeSubCategory);
+  };
+
+  const mainCategories = richCategories.slice(0, visibleCategories);
+  const overflowCategories = richCategories.slice(visibleCategories);
+
   return (
-    <div className="flex items-center gap-3 text-foreground hover:text-primary cursor-pointer">
-      {image ? (
-        <Image src={image} alt={title} width={24} height={24} />
-      ) : (
-        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-          <div className="w-4 h-4 bg-primary rounded" />
+    <div className="relative" onMouseLeave={handleMouseLeave}>
+      {/* Main Navigation Bar */}
+      <Screen>
+        <nav className="w-full border-b border-border bg-background">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div
+              className="flex items-center justify-between h-16"
+              ref={navRef}
+            >
+              {/* Main Categories */}
+              <div
+                className="flex items-center space-x-1 flex-1 overflow-hidden pr-4"
+                ref={categoriesRef}
+              >
+                {mainCategories.map((category) => (
+                  <button
+                    key={category.name}
+                    className={cn(
+                      "flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-md whitespace-nowrap",
+                      activeCategory === category.name
+                        ? "text-primary bg-accent"
+                        : "text-foreground hover:text-primary hover:bg-accent/50"
+                    )}
+                    onMouseEnter={() => handleCategoryHover(category)}
+                  >
+                    <span className="truncate">
+                      {category.name.toUpperCase()}
+                    </span>
+                    {category.children && <ChevronDown className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right Side: More Button + Icons */}
+              <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
+                {overflowCategories.length > 0 && (
+                  <DropdownMenu open={open} onOpenChange={setOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 border border-border"
+                        onMouseEnter={() => setOpen(true)}
+                        onMouseLeave={() => setOpen(false)}
+                      >
+                        <span>MORE</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent
+                      align="end"
+                      onMouseEnter={() => setOpen(true)}
+                      onMouseLeave={() => setOpen(false)}
+                    >
+                      {overflowCategories.map((category, index) => (
+                        <div key={category.name}>
+                          <DropdownMenuItem
+                            className="cursor-pointer"
+                            onMouseEnter={() => handleCategoryHover(category)}
+                          >
+                            <span className="font-medium">{category.name}</span>
+                            {category.children && (
+                              <ChevronRight className="w-4 h-4 ml-auto" />
+                            )}
+                          </DropdownMenuItem>
+                          {index < overflowCategories.length - 1 && (
+                            <DropdownMenuSeparator />
+                          )}
+                        </div>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                {/* Navigation Icons */}
+                <div className="flex items-center space-x-2 border-l border-border pl-4">
+                  <Link
+                    href="/"
+                    className="p-2 hover:bg-accent/50 rounded-md transition-colors"
+                  >
+                    <HeartIcon />
+                  </Link>
+                  <Link
+                    href="/cart"
+                    className="p-2 hover:bg-accent/50 rounded-md transition-colors"
+                  >
+                    <ShoppingCartIcon />
+                  </Link>
+                  {y > 0 && <Search className="w-4 h-4" />}
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+      </Screen>
+      {activeCategory && (
+        <div className="absolute top-full left-0 w-full z-50 shadow-lg border-b border-border bg-popover">
+          <Screen>
+            <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="grid grid-cols-12 gap-8">
+                {/* Level 2 Categories */}
+                <div className="col-span-3">
+                  <h3 className="text-lg font-semibold text-popover-foreground mb-4">
+                    Shop by Category
+                  </h3>
+                  <div className="space-y-1">
+                    {getActiveCategory()?.children?.map((subCategory) => (
+                      <button
+                        key={subCategory.name}
+                        className={cn(
+                          "flex items-center justify-between w-full px-3 py-2 text-left text-sm transition-colors duration-200 rounded-md",
+                          activeSubCategory === subCategory.name
+                            ? "text-primary bg-accent"
+                            : "text-popover-foreground hover:text-primary hover:bg-accent/50"
+                        )}
+                        onMouseEnter={() =>
+                          handleSubCategoryHover(subCategory.name)
+                        }
+                      >
+                        <span>{subCategory.name}</span>
+                        {subCategory.children && (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Level 3 Categories */}
+                {getActiveSubCategory()?.children && (
+                  <div className="col-span-3">
+                    <h3 className="text-lg font-semibold text-popover-foreground mb-4">
+                      {getActiveSubCategory()?.name}
+                    </h3>
+                    <div className="space-y-1">
+                      {getActiveSubCategory()?.children?.map((item) => (
+                        <a
+                          key={item.name}
+                          href="#"
+                          className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200"
+                        >
+                          {item.name}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Collections Section */}
+                <div className="col-span-3">
+                  <h3 className="text-lg font-semibold text-popover-foreground mb-4">
+                    Collections
+                  </h3>
+                  <div className="space-y-1">
+                    {[
+                      "New Arrivals",
+                      "Best Sellers",
+                      "Trending Now",
+                      "Limited Edition",
+                      "Seasonal Picks",
+                    ].map((collection) => (
+                      <a
+                        key={collection}
+                        href="#"
+                        className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors"
+                      >
+                        {collection}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Promotional Banner */}
+                <div className="col-span-3">
+                  <div className="bg-gradient-to-br from-primary/10 to-accent rounded-lg p-6 h-full flex flex-col justify-center items-center text-center">
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+                      <span className="text-2xl">🎉</span>
+                    </div>
+                    <h4 className="text-lg font-semibold text-popover-foreground mb-2">
+                      Up to 50% Off
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {activeCategory === "Fashion & Apparel"
+                        ? "Summer Styles"
+                        : activeCategory === "Electronics & Appliances"
+                        ? "Tech Deals"
+                        : "Special Offers"}
+                    </p>
+                    <button className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
+                      Shop Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Screen>
         </div>
       )}
-      <span className="text-sm font-medium">{title}</span>
     </div>
   );
 }
