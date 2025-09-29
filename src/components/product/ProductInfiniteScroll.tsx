@@ -52,7 +52,12 @@ const ProductInfiniteScroll = ({
       .fill(null)
       .map((_, index) => <ProductCardSkeleton key={index} />);
 
-  if (isLoading) return productSkeleton();
+  if (isLoading)
+    return (
+      <div className="w-full">
+        <ProductCardSkeleton />
+      </div>
+    );
 
   if (error) return <p>Error occurred</p>;
   return (

@@ -88,7 +88,7 @@ const ProductPageContent = () => {
             <div className="absolute right-0 h-full border border-border"></div>
           </div>
           <div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4">
               <ProductInfiniteScroll
                 data={result}
                 isFetching={isFetching}

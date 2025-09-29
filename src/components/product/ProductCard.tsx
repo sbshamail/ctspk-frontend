@@ -7,6 +7,7 @@ import { PriceAndSalePrice } from "../typography/PriceAndSalePrice";
 import { Card } from "../ui/card";
 import { ProductCartButton } from "./ProductCartButton";
 import { ProductFavorite } from "./ProductFavorite";
+import ProductImage from "./ProductImage";
 
 interface Props {
   name: string;
@@ -19,6 +20,7 @@ interface Props {
   Tags?: () => React.ReactNode;
   CartButton?: () => React.ReactNode;
 }
+
 const ProductCard = ({
   name,
   price,
@@ -37,14 +39,7 @@ const ProductCard = ({
         <Card className=" cursor-pointer p-0">
           <div>
             <div className="relative transition duration-300">
-              <Image
-                className="mx-auto rounded-lg m-0"
-                // @ts-ignore
-                src={image?.original ? image.original : image}
-                alt={name}
-                width={500}
-                height={500}
-              />
+              <ProductImage image={image} alt={name} />
               {/* Tags */}
 
               <div className="absolute  left-0 top-0 mt-3">

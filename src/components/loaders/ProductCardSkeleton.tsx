@@ -1,47 +1,36 @@
-import React from 'react';
+import React from "react";
 
 const ProductCardSkeleton = () => {
   return (
-    <div className=" border border-border shadow rounded-md max-w-sm w-full mx-auto">
-      <div className="animate-pulse">
-        <div className="relative ">
-          <div className="h-56 w-full py-2 ">
-            <div className="mt-16 px-10 space-y-2">
-              <div className="h-2 bg-effect-md rounded col-span-2"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2"></div>
-            </div>
-          </div>
-          <div className="absolute  left-0 top-0 mt-3">
-            <div className="h-2 bg-effect-md rounded col-span-2 w-8"></div>
-          </div>
+    <div className="w-full rounded-lg border border-border bg-card shadow animate-pulse overflow-hidden">
+      {/* Image section */}
+      <div className="relative w-full h-56 bg-muted" />
 
-          <div className="absolute right-0 top-0 m-2 z-10 ">
-            <div className="flex space-x-1 ">
-              <div className="h-2 bg-effect-md rounded col-span-2 w-6"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2 w-6"></div>
-              <div className="h-2 bg-effect-md rounded col-span-2 w-6"></div>
-            </div>
-          </div>
+      {/* Badge / top-left */}
+      <div className="absolute top-3 left-3 h-5 w-14 rounded-md bg-accent" />
+
+      {/* Action icons / top-right */}
+      <div className="absolute top-3 right-3 flex space-x-2">
+        <div className="h-7 w-7 rounded-full bg-muted" />
+        <div className="h-7 w-7 rounded-full bg-muted" />
+        <div className="h-7 w-7 rounded-full bg-muted" />
+      </div>
+
+      {/* Content */}
+      <div className="p-4 space-y-4">
+        {/* Title */}
+        <div className="h-4 w-3/4 rounded bg-muted" />
+
+        {/* Description */}
+        <div className="space-y-2">
+          <div className="h-3 w-full rounded bg-muted" />
+          <div className="h-3 w-5/6 rounded bg-muted" />
         </div>
-        <div className="p-2 bg-card ">
-          <div className="h-2 bg-effect-md rounded col-span-2"></div>
-          <div className="w-full flex items-center justify-between ">
-            <div className="w-full flex flex-col mt-2 space-y-2">
-              <div>
-                <div className="h-2 bg-effect-md rounded col-span-2 w-12"></div>
-              </div>
-              <div className="w-full flex justify-between">
-                <div className="h-2 bg-effect-md rounded col-span-2 w-12"></div>
-              </div>
-            </div>
-            <div className="z-10">
-              <div className="h-2 bg-effect-md rounded col-span-2 w-6"></div>
-            </div>
-          </div>
+
+        {/* Price + Button */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="h-4 w-16 rounded bg-primary" />
+          <div className="h-8 w-20 rounded-md bg-secondary" />
         </div>
       </div>
     </div>
