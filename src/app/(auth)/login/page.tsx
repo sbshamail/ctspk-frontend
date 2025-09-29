@@ -12,6 +12,7 @@ const LoginPage = () => {
     try {
       const res = await fetch("http://69.10.53.162/api/login", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
