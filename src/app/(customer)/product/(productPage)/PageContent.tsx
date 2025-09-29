@@ -3,7 +3,7 @@ import { Screen } from "@/@core/layout";
 import ProductFilterSidebar from "@/components/product/ProductFilterSidebar";
 import ProductInfiniteScroll from "@/components/product/ProductInfiniteScroll";
 import { Separator } from "@/components/ui/separator";
-import { useGetProductsQuery } from "@/store/services/product";
+import { useGetProductsQuery } from "@/store/services/productApi";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
