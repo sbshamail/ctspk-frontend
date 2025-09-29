@@ -34,12 +34,12 @@ const ProductCard = ({
   ...props
 }: Props) => {
   return (
-    <div>
+    <div className=" ">
       <Link href={link} className="z-0">
-        <Card className=" cursor-pointer p-0">
+        <Card className=" cursor-pointer p-0 ">
           <div>
             <div className="relative transition duration-300">
-              <ProductImage image={image} alt={name} />
+              <ProductImage image={image} alt={name} className="min-h-56" />
               {/* Tags */}
 
               <div className="absolute  left-0 top-0 mt-3">
