@@ -1,21 +1,21 @@
 "use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { InView } from "react-intersection-observer";
-
-// import { ProductDataType } from '@/utils/interfaces/responseTypes/responseTypes';
 import ProductCardSkeleton from "../loaders/ProductCardSkeleton";
 import ProductCard from "./ProductCard";
 
 interface Props {
-  data: any;
-  isLoading: boolean;
-  isFetching: boolean;
-  error: any;
-  limit: number;
-  page: number;
-  count: number;
-  setPage: (p: number) => void;
+  data: any[]; // Array of products passed from parent
+  isLoading: boolean; // True only on the first API call
+  isFetching: boolean; // True when fetching new pages
+  error: any; // API error (if any)
+  limit: number; // Items per page
+  page: number; // Current page number
+  count: number; // Total number of products from backend
+  setPage: (p: number) => void; // Setter function to update page (from parent)
 }
+
 const ProductInfiniteScroll = ({
   data,
   isLoading,
@@ -24,47 +24,57 @@ const ProductInfiniteScroll = ({
   count,
   page,
   setPage,
+  limit,
 }: Props) => {
-  const [hasMore, setHasMore] = useState(true);
+  // Store all loaded products
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
-  // Handle data merge and pagination
+  // Update local state whenever new data arrives from parent
   useEffect(() => {
-    if (data.length < count && !isFetching) {
-      setHasMore(true);
-    } else {
-      setHasMore(false);
+    if (data && data.length > 0) {
+      setAllProducts((prev) => [...prev, ...data]);
     }
-  }, [data, count, isFetching]);
+  }, [data]);
 
+  // Check if there are more products left to fetch
+  const hasMore = allProducts.length < count;
+
+  // Trigger when "InView" hits bottom of the page
   const handleViewChange = useCallback(
     (inView: boolean) => {
       if (inView && hasMore && !isFetching) {
-        setTimeout(() => {
-          setPage(page + 1);
-        }, 3000);
+        // Load next page
+        setPage(page + 1);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hasMore, isFetching]
+    [hasMore, isFetching, page, setPage]
   );
+
+  // Skeleton generator (placeholder while loading/fetching)
   const productSkeleton = () =>
-    Array(12)
+    Array(limit)
       .fill(null)
       .map((_, index) => <ProductCardSkeleton key={index} />);
 
-  if (isLoading) return productSkeleton();
+  // Show skeletons while first page is loading
+  if (isLoading) return <>{productSkeleton()}</>;
 
-  if (error) return <p>Error occurred</p>;
+  // Show error if API fails
+  if (error) return <p>Error occurred while fetching products</p>;
+
   return (
     <>
-      {data?.map((item: any, index: number) => (
-        // @ts-ignore
+      {/* Render all loaded products */}
+      {allProducts.map((item, index) => (
+        // @ts-ignore because product shape may vary
         <ProductCard key={index} {...item} />
       ))}
-      {isFetching ? productSkeleton() : null}
-      <InView as="div" onChange={handleViewChange}>
-        <div></div>
-      </InView>
+
+      {/* Show skeletons while fetching more pages */}
+      {isFetching && productSkeleton()}
+
+      {/* Load more when reaching bottom */}
+      {hasMore && <InView as="div" onChange={handleViewChange} />}
     </>
   );
 };

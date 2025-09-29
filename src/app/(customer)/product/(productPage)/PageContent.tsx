@@ -21,7 +21,14 @@ const ProductPageContent = () => {
   });
 
   const { page, limit, categories, searchTerm } = filters;
-  const { data, error, isLoading, isFetching } = useGetProductsQuery();
+  const { data, error, isLoading, isFetching } = useGetProductsQuery(
+    {
+      page,
+      limit,
+    },
+    { refetchOnMountOrArgChange: true }
+  );
+
   // ---------------------------
   // Helpers to manage query params
   // ---------------------------

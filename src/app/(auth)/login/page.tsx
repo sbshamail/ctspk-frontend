@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-
+import { API_URL } from "../../../../config";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,7 +10,7 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://69.10.53.162/api/login", {
+      const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         credentials: "include",
         headers: {

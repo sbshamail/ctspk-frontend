@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**", // allow ALL hosts
       },
+      {
+        protocol: "http",
+        hostname: "**", // allow ALL hosts
+      },
     ],
   },
 };
