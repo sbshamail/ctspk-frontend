@@ -7,15 +7,20 @@ interface IFetchApi {
 }
 
 export const fetchApi = async ({ url, method = "GET", options }: IFetchApi) => {
-  const baseUrl = `${API_URL}/${url}`;
-  const response = await fetch(baseUrl, {
-    method,
-    ...options,
-  });
+  try {
+    const baseUrl = `${API_URL}/${url}`;
+    const response = await fetch(baseUrl, {
+      method,
+      ...options,
+    });
+    console.log(response);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    return response.json();
+  } catch (error) {
+    console.log(error);
+    // throw new Error(`error: ${error}`);
   }
-
-  return response.json();
 };

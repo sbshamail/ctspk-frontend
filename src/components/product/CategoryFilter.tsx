@@ -1,6 +1,5 @@
 "use client";
 
-import { CategoryDataType } from "@/utils/modelTypes";
 import { ChevronRight } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 
@@ -9,7 +8,7 @@ interface Props {
   checkedCategories: string[];
 }
 
-export const categoriesList: CategoryDataType[] = [
+export const categoriesList: any = [
   {
     id: 1,
     name: "Clothes",
@@ -138,7 +137,7 @@ export const categoriesList: CategoryDataType[] = [
 const CategoryFilter = ({ handleCategories, checkedCategories }: Props) => {
   return (
     <div>
-      {categoriesList.map((item, index) => (
+      {categoriesList.map((item: any, index: number) => (
         <div key={index}>
           <div className="flex justify-between">
             <table className="m-0 p-0 w-full border-collapse">
