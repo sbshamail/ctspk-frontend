@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { richCategories } from "@/utils/temp_categories";
+
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -15,21 +15,20 @@ import {
 import HeartIcon from "@/components/icons/HeartIcon";
 import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import { Screen } from "@/@core/layout";
+import { CategoryDataType } from "@/utils/modelTypes";
 
-interface Category {
-  name: string;
-  image?: string;
-  children?: Category[];
+interface HeaderNavProps {
+  y: number;
+  categories: CategoryDataType[];
 }
-
-export function HeaderNav({ y }: any) {
+export function HeaderNav({ y, categories }: HeaderNavProps) {
   const [open, setOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(
     null
   );
   const [visibleCategories, setVisibleCategories] = useState<number>(
-    richCategories.length
+    categories.length
   );
   const navRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
@@ -66,9 +65,9 @@ export function HeaderNav({ y }: any) {
     window.addEventListener("resize", calculateVisibleCategories);
     return () =>
       window.removeEventListener("resize", calculateVisibleCategories);
-  }, [richCategories]);
+  }, [categories]);
 
-  const handleCategoryHover = (category: Category) => {
+  const handleCategoryHover = (category: CategoryDataType) => {
     setActiveSubCategory(null);
     if (!category?.children || category?.children?.length === 0) {
       return setActiveCategory(null);
@@ -86,7 +85,7 @@ export function HeaderNav({ y }: any) {
   };
 
   const getActiveCategory = () => {
-    return richCategories.find((cat) => cat.name === activeCategory);
+    return categories.find((cat) => cat.name === activeCategory);
   };
 
   const getActiveSubCategory = () => {
@@ -95,8 +94,8 @@ export function HeaderNav({ y }: any) {
     return category.children.find((sub) => sub.name === activeSubCategory);
   };
 
-  const mainCategories = richCategories.slice(0, visibleCategories);
-  const overflowCategories = richCategories.slice(visibleCategories);
+  const mainCategories = categories.slice(0, visibleCategories);
+  const overflowCategories = categories.slice(visibleCategories);
 
   return (
     <div className="relative" onMouseLeave={handleMouseLeave}>

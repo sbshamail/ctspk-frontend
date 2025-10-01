@@ -11,6 +11,7 @@ import ProductImage from "./ProductImage";
 
 interface Props {
   name: string;
+  slug?: string;
   link?: string;
   image: string;
   rating?: number;
@@ -24,6 +25,7 @@ interface Props {
 const ProductCard = ({
   name,
   price,
+  slug = "#",
   link = "#",
   image,
   rating,
@@ -35,7 +37,7 @@ const ProductCard = ({
 }: Props) => {
   return (
     <div className=" ">
-      <Link href={link} className="z-0">
+      <Link href={`/product/${slug}`} className="z-0">
         <Card className=" cursor-pointer p-0 ">
           <div>
             <div className="relative transition duration-300">

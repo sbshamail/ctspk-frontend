@@ -18,17 +18,22 @@ import { useState } from "react";
 
 interface Product {
   id: number;
-  title: string;
-  images: string[];
-  rating: number;
+  name: string;
+  image: { original: string; filename: string };
   price: number;
-  salePrice: number;
-  reviews: number;
-  sku: string;
+  max_price?: number;
+  min_price?: number;
   category: { id: number; name: string };
-  weight: string;
-  quota: number;
+  slug: string;
+  gallery?: { original: string; filename: string }[];
+
+  rating: number;
+  quantity: number;
   description: string;
+  // salePrice: number;
+  // reviews: number;
+  // sku: string;
+  // weight: string;
 }
 
 interface ProductDetailProps {
@@ -36,12 +41,26 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ product }: ProductDetailProps) {
+  const {
+    id,
+    category,
+    name,
+    price,
+    slug,
+    image,
+    gallery,
+    min_price,
+    max_price,
+    rating = 0,
+    quantity: quota = 0,
+    description,
+  } = product || {};
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const discountPercentage = Math.round(
-    ((product.price - product.salePrice) / product.price) * 100
+    ((price - (min_price ?? 0)) / price) * 100
   );
 
   return (
@@ -53,8 +72,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
             {/* Main Image */}
             <div className=" aspect-square max-h-[400px] lg:max-h-[calc(100vh-50%)]  rounded-lg overflow-hidden">
               <Image
-                src={product.images[selectedImage] || "/placeholder.svg"}
-                alt={product.title}
+                src={
+                  image?.original ? image?.original : "/defaultProductImage.png"
+                }
+                alt={slug}
                 width={600}
                 height={600}
                 className="w-full h-full object-cover"
@@ -64,23 +85,28 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
           {/* Thumbnail Images */}
           <div className="flex gap-2">
-            {product.images.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedImage(index)}
-                className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                  selectedImage === index ? "border-primary" : "border-muted"
-                }`}
-              >
-                <Image
-                  src={image || "/placeholder.svg"}
-                  alt={`${product.title} ${index + 1}`}
-                  width={80}
-                  height={80}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
+            {gallery &&
+              gallery?.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                    selectedImage === index ? "border-primary" : "border-muted"
+                  }`}
+                >
+                  <Image
+                    src={
+                      image?.original
+                        ? image?.original
+                        : "/defaultProductImage.png"
+                    }
+                    alt={slug}
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
           </div>
         </div>
 
@@ -88,20 +114,24 @@ export function ProductDetail({ product }: ProductDetailProps) {
         <div className="space-y-6">
           {/* Price */}
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-foreground">
-              Rs {product.salePrice}.00
-            </span>
+            {min_price && (
+              <span className="text-3xl font-bold text-foreground">
+                Rs {min_price}.00
+              </span>
+            )}
             <span className="text-xl text-muted-foreground line-through">
-              Rs {product.price}.00
+              Rs {price}.00
             </span>
-            <Badge variant="destructive" className="text-sm">
-              {discountPercentage}% off
-            </Badge>
+            {discountPercentage > 0 && (
+              <Badge variant="destructive" className="text-sm">
+                {discountPercentage}% off
+              </Badge>
+            )}
           </div>
 
           {/* Title */}
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-            {product.title}
+            {name}
           </h1>
 
           {/* Rating */}
@@ -111,14 +141,14 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 <Star
                   key={i}
                   className={`w-5 h-5 ${
-                    i < Math.floor(product.rating)
+                    i < Math.floor(rating)
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-muted-foreground"
                   }`}
                 />
               ))}
             </div>
-            <span className="text-muted-foreground">({product.reviews})</span>
+            {/* <span className="text-muted-foreground">({reviews})</span> */}
           </div>
 
           {/* Policies */}
@@ -144,9 +174,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </button>
               <span className="px-4 py-2 border-x">{quantity}</span>
               <button
-                onClick={() =>
-                  setQuantity(Math.min(product.quota, quantity + 1))
-                }
+                onClick={() => setQuantity(Math.min(quota, quantity + 1))}
                 className="px-3 py-2 hover:bg-muted transition-colors"
               >
                 +
@@ -174,20 +202,20 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Category:</span>
-              <span className="font-medium">{product.category.name}</span>
+              <span className="font-medium">{category?.name}</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Stock:</span>
               <span className="font-medium text-green-600">In Stock</span>
             </div>
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Weight:</span>
               <span className="font-medium">{product.weight}</span>
-            </div>
-            <div className="flex items-center gap-4">
+            </div> */}
+            {/* <div className="flex items-center gap-4">
               <span className="text-muted-foreground">SKU:</span>
-              <span className="font-medium">{product.sku}</span>
-            </div>
+              <span className="font-medium">{sku}</span>
+            </div> */}
           </div>
 
           {/* Social Share */}
@@ -229,7 +257,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <TabsContent value="description" className="mt-6">
             <div className="prose prose-sm max-w-none">
               <p className="text-muted-foreground leading-relaxed">
-                {product.description}
+                {description}
               </p>
             </div>
           </TabsContent>

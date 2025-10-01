@@ -1,10 +1,13 @@
 export interface CategoryDataType {
   [key: string]: any;
   id?: number;
-  icon?: string;
+  image?: string;
+  is_active: boolean;
   name: string;
-  link?: string;
+  slug: string;
   children?: CategoryDataType[];
+  created_at: string;
+  parent_id?: number;
 }
 
 export interface ProductDataType {

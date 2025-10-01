@@ -15,7 +15,7 @@ const ProductPageContent = () => {
 
   const [filters, setFilters] = useState({
     limit: defaultLimit,
-    page: 0,
+    page: 1,
     searchTerm: "",
     categories: [] as string[],
   });
@@ -28,7 +28,7 @@ const ProductPageContent = () => {
     },
     { refetchOnMountOrArgChange: true }
   );
-
+  console.log(data);
   // ---------------------------
   // Helpers to manage query params
   // ---------------------------

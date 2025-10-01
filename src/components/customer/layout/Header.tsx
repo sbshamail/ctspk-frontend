@@ -1,31 +1,33 @@
 "use client";
-
-import { Screen } from "@/@core/layout";
-import { Button } from "@/components/ui/button";
-import { HomeIcon, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useWindowScroll } from "react-use";
-import Topbar from "./Topbar";
+import { Suspense } from "react";
+import Link from "next/link";
 
-// Shad
-import HeartIcon from "@/components/icons/HeartIcon";
-import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
-import { MainLogo } from "@/components/logo/MainLogo";
-import { Separator } from "@/components/ui/separator";
+// Component
+import Topbar from "./Topbar";
 import MainSearchbar from "../searchbar/MainSearchbar";
 import { HeaderNav } from "./HeaderNav";
-import Link from "next/link";
-import { Suspense } from "react";
+import { Screen } from "@/@core/layout";
+import { MainLogo } from "@/components/logo/MainLogo";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+// Types
+import { CategoryDataType } from "@/utils/modelTypes";
 
-const Header = () => {
+interface IHeader {
+  categories: CategoryDataType[];
+}
+const Header = ({ categories }: IHeader) => {
   const { y } = useWindowScroll();
 
-  const navigationItems = [
-    { name: "Home", href: "/", active: true },
-    { name: "Shop", href: "/shop" },
-    { name: "Blog", href: "/blog" },
-    { name: "Contact", href: "/contact" },
-    { name: "About Us", href: "/about" },
-  ];
+  // const navigationItems = [
+  //   { name: "Home", href: "/", active: true },
+  //   { name: "Shop", href: "/shop" },
+  //   { name: "Blog", href: "/blog" },
+  //   { name: "Contact", href: "/contact" },
+  //   { name: "About Us", href: "/about" },
+  // ];
 
   return (
     <>
@@ -86,9 +88,7 @@ const Header = () => {
 
         <div className={`transition-all duration-500 `}>
           <Screen>
-            <Suspense fallback={<div>Loading navigation...</div>}>
-              <HeaderNav y={y} />
-            </Suspense>
+            <HeaderNav y={y} categories={categories} />
           </Screen>
         </div>
       </header>
