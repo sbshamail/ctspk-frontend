@@ -1,24 +1,20 @@
 "use client";
 import { Menu } from "lucide-react";
-import { useWindowScroll } from "react-use";
-import { Suspense } from "react";
 import Link from "next/link";
+import { useWindowScroll } from "react-use";
 
 // Component
-import Topbar from "./Topbar";
-import MainSearchbar from "../searchbar/MainSearchbar";
-import { HeaderNav } from "./HeaderNav";
 import { Screen } from "@/@core/layout";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import MainSearchbar from "../searchbar/MainSearchbar";
+import { HeaderNav } from "./HeaderNav";
+import Topbar from "./Topbar";
 // Types
-import { CategoryDataType } from "@/utils/modelTypes";
 
-interface IHeader {
-  categories: CategoryDataType[];
-}
-const Header = ({ categories }: IHeader) => {
+interface IHeader {}
+const Header = ({}: IHeader) => {
   const { y } = useWindowScroll();
 
   // const navigationItems = [
@@ -88,7 +84,7 @@ const Header = ({ categories }: IHeader) => {
 
         <div className={`transition-all duration-500 `}>
           <Screen>
-            <HeaderNav y={y} categories={categories} />
+            <HeaderNav y={y} />
           </Screen>
         </div>
       </header>

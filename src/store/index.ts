@@ -1,13 +1,18 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { categoryApi } from "./services/categoryApi";
 import { productApi } from "./services/productApi";
 export const makeStore = () =>
   configureStore({
     reducer: {
       // Add API reducer when you create it
       [productApi.reducerPath]: productApi.reducer,
+      [categoryApi.reducerPath]: categoryApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(productApi.middleware), // Add API middleware(),
+      getDefaultMiddleware().concat(
+        productApi.middleware,
+        categoryApi.middleware
+      ), // Add API middleware(),
   });
 
 // Infer the type of makeStore

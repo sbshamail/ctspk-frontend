@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-import Link from "next/link";
+import { Screen } from "@/@core/layout";
+import HeartIcon from "@/components/icons/HeartIcon";
+import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
+import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,16 +15,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import HeartIcon from "@/components/icons/HeartIcon";
-import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
-import { Screen } from "@/@core/layout";
+import { useGetCategoriesQuery } from "@/store/services/categoryApi";
 import { CategoryDataType } from "@/utils/modelTypes";
+import Link from "next/link";
 
 interface HeaderNavProps {
   y: number;
-  categories: CategoryDataType[];
 }
-export function HeaderNav({ y, categories }: HeaderNavProps) {
+export function HeaderNav({ y }: HeaderNavProps) {
+  const { data, isLoading, isError } = useGetCategoriesQuery();
+
+  const categories: CategoryDataType[] = data?.data ?? [];
+
   const [open, setOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(
@@ -97,6 +102,12 @@ export function HeaderNav({ y, categories }: HeaderNavProps) {
   const mainCategories = categories.slice(0, visibleCategories);
   const overflowCategories = categories.slice(visibleCategories);
 
+  if (isError) {
+    return null;
+  }
+  if (isLoading) {
+    return <LayoutSkeleton header={true} />;
+  }
   return (
     <div className="relative" onMouseLeave={handleMouseLeave}>
       {/* Main Navigation Bar */}

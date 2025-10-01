@@ -3,7 +3,7 @@ import { API_URL } from "../../config";
 interface IFetchApi {
   url: string;
   method?: "GET" | "POST" | "PUT" | "DELETE";
-  options?: RequestInit; // allow cache, headers, etc.
+  options?: RequestInit;
 }
 
 export const fetchApi = async ({ url, method = "GET", options }: IFetchApi) => {
@@ -13,14 +13,15 @@ export const fetchApi = async ({ url, method = "GET", options }: IFetchApi) => {
       method,
       ...options,
     });
-    console.log(response);
+
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      console.error(`API error: ${response.status} - ${response.statusText}`);
+      return null; // 👈 instead of throwing
     }
 
     return response.json();
   } catch (error) {
-    console.log(error);
-    // throw new Error(`error: ${error}`);
+    console.error("fetchApi error:", error);
+    return null; // 👈 safe fallback
   }
 };

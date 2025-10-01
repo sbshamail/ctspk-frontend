@@ -28,7 +28,7 @@ const ProductPageContent = () => {
     },
     { refetchOnMountOrArgChange: true }
   );
-  console.log(data);
+
   // ---------------------------
   // Helpers to manage query params
   // ---------------------------
@@ -65,6 +65,7 @@ const ProductPageContent = () => {
   useEffect(() => {
     const categoriesChanged =
       JSON.stringify(filters.categories) !== JSON.stringify(categoriesList);
+
     const searchTermChanged = filters.searchTerm !== searchTermQuery;
 
     if (categoriesChanged || searchTermChanged) {

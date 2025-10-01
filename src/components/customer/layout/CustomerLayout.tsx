@@ -3,20 +3,16 @@ import { Suspense } from "react";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Footer from "./Footer";
 // Types
-import { fetchApi } from "@/action/fetchApi";
 import { ChildrenType } from "@/utils/reactTypes";
 import Header from "./Header";
 type Props = {
   children: ChildrenType;
 };
-const CustomerLayout = async ({ children }: Props) => {
-  const category = await fetchApi({
-    url: `category/list`,
-  });
+const CustomerLayout = ({ children }: Props) => {
   return (
     <div>
       <Suspense fallback={<LayoutSkeleton header={true} />}>
-        <Header categories={category?.data} />
+        <Header />
       </Suspense>
       {children}
       <Footer />
