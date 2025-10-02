@@ -1,7 +1,7 @@
 import { Screen } from "@/@core/layout";
 import { ProductDetail } from "@/components/customer/ProductDetail";
 import ProductSlider from "@/components/customer/slider/ProductSlider";
-import { gherTakProducts } from "../../page";
+
 import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 
@@ -12,6 +12,7 @@ interface ProductPageProps {
 }
 
 export default async function page({ params }: ProductPageProps) {
+  console.log(params.slug);
   const product = await fetchApi({
     url: `product/read/${params.slug}`,
     options: { cache: "no-store" }, // fresh each request
@@ -19,7 +20,7 @@ export default async function page({ params }: ProductPageProps) {
   const breadcrumbData = [
     { link: "/", name: "Home" },
     { link: "/product", name: "Product" },
-    { name: product.data.name },
+    { name: product?.data?.name },
   ];
   return (
     <div className="min-h-screen bg-background">
@@ -29,13 +30,9 @@ export default async function page({ params }: ProductPageProps) {
           <ProductDetail product={product.data} />
         </main>
         <div className="shadow p-4 rounded-lg">
-          <ProductSlider
-            title="You might also like"
-            products={gherTakProducts}
-          />
+          <ProductSlider title="You might also like" />
         </div>
       </Screen>
-      {/* <Footer /> */}
     </div>
   );
 }

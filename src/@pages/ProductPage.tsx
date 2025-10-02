@@ -3,24 +3,29 @@ import { Screen } from "@/@core/layout";
 import ProductFilterSidebar from "@/components/product/ProductFilterSidebar";
 import ProductInfiniteScroll from "@/components/product/ProductInfiniteScroll";
 import { Separator } from "@/components/ui/separator";
-import { useGetProductsQuery } from "@/store/services/productApi";
+import {
+  ProductQueryParams,
+  useGetProductsQuery,
+} from "@/store/services/productApi";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const defaultLimit = 10;
-const ProductPageContent = () => {
+const defaultLimit = 5;
+const ProductPage = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<ProductQueryParams>({
     limit: defaultLimit,
     page: 1,
-    searchTerm: "",
-    categories: [] as string[],
+    searchTerm: undefined,
+    columnFilters: undefined,
+    dateRange: undefined,
+    numberRange: undefined,
   });
 
-  const { page, limit, categories, searchTerm } = filters;
+  const { page, limit } = filters;
   const { data, error, isLoading, isFetching } = useGetProductsQuery(
     {
       page,
@@ -62,23 +67,23 @@ const ProductPageContent = () => {
   const categoriesList = searchParams!.get("categories")?.split(",") ?? [];
   const searchTermQuery = searchParams!.get("searchTerm") ?? "";
 
-  useEffect(() => {
-    const categoriesChanged =
-      JSON.stringify(filters.categories) !== JSON.stringify(categoriesList);
+  // useEffect(() => {
+  //   const categoriesChanged =
+  //     JSON.stringify(filters.categories) !== JSON.stringify(categoriesList);
 
-    const searchTermChanged = filters.searchTerm !== searchTermQuery;
+  //   const searchTermChanged = filters.searchTerm !== searchTermQuery;
 
-    if (categoriesChanged || searchTermChanged) {
-      setFilters((prev) => ({
-        ...prev,
-        limit: defaultLimit,
-        page: 0,
-        categories: categoriesList,
-        searchTerm: searchTermQuery,
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoriesList, searchTermQuery]);
+  //   if (categoriesChanged || searchTermChanged) {
+  //     setFilters((prev) => ({
+  //       ...prev,
+  //       limit: defaultLimit,
+  //       page: 0,
+  //       categories: categoriesList,
+  //       searchTerm: searchTermQuery,
+  //     }));
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [categoriesList, searchTermQuery]);
 
   return (
     <>
@@ -96,8 +101,9 @@ const ProductPageContent = () => {
             <div className="absolute right-0 h-full border border-border"></div>
           </div>
           <div>
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               <ProductInfiniteScroll
+                defaultLimit={defaultLimit}
                 data={result}
                 isFetching={isFetching}
                 error={error}
@@ -115,4 +121,4 @@ const ProductPageContent = () => {
   );
 };
 
-export default ProductPageContent;
+export default ProductPage;

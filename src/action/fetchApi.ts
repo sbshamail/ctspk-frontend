@@ -9,11 +9,12 @@ interface IFetchApi {
 export const fetchApi = async ({ url, method = "GET", options }: IFetchApi) => {
   try {
     const baseUrl = `${API_URL}/${url}`;
+
     const response = await fetch(baseUrl, {
       method,
       ...options,
     });
-
+    console.log(response);
     if (!response.ok) {
       console.error(`API error: ${response.status} - ${response.statusText}`);
       return null; // 👈 instead of throwing

@@ -6,6 +6,7 @@ import ProductCardSkeleton from "../loaders/ProductCardSkeleton";
 import ProductCard from "./ProductCard";
 
 interface Props {
+  defaultLimit: number;
   data: any[]; // Array of products passed from parent
   isLoading: boolean; // True only on the first API call
   isFetching: boolean; // True when fetching new pages
@@ -17,6 +18,7 @@ interface Props {
 }
 
 const ProductInfiniteScroll = ({
+  defaultLimit,
   data,
   isLoading,
   isFetching,
@@ -52,7 +54,7 @@ const ProductInfiniteScroll = ({
 
   // Skeleton generator (placeholder while loading/fetching)
   const productSkeleton = () =>
-    Array(limit)
+    Array(defaultLimit)
       .fill(null)
       .map((_, index) => <ProductCardSkeleton key={index} />);
 

@@ -1,10 +1,11 @@
-import { Suspense } from "react";
 // Components
-import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
+
 import Footer from "./Footer";
 // Types
 import { ChildrenType } from "@/utils/reactTypes";
 import Header from "./Header";
+import { Suspense } from "react";
+import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 type Props = {
   children: ChildrenType;
 };
