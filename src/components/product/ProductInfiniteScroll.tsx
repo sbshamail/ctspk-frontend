@@ -11,9 +11,9 @@ interface Props {
   isLoading: boolean; // True only on the first API call
   isFetching: boolean; // True when fetching new pages
   error: any; // API error (if any)
-  limit: number; // Items per page
-  page: number; // Current page number
-  count: number; // Total number of products from backend
+  limit?: number; // Items per page
+  page?: number; // Current page number
+  count?: number; // Total number of products from backend
   setPage: (p: number) => void; // Setter function to update page (from parent)
 }
 
@@ -23,10 +23,9 @@ const ProductInfiniteScroll = ({
   isLoading,
   isFetching,
   error,
-  count,
-  page,
+  count = 0,
+  page = 1,
   setPage,
-  limit,
 }: Props) => {
   // Store all loaded products
   const [allProducts, setAllProducts] = useState<any[]>([]);
