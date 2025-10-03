@@ -6,10 +6,10 @@ export type ProductQueryParams = {
   page?: number; // current page number (1-based)
   limit?: number; // number of items to return per page
   searchTerm?: string; // keyword search
-
   columnFilters?: [string, string | number | boolean][]; // e.g. [["name","car"],["description","product"]]
   numberRange?: [string, number, number]; // e.g. ["amount", 0, 1000]
   dateRange?: [string, string, string]; // e.g. ["created_at","01-01-2025","01-12-2025"]
+  sort?: [string, "asc" | "desc"];
 };
 
 export const toQueryString = (params: Record<string, any> = {}) => {
@@ -59,16 +59,20 @@ export const productApi = createApi({
           columnFilters = null,
           numberRange = null,
           dateRange = null,
+          sort = null, // 👈 include sort
         } = queryArgs;
 
-        return `${endpointName}-${page}-${limit}-${searchTerm}-${columnFilters}-${numberRange}-${dateRange}`;
+        return `${endpointName}-${page}-${limit}-${searchTerm}-${columnFilters}-${numberRange}-${dateRange}-${sort}`;
       },
+
       merge: (currentCache, newItems, { arg }) => {
+        // Replace cache on first page OR when filters change
+
         if (!currentCache || arg.page === 1) {
           return newItems;
         }
 
-        // Prevent duplicate merges
+        // Infinite scroll merge
         const existingIds = new Set(currentCache.data.map((item) => item.id));
         const mergedResults = [
           ...currentCache.data,
@@ -85,7 +89,8 @@ export const productApi = createApi({
           currentArg?.searchTerm !== previousArg?.searchTerm ||
           currentArg?.columnFilters !== previousArg?.columnFilters ||
           currentArg?.dateRange !== previousArg?.dateRange ||
-          currentArg?.numberRange !== previousArg?.numberRange
+          currentArg?.numberRange !== previousArg?.numberRange ||
+          currentArg?.sort !== previousArg?.sort
         );
       },
     }),

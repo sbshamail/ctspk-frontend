@@ -9,30 +9,9 @@ interface MainSearchbarProps {
   className?: ClassNameType;
 }
 const MainSearchbar = ({ className }: MainSearchbarProps) => {
-  const [category, setCategory] = useState<string>("all-categories");
-  const categories = [
-    "Milks and Dairies",
-    "Wines & Alcohol",
-    "Clothing & Beauty",
-    "Pet Foods & Toy",
-    "Fast food",
-    "Baking material",
-    "Vegetables",
-    "Fresh Seafood",
-    "Noodles & Rice",
-    "Ice cream",
-  ];
   return (
     <div className={cn("hidden lg:flex flex-1 max-w-2xl ", className)}>
       <div className="flex w-full border border-border rounded-md">
-        {/* <FilterableSelect
-          options={categories}
-          setvalue={setCategory}
-          placeholder="Select category"
-          value={category}
-          className="border-none rounded-none"
-        /> */}
-
         <div className="relative flex-1">
           <Input
             placeholder="Search for items..."

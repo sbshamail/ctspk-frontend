@@ -32,7 +32,9 @@ const ProductInfiniteScroll = ({
 
   // Update local state whenever new data arrives from parent
   useEffect(() => {
-    if (data && data.length > 0) {
+    if (page === 1) {
+      setAllProducts(data);
+    } else if (data && data.length > 0) {
       setAllProducts((prev) => [...prev, ...data]);
     }
   }, [data]);
