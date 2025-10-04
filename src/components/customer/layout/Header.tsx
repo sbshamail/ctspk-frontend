@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import MainSearchbar from "../searchbar/MainSearchbar";
 import { HeaderNav } from "./HeaderNav";
 import Topbar from "./Topbar";
+import { Suspense } from "react";
+import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 // Types
 
 export const MainHeader = ({ y = 0 }: { y?: number }) => {
@@ -28,7 +30,9 @@ export const MainHeader = ({ y = 0 }: { y?: number }) => {
               <MainLogo />
 
               {/* Search Bar */}
-              <MainSearchbar />
+              <Suspense fallback={<LayoutSkeleton header={true} />}>
+                <MainSearchbar />
+              </Suspense>
 
               {/* Right Actions */}
               <div className="flex items-center gap-4 text-base  ">

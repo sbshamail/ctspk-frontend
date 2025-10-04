@@ -1,52 +1,46 @@
-"use client";
-
 import { useGetCategoriesQuery } from "@/store/services/categoryApi";
 import { ChevronRight } from "lucide-react";
 import LayoutSkeleton from "../loaders/LayoutSkeleton";
 import { Checkbox } from "../ui/checkbox";
 
 interface Props {
-  handleCategories: (e: boolean, item: string) => void;
-  checkedCategories: string[];
+  handleCategories: (checked: boolean, item: any) => void;
+  checkedCategories: { id: number; name: string }[];
 }
 
 const CategoryFilter = ({ handleCategories, checkedCategories }: Props) => {
-  const { data, isLoading, isError } = useGetCategoriesQuery();
-
+  const { data, isLoading } = useGetCategoriesQuery();
   const categoriesList = data?.data ?? [];
-  isLoading && <LayoutSkeleton />;
+
+  if (isLoading) return <LayoutSkeleton />;
+
   return (
     <div>
-      {categoriesList.map((item: any, index: number) => (
-        <div key={index}>
-          <div className="flex justify-between">
+      {categoriesList.map((item: any) => {
+        const isChecked = checkedCategories.some((c) => c.id === item.id);
+        return (
+          <div key={item.id} className="flex justify-between">
             <table className="m-0 p-0 w-full border-collapse">
-              <thead className="border-none">
-                <tr>
-                  <th className="text-left"></th>
-                  <th className="text-left"></th>
-                </tr>
-              </thead>
               <tbody>
                 <tr>
-                  <td className="w-10 whitespace-normal m-0 p-0 text-left">
+                  <td className="w-10 text-left">
                     <Checkbox
-                      checked={checkedCategories.includes(item.name)}
+                      checked={isChecked}
                       onCheckedChange={(checked) =>
-                        handleCategories(!!checked, item.name!)
+                        handleCategories(!!checked, item)
                       }
                     />
                   </td>
-                  <td className="m-0 p-0  text-left whitespace-normal">
-                    <h5 className="text-lg ">{item.name}</h5>
+                  <td className="m-0 p-0 text-left">
+                    <h5 className="text-lg">{item.name}</h5>
                   </td>
                 </tr>
               </tbody>
             </table>
             <ChevronRight />
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

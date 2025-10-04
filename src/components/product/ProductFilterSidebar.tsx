@@ -22,26 +22,30 @@ const ProductFilterSidebar = ({
   addQuery,
   deleteQueryAll,
 }: ProductFilterSidebarType) => {
-  const [categories, setCategories] = useState<string[]>(categoriesList);
+  const [categories, setCategories] = useState<any>(categoriesList);
   const [lowPrice, setLowPrice] = useState(0);
   const [highPrice, setHighPrice] = useState(1000);
 
-  const handleCategories = (isChecked: boolean, item: string) => {
-    setCategories((prevCategories) => {
+  const handleCategories = (isChecked: boolean, item: any) => {
+    setCategories((prev: any) => {
       if (isChecked) {
-        return [...prevCategories, item];
+        // add if not already there
+        if (!prev.some((cat: any) => cat.id === item.id)) {
+          return [...prev, { id: item.id, name: item.name }];
+        }
+        return prev;
       } else {
-        return prevCategories.filter((cat) => cat !== item);
+        return prev.filter((cat: any) => cat.id !== item.id);
       }
     });
   };
 
+  console.log(categories);
   const applyFilter = () => {
     if (categories.length > 0) {
-      // ✅ convert back to [["category.root_id", id], ...]
-      const columnFilters = categories.map((id) => [
+      const columnFilters = categories.map((cat: any) => [
         "category.root_id",
-        Number(id),
+        Number(cat.id),
       ]);
       addQuery("columnFilters", JSON.stringify(columnFilters));
     }
