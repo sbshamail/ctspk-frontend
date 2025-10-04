@@ -5,8 +5,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchApi } from "@/action/fetchApi";
+import { useRouter } from "next/navigation";
 
 export function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -21,11 +24,20 @@ export function LoginForm() {
     }
     try {
       setSubmitting(true);
-      // Placeholder: no backend yet
-      await new Promise((r) => setTimeout(r, 600));
-      // You can route on success when backend is wired:
-      // router.push("/dashboard")
-      console.log("[v0] Logged in with:", { email });
+      const data = {
+        email,
+        password,
+      };
+      const login = await fetchApi({
+        url: "login",
+        method: "POST",
+        data,
+      });
+      console.log(login);
+      if (login) {
+        // route to onboarding once backend wired:
+        router.push("/");
+      }
     } catch (err) {
       setError("Something went wrong. Please try again.");
     } finally {

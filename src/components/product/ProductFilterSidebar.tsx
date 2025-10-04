@@ -13,15 +13,18 @@ import RatingFilter from "./RatingFilter";
 
 interface ProductFilterSidebarType {
   categoriesList: string[];
-  addQuery: any;
+  addQuery: (key: string, value: string) => void;
   deleteQueryAll: () => void;
 }
+
 const ProductFilterSidebar = ({
   categoriesList = [],
   addQuery,
   deleteQueryAll,
 }: ProductFilterSidebarType) => {
   const [categories, setCategories] = useState<string[]>(categoriesList);
+  const [lowPrice, setLowPrice] = useState(0);
+  const [highPrice, setHighPrice] = useState(1000);
 
   const handleCategories = (isChecked: boolean, item: string) => {
     setCategories((prevCategories) => {
@@ -34,20 +37,36 @@ const ProductFilterSidebar = ({
   };
 
   const applyFilter = () => {
-    addQuery("categories", categories.join(","));
+    if (categories.length > 0) {
+      // ✅ convert back to [["category.root_id", id], ...]
+      const columnFilters = categories.map((id) => [
+        "category.root_id",
+        Number(id),
+      ]);
+      addQuery("columnFilters", JSON.stringify(columnFilters));
+    }
+    if (lowPrice !== 0 || highPrice !== 1000) {
+      // ✅ backend expects ["amount", min, max]
+      addQuery("numberRange", JSON.stringify(["price", lowPrice, highPrice]));
+    }
   };
+
   const clearFilter = () => {
     setCategories([]);
+    setLowPrice(0);
+    setHighPrice(1000);
     deleteQueryAll();
   };
+
   return (
-    <div className=" w-full flex flex-col item-center space-y-6">
+    <div className="w-full flex flex-col item-center space-y-6">
       <div className="w-full flex items-end justify-end space-x-2">
         <Button variant="secondary" onClick={clearFilter}>
           Clear Filter
         </Button>
         <Button onClick={applyFilter}>Apply</Button>
       </div>
+
       <Accordion
         type="multiple"
         defaultValue={["price", "category", "rating"]}
@@ -56,7 +75,12 @@ const ProductFilterSidebar = ({
         <AccordionItem value="price">
           <AccordionTrigger>Price</AccordionTrigger>
           <AccordionContent>
-            <PriceFilter />
+            <PriceFilter
+              lowPrice={lowPrice}
+              highPrice={highPrice}
+              setLowPrice={setLowPrice}
+              setHighPrice={setHighPrice}
+            />
           </AccordionContent>
         </AccordionItem>
 

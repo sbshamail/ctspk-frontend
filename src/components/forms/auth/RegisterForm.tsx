@@ -53,7 +53,7 @@ export function RegisterForm() {
         password: form.password,
       };
       const register = await fetchApi({
-        url: "login",
+        url: "register",
         method: "POST",
         data,
       });

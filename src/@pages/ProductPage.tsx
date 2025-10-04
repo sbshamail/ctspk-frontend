@@ -60,23 +60,50 @@ const ProductPage = () => {
   // ---------------------------
   // Sync filters with URL params
   // ---------------------------
-  const categoriesList = searchParams!.get("categories")?.split(",") ?? [];
   const searchTermQuery = searchParams!.get("searchTerm") ?? "";
   const sortQuery = searchParams!.get("sort") ?? "";
+  const numberRangeQuery = searchParams!.get("numberRange") ?? "";
+  const columnFiltersQuery = searchParams!.get("columnFilters") ?? "";
 
   useEffect(() => {
     const searchTermChanged = filters.searchTerm !== searchTermQuery;
-    const sortChanged = filters.sort?.toString() !== sortQuery; // handle array/JSON string
-    if (searchTermChanged || sortChanged) {
+    const sortChanged = filters.sort?.toString() !== sortQuery;
+    const numberRangeChanged =
+      JSON.stringify(filters.numberRange) !== numberRangeQuery;
+    const columnFiltersChanged =
+      JSON.stringify(filters.columnFilters) !== columnFiltersQuery;
+
+    if (
+      searchTermChanged ||
+      sortChanged ||
+      numberRangeChanged ||
+      columnFiltersChanged
+    ) {
       setFilters((prev) => ({
         ...prev,
         limit: defaultLimit,
-        page: 1, // 👈 start from 1 not 0
+        page: 1,
         searchTerm: searchTermQuery || undefined,
-        sort: sortQuery ? JSON.parse(sortQuery) : undefined, // parse back to array
+        sort: sortQuery ? JSON.parse(sortQuery) : undefined,
+        numberRange: numberRangeQuery
+          ? JSON.parse(numberRangeQuery)
+          : undefined,
+        columnFilters: columnFiltersQuery
+          ? JSON.parse(columnFiltersQuery)
+          : undefined,
       }));
     }
-  }, [searchTermQuery, sortQuery]);
+  }, [searchTermQuery, sortQuery, numberRangeQuery, columnFiltersQuery]);
+
+  let categoriesList: string[] = [];
+  try {
+    const parsed = columnFiltersQuery ? JSON.parse(columnFiltersQuery) : [];
+    categoriesList = parsed
+      .filter((f: any) => f[0] === "category.root_id")
+      .map((f: any) => String(f[1]));
+  } catch {
+    categoriesList = [];
+  }
 
   const breadcrumbData = [
     { link: "/", name: "Home" },
