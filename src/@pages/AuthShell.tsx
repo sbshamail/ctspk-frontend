@@ -29,12 +29,12 @@ export function AuthShell({
       className={cn("min-h-dvh grid grid-cols-1 md:grid-cols-2", className)}
     >
       {/* Left: brand/visual panel */}
-      <aside className="hidden md:flex bg-muted">
+      <aside className="hidden md:flex ">
         <div className="flex flex-1 items-center justify-center p-8">
           <div className="max-w-md text-center">
-            <div className="relative rounded-lg overflow-hidden border border-border mb-6">
+            <div className="relative rounded-lg overflow-hidden  mb-6">
               <Image
-                src="/assets/imgs/theme/loading.svg"
+                src="/assets/cart-login.jpg"
                 alt="Preview of a multi-vendor marketplace storefront"
                 width={720}
                 height={480}
@@ -42,13 +42,13 @@ export function AuthShell({
                 priority
               />
             </div>
-            <h2 className="text-balance text-2xl font-semibold">
+            {/* <h2 className="text-balance text-2xl font-semibold">
               A Marketplace Built for Buyers and Sellers
             </h2>
             <p className="mt-2 text-muted-foreground text-pretty">
               Connecting buyers and sellers with a platform that’s fast,
               reliable, and built to scale.
-            </p>
+            </p> */}
           </div>
         </div>
       </aside>

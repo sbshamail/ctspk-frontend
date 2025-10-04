@@ -38,32 +38,80 @@ export function HeaderNav({ y }: HeaderNavProps) {
   const navRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
 
+  // useEffect(() => {
+  //   const calculateVisibleCategories = () => {
+  //     if (navRef.current && categoriesRef.current) {
+  //       const containerWidth = navRef.current.offsetWidth;
+  //       const iconsWidth = 120; // reserve space for icons
+  //       const moreButtonWidth = 90; // reserve space for "MORE" button
+  //       const availableWidth = containerWidth - iconsWidth - moreButtonWidth;
+
+  //       let totalWidth = 0;
+  //       let maxVisible = 0;
+
+  //       // get all rendered buttons inside categoriesRef
+  //       const buttons = categoriesRef.current.querySelectorAll("button");
+
+  //       for (let i = 0; i < buttons.length; i++) {
+  //         const btnWidth = (buttons[i] as HTMLButtonElement).offsetWidth + 8; // include spacing
+  //         if (totalWidth + btnWidth <= availableWidth) {
+  //           totalWidth += btnWidth;
+  //           maxVisible++;
+  //         } else {
+  //           break;
+  //         }
+  //       }
+
+  //       setVisibleCategories(Math.max(1, maxVisible)); // at least 1 always visible
+  //     }
+  //   };
+
+  //   calculateVisibleCategories();
+  //   window.addEventListener("resize", calculateVisibleCategories);
+  //   return () =>
+  //     window.removeEventListener("resize", calculateVisibleCategories);
+  // }, [categories]);
   useEffect(() => {
     const calculateVisibleCategories = () => {
-      if (navRef.current && categoriesRef.current) {
-        const containerWidth = navRef.current.offsetWidth;
-        const iconsWidth = 120; // reserve space for icons
-        const moreButtonWidth = 90; // reserve space for "MORE" button
-        const availableWidth = containerWidth - iconsWidth - moreButtonWidth;
+      if (!navRef.current || categories.length === 0) return;
 
-        let totalWidth = 0;
-        let maxVisible = 0;
+      const containerWidth = navRef.current.offsetWidth;
+      const iconsWidth = 120; // right icons
+      let availableWidth = containerWidth - iconsWidth;
 
-        // get all rendered buttons inside categoriesRef
-        const buttons = categoriesRef.current.querySelectorAll("button");
+      // Measure widths of ALL categories (even those that might go into More)
+      const buttonWidths = Array.from(
+        categoriesRef.current?.querySelectorAll("button") ?? []
+      ).map((btn) => (btn as HTMLButtonElement).offsetWidth + 8);
 
-        for (let i = 0; i < buttons.length; i++) {
-          const btnWidth = (buttons[i] as HTMLButtonElement).offsetWidth + 8; // include spacing
-          if (totalWidth + btnWidth <= availableWidth) {
-            totalWidth += btnWidth;
+      let totalWidth = 0;
+      let maxVisible = categories.length;
+
+      for (let i = 0; i < buttonWidths.length; i++) {
+        if (totalWidth + buttonWidths[i] <= availableWidth) {
+          totalWidth += buttonWidths[i];
+        } else {
+          maxVisible = i; // stop here
+          break;
+        }
+      }
+
+      // If not all categories fit, reserve space for "More" button and recalc
+      if (maxVisible < categories.length) {
+        availableWidth = containerWidth - iconsWidth - 90; // subtract More btn
+        totalWidth = 0;
+        maxVisible = 0;
+        for (let i = 0; i < buttonWidths.length; i++) {
+          if (totalWidth + buttonWidths[i] <= availableWidth) {
+            totalWidth += buttonWidths[i];
             maxVisible++;
           } else {
             break;
           }
         }
-
-        setVisibleCategories(Math.max(1, maxVisible)); // at least 1 always visible
       }
+
+      setVisibleCategories(Math.max(1, maxVisible));
     };
 
     calculateVisibleCategories();
