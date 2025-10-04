@@ -42,8 +42,10 @@ const ProductCardSkeleton = () => {
         </div>
       </div>
     </div>
+
   );
 };
+export default ProductCardSkeleton;
 // layout skeleton
 const LayoutSkeleton = ({
   sidebar,
@@ -57,7 +59,7 @@ const LayoutSkeleton = ({
   main?: boolean;
 }) => {
   return (
-    <div className="flex flex-col min-h-screen animate-pulse">
+    <div className="flex flex-col  animate-pulse">
       {/* Header */}
       {header && (
         <header className="h-16 border-b border-border bg-card flex items-center px-4">
@@ -102,7 +104,6 @@ const LayoutSkeleton = ({
 
 export default LayoutSkeleton;
 
-export default ProductCardSkeleton;
 ```
 
 ## infinite scroll

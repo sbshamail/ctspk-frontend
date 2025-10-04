@@ -13,6 +13,45 @@ import { HeaderNav } from "./HeaderNav";
 import Topbar from "./Topbar";
 // Types
 
+export const MainHeader = ({ y = 0 }: { y?: number }) => {
+  return (
+    <div className="w-full">
+      <Screen>
+        <div
+          className={`transition-all duration-300 ${
+            y > 0 ? "-mt-14" : "mt-0"
+          } py-4`}
+        >
+          <div className="w-full   sm:px-6 ">
+            <div className=" flex items-center justify-between">
+              {/* Logo */}
+              <MainLogo />
+
+              {/* Search Bar */}
+              <MainSearchbar />
+
+              {/* Right Actions */}
+              <div className="flex items-center gap-4 text-base  ">
+                <Link href="/product" className="hover:underline Transition">
+                  Shop
+                </Link>
+                <Link href="#" className="hover:underline Transition">
+                  <h3>About Us</h3>
+                </Link>
+
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Screen>
+      <Separator className="bg-border/80" />
+    </div>
+  );
+};
+
 interface IHeader {}
 const Header = ({}: IHeader) => {
   const { y } = useWindowScroll();
@@ -42,43 +81,7 @@ const Header = ({}: IHeader) => {
           <Separator className="bg-border/80" />
 
           {/* Main Header */}
-          <div className="w-full">
-            <Screen>
-              <div
-                className={`transition-all duration-300 ${
-                  y > 0 ? "-mt-14" : "mt-0"
-                } py-4`}
-              >
-                <div className="w-full   sm:px-6 ">
-                  <div className=" flex items-center justify-between">
-                    {/* Logo */}
-                    <MainLogo />
-
-                    {/* Search Bar */}
-                    <MainSearchbar />
-
-                    {/* Right Actions */}
-                    <div className="flex items-center gap-4 text-base  ">
-                      <Link
-                        href="/product"
-                        className="hover:underline Transition"
-                      >
-                        Shop
-                      </Link>
-                      <Link href="#" className="hover:underline Transition">
-                        <h3>About Us</h3>
-                      </Link>
-
-                      <Button variant="ghost" size="sm" className="md:hidden">
-                        <Menu className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Screen>
-            <Separator className="bg-border/80" />
-          </div>
+          <MainHeader y={y} />
         </div>
         {/* Navigation */}
 

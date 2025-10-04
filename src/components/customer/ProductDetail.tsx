@@ -15,12 +15,14 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import SingleProductAddToCart from "./SingleProductAddtoCart";
 
 interface Product {
   id: number;
   name: string;
   image: { original: string; filename: string };
   price: number;
+  salePrice?: number;
   max_price?: number;
   min_price?: number;
   category: { id: number; name: string };
@@ -165,27 +167,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
           {/* Add to Cart */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center border rounded-lg">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-3 py-2 hover:bg-muted transition-colors"
-              >
-                -
-              </button>
-              <span className="px-4 py-2 border-x">{quantity}</span>
-              <button
-                onClick={() => setQuantity(Math.min(quota, quantity + 1))}
-                className="px-3 py-2 hover:bg-muted transition-colors"
-              >
-                +
-              </button>
-            </div>
-
-            <Button className="max-w-[200px] flex-1 bg-primary hover:bg-primary/90">
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Add to Cart
-            </Button>
-
+            <SingleProductAddToCart product={product} />
             <Button
               variant="outline"
               size="icon"

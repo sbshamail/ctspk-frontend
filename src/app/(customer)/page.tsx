@@ -1,11 +1,18 @@
 import HeroSection from "@/components/customer/banner/HeroSection";
 import ProductSlider from "@/components/customer/slider/ProductSlider";
+import { fetchApi } from "@/action/fetchApi";
+const page = async () => {
+  const fetchBanner = await fetchApi({
+    url: "banner/list",
+    options: { cache: "no-store" },
+  });
 
-const page = () => {
+  const bannerData = fetchBanner?.data || [];
+
   return (
     <div className="mt-4">
       <div className="flex flex-col lg:gap-12 gap-8">
-        <HeroSection />
+        {bannerData?.length > 0 && <HeroSection data={bannerData} />}
         <ProductSlider
           title="Featured Products"
           columnFilters={[["is_feature", true]]}

@@ -13,63 +13,66 @@ import Autoplay from "embla-carousel-autoplay";
 import { ChevronRight, Play } from "lucide-react";
 import { Screen } from "@/@core/layout";
 import { ClassNameType } from "@/utils/reactTypes";
+import { ImageType } from "@/utils/modelTypes";
 
 interface SlideData {
   id: number;
-  image: string;
-  title?: string;
+  image: ImageType;
+  name?: string;
+  description?: string;
+  slug?: string;
+
   titleClass?: ClassNameType;
   subtitle?: string;
-  description?: string;
   descriptionClass?: ClassNameType;
   buttonText?: string;
   onClick: () => void;
   theme?: "light" | "dark";
 }
 
-export default function HeroSection() {
-  const slides: SlideData[] = [
-    {
-      id: 1,
-      image: "/assets/banner/unnamed3.png",
-      title: "Welcome to Our Platform",
-      subtitle: "Experience Innovation",
-      // description:
-      //   "Discover amazing features that will transform your workflow and boost productivity.",
-      // buttonText: "Get Started",
-      onClick: () => {
-        console.log("Navigate to getting started");
-        // Add your navigation logic here
-      },
-      // theme: "dark",
-    },
-    {
-      id: 2,
-      image: "/assets/banner/unnamed3.png",
-      title: "Powerful Solutions",
-      subtitle: "Built for Success",
+export default function HeroSection({ data }: { data: SlideData[] }) {
+  // const slides: SlideData[] = [
+  //   {
+  //     id: 1,
+  //     image: "/assets/banner/unnamed3.png",
+  //     title: "Welcome to Our Platform",
+  //     subtitle: "Experience Innovation",
+  //     // description:
+  //     //   "Discover amazing features that will transform your workflow and boost productivity.",
+  //     // buttonText: "Get Started",
+  //     onClick: () => {
+  //       console.log("Navigate to getting started");
+  //       // Add your navigation logic here
+  //     },
+  //     // theme: "dark",
+  //   },
+  //   {
+  //     id: 2,
+  //     image: "/assets/banner/unnamed3.png",
+  //     title: "Powerful Solutions",
+  //     subtitle: "Built for Success",
 
-      // buttonText: "Learn More",
-      onClick: () => {
-        console.log("Navigate to features");
-        // Add your navigation logic here
-      },
-    },
-    {
-      id: 3,
-      image: "/assets/banner/unnamed3.png",
-      title: "Join Our Community",
-      subtitle: "Connect & Grow",
-      // description:
-      //   "Be part of a thriving community of innovators and creators shaping the future.",
-      // buttonText: "Join Now",
-      onClick: () => {
-        console.log("Navigate to signup");
-        // Add your navigation logic here
-      },
-      // theme: "dark",
-    },
-  ];
+  //     // buttonText: "Learn More",
+  //     onClick: () => {
+  //       console.log("Navigate to features");
+  //       // Add your navigation logic here
+  //     },
+  //   },
+  //   {
+  //     id: 3,
+  //     image: "/assets/banner/unnamed3.png",
+  //     title: "Join Our Community",
+  //     subtitle: "Connect & Grow",
+  //     // description:
+  //     //   "Be part of a thriving community of innovators and creators shaping the future.",
+  //     // buttonText: "Join Now",
+  //     onClick: () => {
+  //       console.log("Navigate to signup");
+  //       // Add your navigation logic here
+  //     },
+  //     // theme: "dark",
+  //   },
+  // ];
 
   return (
     <main>
@@ -93,17 +96,19 @@ export default function HeroSection() {
               ]}
             >
               <CarouselContent className="-ml-0">
-                {slides.map((slide) => (
+                {data?.map((slide) => (
                   <CarouselItem
                     key={slide.id}
                     className="relative pl-0 cursor-pointer group"
-                    onClick={slide.onClick}
+                    onClick={() => {}}
                   >
                     <div className="relative mx-auto max-w-full aspect-[3/1] bg-cover bg-center rounded-xl overflow-hidden shadow-2xl">
                       {/* Background Image with Overlay */}
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                        style={{ backgroundImage: `url(${slide.image})` }}
+                        style={{
+                          backgroundImage: `url(${slide.image.original})`,
+                        }}
                       />
 
                       {/* Gradient Overlay */}
@@ -136,7 +141,7 @@ export default function HeroSection() {
                               slide.titleClass
                             )}
                           >
-                            {slide.title}
+                            {slide.name}
                           </h1>
 
                           {/* Description */}

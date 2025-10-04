@@ -82,7 +82,6 @@ const ProductPage = () => {
     { link: "/", name: "Home" },
     { link: "/product", name: "Product" },
   ];
-  console.log(data);
   return (
     <>
       <div className="flex flex-1 gap-4 pt-10">

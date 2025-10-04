@@ -1,4 +1,5 @@
 "use client";
+import { CartProvider } from "@/context/cartContext";
 import { AppStore, makeStore } from "@/store";
 import { useRef } from "react";
 import { Provider } from "react-redux";
@@ -14,5 +15,9 @@ export default function StoreProvider({
     storeRef.current = makeStore();
   }
 
-  return <Provider store={storeRef.current}>{children}</Provider>;
+  return (
+    <Provider store={storeRef.current}>
+      <CartProvider>{children}</CartProvider>
+    </Provider>
+  );
 }

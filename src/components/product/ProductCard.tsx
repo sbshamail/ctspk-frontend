@@ -22,19 +22,8 @@ interface Props {
   CartButton?: () => React.ReactNode;
 }
 
-const ProductCard = ({
-  name,
-  price,
-  slug = "#",
-  link = "#",
-  image,
-  rating,
-  salePrice,
-  showPercentage,
-  Tags,
-  CartButton,
-  ...props
-}: Props) => {
+const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
+  const { name, price, slug = "#", salePrice, image, rating } = props || {};
   return (
     <div className=" ">
       <Link href={`/product/${slug}`} className="z-0">
@@ -74,7 +63,11 @@ const ProductCard = ({
                   </div>
                 </div>
                 <div className="z-10">
-                  {CartButton ? CartButton() : <ProductCartButton />}
+                  {CartButton ? (
+                    CartButton()
+                  ) : (
+                    <ProductCartButton product={props} />
+                  )}
                 </div>
               </div>
             </div>

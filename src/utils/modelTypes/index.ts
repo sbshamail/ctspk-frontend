@@ -1,7 +1,13 @@
+export interface ImageType {
+  original: string;
+  filename: string;
+  thumbnail?: string;
+  media_type?: string;
+}
 export interface CategoryDataType {
   [key: string]: any;
   id?: number;
-  image?: string;
+  image?: ImageType;
   is_active: boolean;
   name: string;
   slug: string;
@@ -12,9 +18,10 @@ export interface CategoryDataType {
 
 export interface ProductDataType {
   [key: string]: any;
-  id?: number;
-  title?: string;
-  images?: string[];
+  id: number;
+  name: string;
+  gallery?: ImageType[];
+  image?: ImageType;
   rating?: number;
   price?: number;
   salePrice?: number;

@@ -12,7 +12,6 @@ interface ProductPageProps {
 }
 
 export default async function page({ params }: ProductPageProps) {
-  console.log(params.slug);
   const product = await fetchApi({
     url: `product/read/${params.slug}`,
     options: { cache: "no-store" }, // fresh each request
