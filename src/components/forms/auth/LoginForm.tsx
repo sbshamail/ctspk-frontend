@@ -1,12 +1,12 @@
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
+import { fetchApi } from "@/action/fetchApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { fetchApi } from "@/action/fetchApi";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import * as React from "react";
 
 export function LoginForm() {
   const router = useRouter();
@@ -95,16 +95,6 @@ export function LoginForm() {
       >
         {submitting ? "Signing in..." : "Sign in"}
       </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        New here?{" "}
-        <Link
-          href="/register"
-          className="text-primary underline underline-offset-4"
-        >
-          Create an account
-        </Link>
-      </p>
     </form>
   );
 }

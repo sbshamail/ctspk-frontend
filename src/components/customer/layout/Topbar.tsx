@@ -69,7 +69,7 @@ export default function Topbar() {
           {/* Right: Contact */}
           <div className="col-span-3 flex justify-end">
             <div className="flex items-center space-x-4">
-              <Link href={"/login"}>
+              <Link href={"/login"} scroll={false}>
                 <button className="hover:text-primary transition-colors cursor-pointer">
                   Sign In
                 </button>

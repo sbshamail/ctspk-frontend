@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@/@core/theme/theme-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ReactNode } from "react";
 import StoreProvider from "./StoreProvider";
 import "./globals.css";
 const geistSans = Geist({
@@ -20,8 +21,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal: ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -36,6 +39,7 @@ export default function RootLayout({
         >
           <StoreProvider>{children}</StoreProvider>
           {/* {children} */}
+          {modal}
         </ThemeProvider>
       </body>
     </html>

@@ -1,13 +1,13 @@
-import type React from "react";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
+import type React from "react";
 
 type AuthShellProps = {
   title: string;

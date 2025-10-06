@@ -1,9 +1,16 @@
+"use client";
 import { Screen } from "@/@core/layout";
 import CheckoutForm from "@/components/forms/CheckoutForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function CheckoutPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.push("/login");
+  }, []);
   return (
     <Screen>
       <main className="mt-10">

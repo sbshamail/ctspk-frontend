@@ -1,12 +1,11 @@
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
+import { fetchApi } from "@/action/fetchApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { fetchApi } from "@/action/fetchApi";
+import * as React from "react";
 
 type FormState = {
   name: string;
@@ -162,16 +161,6 @@ export function RegisterForm() {
       >
         {submitting ? "Creating account..." : "Create account"}
       </Button>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Already have an account?{" "}
-        <Link
-          href="/login"
-          className="text-primary underline underline-offset-4"
-        >
-          Sign in
-        </Link>
-      </p>
     </form>
   );
 }
