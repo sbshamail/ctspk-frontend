@@ -29,7 +29,7 @@ export const saveSession = (
   //   // ✅ 3. Store in Redux (for CSR)
   //   store.dispatch(setUser(user));
 };
-export function clientUserRaw() {
+export function clientUser() {
   const session = Cookies.get("user_session");
   if (!session) return null;
   try {

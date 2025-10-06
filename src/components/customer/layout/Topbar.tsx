@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
-import { clearSession, clientUserRaw } from "@/action/auth";
+import { clearSession, clientUser } from "@/action/auth";
 import { Store, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -9,21 +9,25 @@ import { useEffect, useState } from "react";
 export default function Topbar() {
   const [user, setUser] = useState<any>(null);
 
-  // ✅ Load on mount
   useEffect(() => {
-    setUser(clientUserRaw());
+    // Load initial user
+    setUser(clientUser());
 
-    // ✅ Watch for cookie changes (login/logout)
+    // Start watching for login/logout changes
     const interval = setInterval(() => {
-      const current = clientUserRaw();
-      // simple check
-      if (JSON.stringify(current) !== JSON.stringify(user)) {
-        setUser(current);
-      }
-    }, 100); // every 1s — simple and reliable for modal login
+      const current = clientUser();
+
+      // compare to previous user without retriggering the effect
+      setUser((prev: any) => {
+        if (JSON.stringify(prev) !== JSON.stringify(current)) {
+          return current;
+        }
+        return prev;
+      });
+    }, 1000); // every 1s (100ms is too frequent)
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, []); // ✅ run only once on mount
 
   const handleLogout = () => {
     clearSession(); // remove cookie

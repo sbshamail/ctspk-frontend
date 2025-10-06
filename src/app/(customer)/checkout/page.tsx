@@ -4,13 +4,38 @@ import CheckoutForm from "@/components/forms/CheckoutForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { clientUser } from "@/action/auth";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const [user, setUser] = useState(clientUser());
+
   useEffect(() => {
+    // If not logged in, start watching for login changes
+    if (!user) {
+      const interval = setInterval(() => {
+        const current = clientUser();
+
+        // detect login (object changed)
+        if (JSON.stringify(current) !== JSON.stringify(user)) {
+          setUser(current);
+          if (current) {
+            // ✅ user just logged in
+            clearInterval(interval);
+            router.push("/checkout"); // or refresh page, or close modal, etc.
+          }
+        }
+      }, 1000); // every 1s
+
+      // cleanup when unmounts
+      return () => clearInterval(interval);
+    }
+  }, [user, router]);
+  const handleLogin = () => {
     router.push("/login");
-  }, []);
+  };
+
   return (
     <Screen>
       <main className="mt-10">
@@ -49,9 +74,18 @@ export default function CheckoutPage() {
                 <span>Rs 2810</span>
               </div>
               <Separator />
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition">
-                Proceed to Payment →
-              </button>
+              {user ? (
+                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition">
+                  Proceed to Payment →
+                </button>
+              ) : (
+                <button
+                  onClick={handleLogin}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition"
+                >
+                  Login to Proceed →
+                </button>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -38,7 +38,6 @@ export const fetchApi = async ({
     }
 
     const response = await fetch(baseUrl, fetchOptions);
-    console.log("Response:", response);
 
     if (!response.ok) {
       console.error(`API error: ${response.status} - ${response.statusText}`);
