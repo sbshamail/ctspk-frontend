@@ -40,7 +40,7 @@ export default function LoginModal() {
         <h2 className="text-xl font-semibold mb-4 text-center">
           Sign In to Your Account
         </h2>
-        <LoginForm close={() => handleClose()} />
+        <LoginForm close={handleClose} />
         <p className="text-center text-sm text-muted-foreground mt-4">
           New here?{" "}
           <button
