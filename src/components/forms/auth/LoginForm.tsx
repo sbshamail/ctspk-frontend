@@ -1,5 +1,6 @@
 "use client";
 
+import { saveSession } from "@/action/auth";
 import { fetchApi } from "@/action/fetchApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-export function LoginForm() {
+export function LoginForm({ close }: { close: () => void }) {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -17,6 +18,8 @@ export function LoginForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    close();
+
     setError(null);
     if (!email || !password) {
       setError("Please enter your email and password.");
@@ -34,9 +37,10 @@ export function LoginForm() {
         data,
       });
       console.log(login);
+      const { access_token, refresh_token, user, exp } = login.data || {};
+      saveSession(user, access_token, refresh_token, exp);
       if (login) {
-        // route to onboarding once backend wired:
-        router.push("/");
+        // close();
       }
     } catch (err) {
       setError("Something went wrong. Please try again.");

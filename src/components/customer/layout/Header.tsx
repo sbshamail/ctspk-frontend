@@ -5,14 +5,14 @@ import { useWindowScroll } from "react-use";
 
 // Component
 import { Screen } from "@/@core/layout";
+import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Suspense } from "react";
 import MainSearchbar from "../searchbar/MainSearchbar";
 import { HeaderNav } from "./HeaderNav";
 import Topbar from "./Topbar";
-import { Suspense } from "react";
-import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 // Types
 
 export const MainHeader = ({ y = 0 }: { y?: number }) => {
@@ -38,9 +38,6 @@ export const MainHeader = ({ y = 0 }: { y?: number }) => {
               <div className="flex items-center gap-4 text-base  ">
                 <Link href="/product" className="hover:underline Transition">
                   Shop
-                </Link>
-                <Link href="#" className="hover:underline Transition">
-                  <h3>About Us</h3>
                 </Link>
 
                 <Button variant="ghost" size="sm" className="md:hidden">

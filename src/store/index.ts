@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./features/authSlice";
 import { categoryApi } from "./services/categoryApi";
 import { productApi } from "./services/productApi";
 export const makeStore = () =>
@@ -7,6 +8,7 @@ export const makeStore = () =>
       // Add API reducer when you create it
       [productApi.reducerPath]: productApi.reducer,
       [categoryApi.reducerPath]: categoryApi.reducer,
+      auth: authReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(

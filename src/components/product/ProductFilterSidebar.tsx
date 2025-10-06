@@ -40,7 +40,6 @@ const ProductFilterSidebar = ({
     });
   };
 
-  console.log(categories);
   const applyFilter = () => {
     if (categories.length > 0) {
       const columnFilters = categories.map((cat: any) => [

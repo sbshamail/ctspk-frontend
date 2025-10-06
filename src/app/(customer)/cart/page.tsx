@@ -82,7 +82,6 @@ const CartPage = () => {
               </div>
 
               {cart.map((item: any) => {
-                console.log(item);
                 const unitPrice = item.salePrice ?? item.price;
                 const subtotal = unitPrice * item.quantity;
 
@@ -110,7 +109,7 @@ const CartPage = () => {
                               item.image.original ??
                               item.image
                             }
-                            alt={item.slug}
+                            alt={item.name}
                             width={64}
                             height={64}
                             className="object-cover"

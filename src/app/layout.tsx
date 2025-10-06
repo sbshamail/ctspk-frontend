@@ -37,9 +37,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <StoreProvider>{children}</StoreProvider>
+          <StoreProvider>
+            {children}
+            {modal}
+          </StoreProvider>
           {/* {children} */}
-          {modal}
         </ThemeProvider>
       </body>
     </html>
