@@ -2,19 +2,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cartContext";
+import { ImageType } from "@/utils/modelTypes";
 
 interface Props {
   product: {
     id: number;
     name: string;
-    image: { original: string; filename: string };
+    image: ImageType;
     price: number;
     salePrice?: number;
     max_price?: number;
     min_price?: number;
     category: { id: number; name: string };
     slug: string;
-    gallery?: { original: string; filename: string }[];
+    gallery?: ImageType[];
 
     rating: number;
     description: string;
@@ -45,7 +46,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
           name: product.name,
           price: product.price,
           salePrice: product.salePrice,
-          image: product.image.original,
+          image: product.image,
           quantity: 1,
         });
       } else {
@@ -61,7 +62,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
         name: product.name,
         price: product.price,
         salePrice: product.salePrice,
-        image: product.image.original,
+        image: product.image,
         quantity: 1,
       });
     }

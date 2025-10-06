@@ -1,10 +1,12 @@
+import { ImageType } from "@/utils/modelTypes";
+
 // utils/cart.ts
 export interface CartItem {
   id: number | string;
   name: string;
   price: number;
   salePrice?: number;
-  image: string;
+  image: ImageType;
   quantity: number;
 }
 

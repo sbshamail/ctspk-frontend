@@ -16,18 +16,19 @@ import {
 import Image from "next/image";
 import { useState } from "react";
 import SingleProductAddToCart from "./SingleProductAddtoCart";
+import { ImageType } from "@/utils/modelTypes";
 
 interface Product {
   id: number;
   name: string;
-  image: { original: string; filename: string };
+  image: ImageType;
   price: number;
   salePrice?: number;
   max_price?: number;
   min_price?: number;
   category: { id: number; name: string };
   slug: string;
-  gallery?: { original: string; filename: string }[];
+  gallery?: ImageType[];
 
   rating: number;
   quantity: number;

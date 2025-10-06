@@ -82,6 +82,7 @@ const CartPage = () => {
               </div>
 
               {cart.map((item: any) => {
+                console.log(item);
                 const unitPrice = item.salePrice ?? item.price;
                 const subtotal = unitPrice * item.quantity;
 
@@ -104,7 +105,11 @@ const CartPage = () => {
                       <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
                         {item?.image?.original ? (
                           <Image
-                            src={item.image.thumbnail ?? item.image.original}
+                            src={
+                              item.image.thumbnail ??
+                              item.image.original ??
+                              item.image
+                            }
                             alt={item.slug}
                             width={64}
                             height={64}
