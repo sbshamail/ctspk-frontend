@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
+import { Screen } from "@/@core/layout";
+import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cartContext";
-import { useState, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
-import { Screen } from "@/@core/layout";
+import { useMemo, useState } from "react";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -202,9 +202,11 @@ const CartPage = () => {
                   <span>Total</span>
                   <span>Rs {selectedTotal}</span>
                 </div>
-                <Button className="w-full bg-primary text-white">
-                  Proceed To Checkout →
-                </Button>
+                <Link href="/checkout">
+                  <Button className="w-full bg-primary text-white">
+                    Proceed To Checkout →
+                  </Button>
+                </Link>
               </>
             )}
           </div>
