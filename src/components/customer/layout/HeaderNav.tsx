@@ -293,13 +293,16 @@ export function HeaderNav({ y }: HeaderNavProps) {
                     </h3>
                     <div className="space-y-1">
                       {getActiveSubCategory()?.children?.map((item) => (
-                        <a
+                        <Link
                           key={item.name}
-                          href="#"
+                          href={{
+                            pathname: "/product",
+                            query: { searchTerm: item.name },
+                          }}
                           className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200"
                         >
                           {item.name}
-                        </a>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -318,13 +321,13 @@ export function HeaderNav({ y }: HeaderNavProps) {
                       "Limited Edition",
                       "Seasonal Picks",
                     ].map((collection) => (
-                      <a
+                      <Link
                         key={collection}
                         href="#"
                         className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors"
                       >
                         {collection}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
