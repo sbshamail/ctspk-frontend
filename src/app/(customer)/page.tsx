@@ -14,14 +14,16 @@ const page = async () => {
       <div className="flex flex-col lg:gap-12 gap-8">
         {bannerData?.length > 0 && <HeroSection data={bannerData} />}
         <ProductSlider
+          autoplay={false}
           title="Featured Products"
           columnFilters={[["is_feature", true]]}
         />
         <ProductSlider
+          autoplay={false}
           title="Gher Tak Trends (under 1000/- Rs)"
           numberRange={["price", 0, 1000]}
         />
-        <ProductSlider title="Latest Additions" />
+        <ProductSlider autoplay={false} title="Latest Additions" />
       </div>
     </div>
   );

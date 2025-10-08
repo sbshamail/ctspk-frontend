@@ -22,6 +22,7 @@ import * as React from "react";
 interface ProductCarouselProps extends ProductQueryParams {
   title: string;
   className?: string;
+  autoplay?: boolean;
 }
 
 const defaultLimit = 10;
@@ -32,6 +33,7 @@ const ProductSlider = ({
   limit = defaultLimit,
   columnFilters,
   numberRange,
+  autoplay = true,
 }: ProductCarouselProps) => {
   const { data, error, isLoading } = useGetProductsQuery({
     page,
@@ -40,8 +42,8 @@ const ProductSlider = ({
     numberRange,
   });
   const products = data?.data;
-  const plugin = React.useRef(
-    Autoplay({ delay: 3000, stopOnInteraction: true })
+  const plugin = React.useRef<any | null>(
+    autoplay ? Autoplay({ delay: 3000, stopOnInteraction: true }) : null
   );
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
@@ -57,11 +59,6 @@ const ProductSlider = ({
       setCurrent(api.selectedScrollSnap() + 1);
     });
   }, [api]);
-
-  const productSkeleton = () =>
-    Array(defaultLimit)
-      .fill(null)
-      .map((_, index) => <ProductCardSkeleton key={index} />);
 
   return (
     <Screen>
@@ -97,10 +94,10 @@ const ProductSlider = ({
       </div>
 
       <Carousel
-        plugins={[plugin.current]}
+        plugins={autoplay ? [plugin?.current] : []}
         className="w-full"
-        onMouseEnter={plugin.current.stop}
-        onMouseLeave={plugin.current.reset}
+        onMouseEnter={autoplay && plugin?.current?.stop}
+        onMouseLeave={autoplay && plugin?.current?.reset}
         setApi={setApi} // ✅ pass setter so api is captured
       >
         <CarouselContent>

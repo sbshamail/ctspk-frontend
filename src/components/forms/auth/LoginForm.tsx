@@ -9,7 +9,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-export function LoginForm({ close }: { close: () => void }) {
+interface LoginFormProps {
+  close: () => void;
+  setUser: React.Dispatch<React.SetStateAction<any>>;
+}
+export function LoginForm({ close, setUser }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -36,11 +40,11 @@ export function LoginForm({ close }: { close: () => void }) {
         method: "POST",
         data,
       });
-      console.log(login);
-      const { access_token, refresh_token, user, exp } = login.data || {};
-      saveSession(user, access_token, refresh_token, exp);
       if (login) {
-        // close();
+        setUser(login.data.user);
+        const { access_token, refresh_token, user, exp } = login.data || {};
+        saveSession(user, access_token, refresh_token, exp);
+        close();
       }
     } catch (err) {
       setError("Something went wrong. Please try again.");

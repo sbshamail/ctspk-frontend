@@ -6,32 +6,17 @@ import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clientUser } from "@/action/auth";
+import SiginModal from "@/components/modals/SiginModal";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [user, setUser] = useState(clientUser());
+  const [openSiginModal, setOpenSiginModal] = useState(false);
 
   useEffect(() => {
-    // If not logged in, start watching for login changes
-    if (!user) {
-      const interval = setInterval(() => {
-        const current = clientUser();
-
-        // detect login (object changed)
-        if (JSON.stringify(current) !== JSON.stringify(user)) {
-          setUser(current);
-          if (current) {
-            // ✅ user just logged in
-            clearInterval(interval);
-            router.push("/checkout"); // or refresh page, or close modal, etc.
-          }
-        }
-      }, 1000); // every 1s
-
-      // cleanup when unmounts
-      return () => clearInterval(interval);
-    }
-  }, [user, router]);
+    // Load initial user
+    setUser(clientUser());
+  }, []);
   const handleLogin = () => {
     router.push("/login");
   };
@@ -79,12 +64,16 @@ export default function CheckoutPage() {
                   Proceed to Payment →
                 </button>
               ) : (
-                <button
-                  onClick={handleLogin}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition"
-                >
-                  Login to Proceed →
-                </button>
+                <SiginModal
+                  open={openSiginModal}
+                  setOpen={setOpenSiginModal}
+                  setUser={setUser}
+                  trigger={
+                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition">
+                      Login to Proceed →
+                    </button>
+                  }
+                />
               )}
             </CardContent>
           </Card>

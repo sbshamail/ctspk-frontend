@@ -40,7 +40,7 @@ export default function LoginModal() {
         <h2 className="text-xl font-semibold mb-4 text-center">
           Sign In to Your Account
         </h2>
-        <LoginForm close={handleClose} />
+        {/* <LoginForm close={handleClose} /> */}
         <p className="text-center text-sm text-muted-foreground mt-4">
           New here?{" "}
           <button
@@ -50,16 +50,6 @@ export default function LoginModal() {
             Register
           </button>
         </p>
-
-        {/* <p className="text-sm text-center text-muted-foreground mt-4">
-          Don’t have an account?{" "}
-          <button
-            onClick={() => router.push("/register")}
-            className="text-primary hover:underline"
-          >
-            Register
-          </button>
-        </p> */}
       </div>
     </div>
   );
