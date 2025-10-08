@@ -6,15 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+import { useAppDispatch } from "@/lib/hooks";
+import { authLoading, setAuth } from "@/store/features/authSlice";
+
 import * as React from "react";
 
 interface LoginFormProps {
   close: () => void;
-  setUser: React.Dispatch<React.SetStateAction<any>>;
+  // setUser: React.Dispatch<React.SetStateAction<any>>;
 }
-export function LoginForm({ close, setUser }: LoginFormProps) {
-  const router = useRouter();
+export function LoginForm({ close }: LoginFormProps) {
+  const dispatch = useAppDispatch();
+
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -22,8 +26,7 @@ export function LoginForm({ close, setUser }: LoginFormProps) {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    close();
-
+    dispatch(authLoading(true));
     setError(null);
     if (!email || !password) {
       setError("Please enter your email and password.");
@@ -41,10 +44,11 @@ export function LoginForm({ close, setUser }: LoginFormProps) {
         data,
       });
       if (login) {
-        setUser(login.data.user);
+        dispatch(setAuth(login.data));
         const { access_token, refresh_token, user, exp } = login.data || {};
         saveSession(user, access_token, refresh_token, exp);
         close();
+        dispatch(authLoading(false));
       }
     } catch (err) {
       setError("Something went wrong. Please try again.");

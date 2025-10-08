@@ -1,25 +1,19 @@
 "use client";
 import { Screen } from "@/@core/layout";
 import CheckoutForm from "@/components/forms/CheckoutForm";
+import SiginModal from "@/components/modals/SiginModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useAppSelector } from "@/lib/hooks";
+import { cn } from "@/lib/utils";
+import { RootState } from "@/store";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { clientUser } from "@/action/auth";
-import SiginModal from "@/components/modals/SiginModal";
+import { useState } from "react";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [user, setUser] = useState(clientUser());
   const [openSiginModal, setOpenSiginModal] = useState(false);
-
-  useEffect(() => {
-    // Load initial user
-    setUser(clientUser());
-  }, []);
-  const handleLogin = () => {
-    router.push("/login");
-  };
+  const { auth, isLoading } = useAppSelector((state: RootState) => state.auth);
 
   return (
     <Screen>
@@ -59,17 +53,25 @@ export default function CheckoutPage() {
                 <span>Rs 2810</span>
               </div>
               <Separator />
-              {user ? (
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition">
+              {auth ? (
+                <button
+                  className={cn(
+                    "w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition "
+                  )}
+                >
                   Proceed to Payment →
                 </button>
               ) : (
                 <SiginModal
                   open={openSiginModal}
                   setOpen={setOpenSiginModal}
-                  setUser={setUser}
                   trigger={
-                    <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition">
+                    <button
+                      className={cn(
+                        "w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition ",
+                        isLoading && "animate-pulse"
+                      )}
+                    >
                       Login to Proceed →
                     </button>
                   }

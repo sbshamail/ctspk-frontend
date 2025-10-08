@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./features/authSlice";
+import loadingReducer from "./features/loadingSlice";
 import { categoryApi } from "./services/categoryApi";
 import { productApi } from "./services/productApi";
 export const makeStore = () =>
@@ -9,6 +10,7 @@ export const makeStore = () =>
       [productApi.reducerPath]: productApi.reducer,
       [categoryApi.reducerPath]: categoryApi.reducer,
       auth: authReducer,
+      loading: loadingReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(

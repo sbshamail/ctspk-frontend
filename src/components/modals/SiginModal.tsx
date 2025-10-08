@@ -5,10 +5,9 @@ import { LoginForm } from "../forms/auth/LoginForm";
 interface Props {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setUser: React.Dispatch<React.SetStateAction<any>>;
   trigger?: React.ReactNode;
 }
-const SiginModal = ({ open, setOpen, setUser, trigger }: Props) => {
+const SiginModal = ({ open, setOpen, trigger }: Props) => {
   const close = () => {
     setOpen(false);
   };
@@ -27,7 +26,7 @@ const SiginModal = ({ open, setOpen, setUser, trigger }: Props) => {
             )
           }
         >
-          <LoginForm close={close} setUser={setUser} />
+          <LoginForm close={close} />
           <p className="text-center text-sm text-muted-foreground mt-4">
             New here?{" "}
             <button

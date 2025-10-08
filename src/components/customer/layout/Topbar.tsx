@@ -1,24 +1,24 @@
 "use client";
 
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
-import { clearSession, clientUser } from "@/action/auth";
+import { clearSession } from "@/action/auth";
+import SiginModal from "@/components/modals/SiginModal";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { cn } from "@/lib/utils";
+import { RootState } from "@/store";
+import { logoutUser } from "@/store/features/authSlice";
 import { Store, Truck, User } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import SiginModal from "@/components/modals/SiginModal";
+import { useState } from "react";
 
 export default function Topbar() {
-  const [user, setUser] = useState<any>(null);
+  const dispatch = useAppDispatch();
   const [openSiginModal, setOpenSiginModal] = useState(false);
-
-  useEffect(() => {
-    // Load initial user
-    setUser(clientUser());
-  }, []); // ✅ run only once on mount
+  const { auth, isLoading } = useAppSelector((state: RootState) => state.auth);
 
   const handleLogout = () => {
     clearSession(); // remove cookie
-    setUser(null); // re-render UI
+    dispatch(logoutUser());
   };
   return (
     <>
@@ -66,28 +66,41 @@ export default function Topbar() {
 
             {/* Right: Contact */}
             <div className="col-span-3 flex justify-end">
-              <div className="flex items-center space-x-4">
-                {!user ? (
+              <div
+                className={cn(
+                  "flex items-center space-x-4",
+                  isLoading && "animate-pulse" // ✅ Correct conditional class
+                )}
+              >
+                {isLoading ? (
                   <>
-                    <SiginModal
-                      open={openSiginModal}
-                      setOpen={setOpenSiginModal}
-                      setUser={setUser}
-                    />
-
-                    <Link href={"/register"} scroll={false}>
-                      <button className="hover:text-primary transition-colors cursor-pointer">
-                        Register
-                      </button>
-                    </Link>
+                    <div className="h-6 w-6 rounded-full bg-muted" />
+                    <div className="h-6 w-6 rounded-full bg-muted" />
                   </>
                 ) : (
-                  <button
-                    className="hover:text-primary transition-colors cursor-pointer"
-                    onClick={() => handleLogout()}
-                  >
-                    Logout{" "}
-                  </button>
+                  <>
+                    {!auth ? (
+                      <>
+                        <SiginModal
+                          open={openSiginModal}
+                          setOpen={setOpenSiginModal}
+                        />
+
+                        <Link href={"/register"} scroll={false}>
+                          <button className="hover:text-primary transition-colors cursor-pointer">
+                            Register
+                          </button>
+                        </Link>
+                      </>
+                    ) : (
+                      <button
+                        className="hover:text-primary transition-colors cursor-pointer"
+                        onClick={() => handleLogout()}
+                      >
+                        Logout{" "}
+                      </button>
+                    )}
+                  </>
                 )}
                 <ThemeToggle />
               </div>

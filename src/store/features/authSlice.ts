@@ -1,25 +1,50 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
-  user: any | null;
+  auth: any | null;
+  isLoading: boolean; // initial load (e.g., check session)
+  isError: string | null; // error message if any
 }
 
 const initialState: AuthState = {
-  user: null,
+  auth: null,
+  isLoading: false,
+  isError: null,
 };
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setUser(state, action: PayloadAction<any>) {
-      state.user = action.payload;
+    // ✅ Start loading when app mounts or fetching starts
+    authLoading(state, action: PayloadAction<any>) {
+      state.isLoading = action.payload;
+      state.isError = null;
     },
-    logout(state) {
-      state.user = null;
+
+    // ✅ Auth data management
+    setAuth(state, action: PayloadAction<any>) {
+      state.auth = action.payload;
+      state.isLoading = false;
+      state.isError = null;
+    },
+    logoutUser(state) {
+      state.auth = null;
+      state.isError = null;
+    },
+
+    // ✅ Error handler
+    setError(state, action: PayloadAction<string>) {
+      state.isError = action.payload;
+      state.isLoading = false;
+    },
+    clearError(state) {
+      state.isError = null;
     },
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { authLoading, setAuth, logoutUser, setError, clearError } =
+  authSlice.actions;
+
 export default authSlice.reducer;
