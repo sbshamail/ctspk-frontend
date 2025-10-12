@@ -13,7 +13,9 @@ import { useState } from "react";
 export default function CheckoutPage() {
   const router = useRouter();
   const [openSiginModal, setOpenSiginModal] = useState(false);
-  const { auth, isLoading } = useAppSelector((state: RootState) => state.auth);
+  const { data: auth, isLoading } = useAppSelector(
+    (state: RootState) => state.auth
+  );
 
   return (
     <Screen>
