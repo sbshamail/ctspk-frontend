@@ -29,10 +29,7 @@ const SiginModal = ({ open, setOpen, trigger }: Props) => {
           <LoginForm close={close} />
           <p className="text-center text-sm text-muted-foreground mt-4">
             New here?{" "}
-            <button
-              //   onClick={handleSwitch}
-              className="text-primary hover:underline cursor-pointer"
-            >
+            <button className="text-primary hover:underline cursor-pointer">
               Register
             </button>
           </p>

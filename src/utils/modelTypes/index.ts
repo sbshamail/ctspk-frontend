@@ -4,6 +4,8 @@ export interface ImageType {
   thumbnail?: string;
   media_type?: string;
 }
+export * from "./AuthType";
+
 export interface CategoryDataType {
   [key: string]: any;
   id?: number;

@@ -1,5 +1,5 @@
 "use client";
-import SimpleDropdown from "../dropdown/SimpleDropdown";
+import SimpleSelectDropdown from "../select/SimpleSelectDropdown";
 
 type SortOption = {
   label: string;
@@ -24,7 +24,7 @@ export function SortDropdown({ addQuery }: SortDropdownProps) {
   };
   return (
     <>
-      <SimpleDropdown
+      <SimpleSelectDropdown
         title="Sort by"
         options={sortOptions}
         defaultValue={sortOptions[0].value}

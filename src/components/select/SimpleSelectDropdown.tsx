@@ -28,7 +28,7 @@ interface SimpleDropdownProps<T = any> {
   onChange?: (value: T) => void;
 }
 
-const SimpleDropdown = <T,>({
+const SimpleSelectDropdown = <T,>({
   options,
   value,
   defaultValue,
@@ -89,4 +89,4 @@ const SimpleDropdown = <T,>({
   );
 };
 
-export default SimpleDropdown;
+export default SimpleSelectDropdown;

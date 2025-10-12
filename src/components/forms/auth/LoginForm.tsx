@@ -1,111 +1,107 @@
 "use client";
-
-import { saveSession } from "@/action/auth";
-import { fetchApi } from "@/action/fetchApi";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
+import { Button } from "@/components/ui/button";
+
+import { fetchApi } from "@/action/fetchApi";
+import { saveSession } from "@/action/auth";
 import { useAppDispatch } from "@/lib/hooks";
 import { authLoading, setAuth } from "@/store/features/authSlice";
 
-import * as React from "react";
+import { loginSchema, LoginSchemaType } from "@/schemas/authSchemas";
+import { InputField } from "@/components/formFields/InputField";
+import { PasswordField } from "@/components/formFields/PasswordField";
 
 interface LoginFormProps {
   close: () => void;
-  // setUser: React.Dispatch<React.SetStateAction<any>>;
 }
+
 export function LoginForm({ close }: LoginFormProps) {
   const dispatch = useAppDispatch();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginSchemaType>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const onSubmit = async (values: LoginSchemaType) => {
     dispatch(authLoading(true));
     setError(null);
-    if (!email || !password) {
-      setError("Please enter your email and password.");
-      return;
-    }
+
     try {
-      setSubmitting(true);
-      const data = {
-        email,
-        password,
-      };
       const login = await fetchApi({
         url: "login",
         method: "POST",
-        data,
+        options: {
+          body: JSON.stringify(values),
+          headers: { "Content-Type": "application/json" },
+        },
       });
-      if (login) {
+
+      if (login?.data) {
+        const { access_token, refresh_token, user, exp } = login.data;
         dispatch(setAuth(login.data));
-        const { access_token, refresh_token, user, exp } = login.data || {};
         saveSession(user, access_token, refresh_token, exp);
         close();
-        dispatch(authLoading(false));
+      } else {
+        setError("Invalid email or password.");
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
-      setSubmitting(false);
+      dispatch(authLoading(false));
     }
-  }
+  };
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          aria-invalid={!!error && !email}
-          required
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          aria-invalid={!!error && !password}
-          required
-        />
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+      <InputField
+        id="email"
+        label="Email"
+        type="email"
+        placeholder="you@example.com"
+        register={register}
+        error={errors.email}
+        autoComplete="email"
+      />
 
-      {error ? (
+      <PasswordField
+        id="password"
+        label="Password"
+        placeholder="••••••••"
+        register={register}
+        error={errors.password}
+        autoComplete="current-password"
+      />
+
+      {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
-      ) : null}
+      )}
 
       <div className="flex items-center justify-between">
-        <div className="text-sm">
-          <Link href="#" className="text-primary underline underline-offset-4">
-            Forgot password?
-          </Link>
-        </div>
+        <Link
+          href="#"
+          className="text-sm text-primary underline underline-offset-4"
+        >
+          Forgot password?
+        </Link>
       </div>
 
       <Button
         type="submit"
-        disabled={submitting}
+        disabled={isSubmitting}
         className="w-full bg-primary text-primary-foreground hover:opacity-90"
       >
-        {submitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
     </form>
   );

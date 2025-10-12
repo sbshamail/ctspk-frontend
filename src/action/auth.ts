@@ -1,3 +1,4 @@
+import { AuthDataType } from "@/utils/modelTypes";
 import Cookies from "js-cookie";
 
 export const saveSession = (
@@ -29,16 +30,23 @@ export const saveSession = (
   //   // ✅ 3. Store in Redux (for CSR)
   //   store.dispatch(setUser(user));
 };
-export function clientUser() {
-  const session = Cookies.get("user_session");
+type SessionKey =
+  | "user_session"
+  | "access_token"
+  | "refresh_token"
+  | "user_session_exp";
+export function getSession<T = AuthDataType>(
+  key: SessionKey = "user_session"
+): T | null {
+  const session = Cookies.get(key);
   if (!session) return null;
   try {
-    return JSON.parse(session);
+    return JSON.parse(session) as T;
   } catch {
-    return null;
+    return session as T;
   }
 }
-export const clearSession = (dispatch?: any) => {
+export const clearSession = () => {
   console.log("clear session");
   Cookies.remove("access_token");
   Cookies.remove("refresh_token");

@@ -1,165 +1,111 @@
 "use client";
 
 import { fetchApi } from "@/action/fetchApi";
+import { InputField } from "@/components/formFields/InputField";
+import { PasswordField } from "@/components/formFields/PasswordField";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
+import { registerSchema, RegisterSchemaType } from "@/schemas/authSchemas";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-
-type FormState = {
-  name: string;
-  email: string;
-  phone_no: string;
-  password: string;
-  confirm_password: string;
-};
+import { useForm } from "react-hook-form";
 
 export function RegisterForm() {
   const router = useRouter();
-  const [form, setForm] = React.useState<FormState>({
-    name: "",
-    email: "",
-    phone_no: "",
-    password: "",
-    confirm_password: "",
+  const [serverError, setServerError] = React.useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterSchemaType>({
+    resolver: zodResolver(registerSchema),
   });
-  const [submitting, setSubmitting] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((s) => ({ ...s, [key]: value }));
-  }
-
-  const passwordsMismatch =
-    form.password.length > 0 &&
-    form.confirm_password.length > 0 &&
-    form.password !== form.confirm_password;
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    if (passwordsMismatch) {
-      setError("Passwords do not match.");
-      return;
-    }
+  const onSubmit = async (values: RegisterSchemaType) => {
+    setServerError(null);
     try {
-      setSubmitting(true);
-      const data = {
-        name: form.name,
-        email: form.email,
-        phone_no: form.phone_no,
-        password: form.password,
-      };
-      const register = await fetchApi({
+      const res = await fetchApi({
         url: "register",
         method: "POST",
-        data,
+        data: values,
       });
-      console.log(register);
-      if (register) {
-        // route to onboarding once backend wired:
+
+      if (res?.success) {
+        reset();
         router.push("/login");
+      } else {
+        setServerError(
+          res?.detail || "Something went wrong. Please try again."
+        );
       }
     } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
+      setServerError("Network error. Please try again.");
     }
-  }
+  };
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          type="text"
-          autoComplete="name"
-          placeholder="Full name"
-          value={form.name}
-          onChange={(e) => update("name", e.target.value)}
-          required
-        />
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+      <InputField
+        id="name"
+        label="Full Name"
+        placeholder="Your full name"
+        register={register}
+        error={errors.name}
+        autoComplete="name"
+      />
 
-      <div className="grid gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          placeholder="you@example.com"
-          value={form.email}
-          onChange={(e) => update("email", e.target.value)}
-          required
-        />
-      </div>
+      <InputField
+        id="email"
+        label="Email"
+        placeholder="you@example.com"
+        type="email"
+        register={register}
+        error={errors.email}
+        autoComplete="email"
+      />
 
-      <div className="grid gap-2">
-        <Label htmlFor="phone_no">Phone number</Label>
-        <Input
-          id="phone_no"
-          type="tel"
-          autoComplete="tel"
-          placeholder="92123456789"
-          value={form.phone_no}
-          onChange={(e) => update("phone_no", e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">
-          Optional. Include country code for faster verification.
-        </p>
-      </div>
+      <InputField
+        id="phone_no"
+        label="Phone Number"
+        placeholder="923001234567"
+        type="tel"
+        register={register}
+        error={errors.phone_no}
+        autoComplete="tel"
+      />
 
-      <div className="grid gap-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Create a strong password"
-          value={form.password}
-          onChange={(e) => update("password", e.target.value)}
-          required
-          aria-invalid={passwordsMismatch}
-        />
-      </div>
+      <PasswordField
+        id="password"
+        label="Password"
+        placeholder="Create a strong password"
+        register={register}
+        error={errors.password}
+        autoComplete="new-password"
+      />
 
-      <div className="grid gap-2">
-        <Label htmlFor="confirm_password">Confirm password</Label>
-        <Input
-          id="confirm_password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Repeat your password"
-          value={form.confirm_password}
-          onChange={(e) => update("confirm_password", e.target.value)}
-          required
-          aria-invalid={passwordsMismatch}
-        />
-        {passwordsMismatch ? (
-          <p role="alert" className="text-sm text-destructive">
-            Passwords do not match.
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Must match the password above.
-          </p>
-        )}
-      </div>
+      <PasswordField
+        id="confirm_password"
+        label="Confirm Password"
+        placeholder="Repeat your password"
+        register={register}
+        error={errors.confirm_password}
+        autoComplete="new-password"
+      />
 
-      {error ? (
+      {serverError && (
         <p role="alert" className="text-sm text-destructive">
-          {error}
+          {serverError}
         </p>
-      ) : null}
+      )}
 
       <Button
         type="submit"
-        disabled={submitting || passwordsMismatch}
+        disabled={isSubmitting}
         className="w-full bg-primary text-primary-foreground hover:opacity-90"
       >
-        {submitting ? "Creating account..." : "Create account"}
+        {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
     </form>
   );

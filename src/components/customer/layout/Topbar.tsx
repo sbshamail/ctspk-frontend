@@ -1,25 +1,18 @@
 "use client";
 
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
-import { clearSession } from "@/action/auth";
 import SiginModal from "@/components/modals/SiginModal";
-import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
-import { RootState } from "@/store";
-import { logoutUser } from "@/store/features/authSlice";
-import { Store, Truck, User } from "lucide-react";
+
+import { Truck, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-
+import { useSelection } from "@/lib/useSelection";
+import AuthHeaderDropdown from "../dropdown/AuthHeaderDropdown";
 export default function Topbar() {
-  const dispatch = useAppDispatch();
   const [openSiginModal, setOpenSiginModal] = useState(false);
-  const { auth, isLoading } = useAppSelector((state: RootState) => state.auth);
+  const { data: auth, isLoading } = useSelection("auth", true);
 
-  const handleLogout = () => {
-    clearSession(); // remove cookie
-    dispatch(logoutUser());
-  };
   return (
     <>
       <div className="hidden lg:block  bg-background text-foreground">
@@ -46,21 +39,12 @@ export default function Topbar() {
                     Order Tracking
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="#"
-                    className="hover:text-primary transition-colors flex items-center gap-1"
-                  >
-                    <Store className="w-4 h-4" />
-                    Seller
-                  </Link>
-                </li>
               </ul>
             </div>
 
             <div className="hidden md:block">
               <span className="text-primary">
-                📞 Free Shipping on Order 2000/-Rs
+                Free Shipping on Order 2000/-Rs
               </span>
             </div>
 
@@ -93,12 +77,7 @@ export default function Topbar() {
                         </Link>
                       </>
                     ) : (
-                      <button
-                        className="hover:text-primary transition-colors cursor-pointer"
-                        onClick={() => handleLogout()}
-                      >
-                        Logout{" "}
-                      </button>
+                      <AuthHeaderDropdown auth={auth} />
                     )}
                   </>
                 )}
