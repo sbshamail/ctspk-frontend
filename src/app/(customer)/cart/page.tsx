@@ -66,7 +66,7 @@ const CartPage = () => {
           <div className="lg:col-span-2">
             <div className="border rounded-lg overflow-hidden">
               {/* Header row */}
-              <div className="grid grid-cols-7 bg-gray-100 font-medium text-gray-600 px-4 py-2 items-center">
+              <div className="grid grid-cols-7 bg-muted font-medium text-muted-foreground px-4 py-2 items-center">
                 <div>
                   <input
                     type="checkbox"

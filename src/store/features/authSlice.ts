@@ -1,5 +1,4 @@
-import { clearSession, getSession } from "@/action/auth";
-import { UserDataType } from "@/utils/modelTypes";
+import { clearSession } from "@/action/auth";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
@@ -8,32 +7,8 @@ interface AuthState {
   isError: string | null; // error message if any
 }
 
-const user = getSession<UserDataType>("user_session");
-const refresh_token = getSession("refresh_token");
-const access_token = getSession("access_token");
-const user_session_exp = getSession("user_session_exp") as string | null;
-
-function isSessionExpired(expiry: string | null): boolean {
-  if (!expiry) return true;
-  try {
-    const expDate = new Date(expiry).getTime();
-    return Date.now() > expDate;
-  } catch {
-    return true;
-  }
-}
-
-const isExpired = isSessionExpired(user_session_exp);
-
 const initialState: AuthState = {
-  data: !isExpired
-    ? {
-        user,
-        access_token,
-        refresh_token,
-        user_session_exp,
-      }
-    : null,
+  data: null,
   isLoading: false,
   isError: null,
 };

@@ -3,12 +3,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { ImageType } from "@/utils/modelTypes";
 import {
   Facebook,
   Heart,
   Instagram,
   RotateCcw,
-  ShoppingCart,
   Star,
   Truck,
   Twitter,
@@ -16,7 +17,6 @@ import {
 import Image from "next/image";
 import { useState } from "react";
 import SingleProductAddToCart from "./SingleProductAddtoCart";
-import { ImageType } from "@/utils/modelTypes";
 
 interface Product {
   id: number;
@@ -55,11 +55,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
     min_price,
     max_price,
     rating = 0,
-    quantity: quota = 0,
+    quantity = 0,
     description,
   } = product || {};
   const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
+
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const discountPercentage = Math.round(
@@ -168,7 +168,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
           {/* Add to Cart */}
           <div className="flex items-center gap-4">
-            <SingleProductAddToCart product={product} />
+            {quantity > 0 ? (
+              <SingleProductAddToCart product={product} />
+            ) : (
+              <div className="flex items-center gap-4">
+                <span className="text-orange-700">Out of Stock</span>
+              </div>
+            )}
             <Button
               variant="outline"
               size="icon"
@@ -189,7 +195,14 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Stock:</span>
-              <span className="font-medium text-green-600">In Stock</span>
+              <span
+                className={cn(
+                  "font-medium",
+                  quantity > 0 ? "text-green-600" : "text-yellow-600"
+                )}
+              >
+                {quantity > 3 ? "In Stock" : "Low Stock"}
+              </span>
             </div>
             {/* <div className="flex items-center gap-4">
               <span className="text-muted-foreground">Weight:</span>

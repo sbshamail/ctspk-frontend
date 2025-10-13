@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cartContext";
 import { ImageType } from "@/utils/modelTypes";
@@ -16,10 +15,9 @@ interface Props {
     category: { id: number; name: string };
     slug: string;
     gallery?: ImageType[];
-
     rating: number;
     description: string;
-    quota?: number;
+    quantity: number;
   };
 }
 
@@ -29,7 +27,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
   // find if product already in cart
   const existingItem = cart.find((item) => item.id === product.id);
   const quantity = existingItem?.quantity ?? 1;
-  const quota = product.quota ?? 10;
+  const quota = product.quantity ?? 0;
 
   const handleDecrease = () => {
     if (quantity > 1) {
@@ -69,7 +67,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
   };
 
   return (
-    <div className="flex items-center gap-4 mt-6">
+    <div className="flex items-center gap-4">
       {/* Quantity Control */}
       <div className="flex items-center border rounded-lg">
         <button

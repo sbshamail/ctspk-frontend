@@ -1,5 +1,4 @@
 import { titleSubstring } from "@/utils/helper";
-import Image from "next/image";
 import Link from "next/link";
 import StarRating from "../starRating";
 import { ProductTag } from "../tag/ProductTag";
@@ -16,6 +15,7 @@ interface Props {
   image: string;
   rating?: number;
   price: number;
+  quantity: number;
   salePrice?: number;
   showPercentage?: boolean;
   Tags?: () => React.ReactNode;
@@ -23,7 +23,15 @@ interface Props {
 }
 
 const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
-  const { name, price, slug = "#", salePrice, image, rating } = props || {};
+  const {
+    name,
+    price,
+    slug = "#",
+    salePrice,
+    quantity,
+    image,
+    rating,
+  } = props || {};
   return (
     <div className=" ">
       <Link href={`/product/${slug}`} className="z-0">
