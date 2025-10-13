@@ -1,12 +1,13 @@
 "use client";
+import { useCart } from "@/context/cartContext";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { useCart } from "@/context/cartContext";
 
 const ShoppingCartIcon = () => {
   const { cart } = useCart();
-  const count = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const count = cart.length;
+  const totalQuantity = cart.reduce((acc, i) => acc + i.quantity, 0);
 
   return (
     <Button variant="ghost" size="sm" className="relative hover:text-primary">

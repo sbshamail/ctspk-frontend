@@ -8,6 +8,7 @@ export interface CartItem {
   salePrice?: number;
   image: ImageType;
   quantity: number;
+  shop_id: number;
 }
 
 const CART_KEY = "myapp_cart";

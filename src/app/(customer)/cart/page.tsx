@@ -1,18 +1,68 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
+import { loadCart } from "@/action/cart";
+import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cartContext";
+import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 const breadcrumbData = [
   { link: "/", name: "Home" },
   { link: "/cart", name: "Cart" },
 ];
+
+const syncCartWithBackend = async (auth: any) => {
+  const localCart = loadCart();
+  const res = await fetchApi({
+    url: "cart/list",
+    method: "GET",
+    token: auth.access_token,
+  });
+  const backendCart = res?.data || [];
+
+  for (const item of localCart) {
+    const exists = backendCart.find((p: any) => p.product_id === item.id);
+    if (exists) {
+      // ⚠️ show popup if conflict
+      alert(
+        `"${item.name}" already exists in your online cart. Choose version to keep.`
+      );
+      continue;
+    }
+
+    await fetchApi({
+      url: "cart/create",
+      method: "POST",
+      data: {
+        product_id: item.id,
+        shop_id: item.shop_id || 0,
+        quantity: item.quantity,
+      },
+    });
+  }
+
+  // Refresh from server
+  const updated = await fetchApi({
+    url: "cart/list",
+    method: "GET",
+    token: auth.access_token,
+  });
+  return updated;
+};
+
 const CartPage = () => {
+  const { data: auth } = useSelection("auth");
+
+  useEffect(() => {
+    if (auth?.access_token) {
+      // merge local + backend cart
+      syncCartWithBackend(auth);
+    }
+  }, [auth]);
   const { cart, update, remove, clear } = useCart();
 
   // State for selected items

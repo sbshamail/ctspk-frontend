@@ -18,6 +18,10 @@ interface Props {
     rating: number;
     description: string;
     quantity: number;
+    shop: {
+      id: number;
+      name: string;
+    };
   };
 }
 
@@ -46,6 +50,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
           salePrice: product.salePrice,
           image: product.image,
           quantity: 1,
+          shop_id: product.shop.id,
         });
       } else {
         update(product.id, quantity + 1);
@@ -62,6 +67,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
         salePrice: product.salePrice,
         image: product.image,
         quantity: 1,
+        shop_id: product.shop.id,
       });
     }
   };
