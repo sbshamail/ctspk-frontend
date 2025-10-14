@@ -1,9 +1,10 @@
 "use client";
 import {
   addToCart,
+  CART_KEY,
   CartItem,
   clearCart,
-  loadCart,
+  loadCartStorage,
   removeCartItem,
   updateCartItem,
 } from "@/action/cart";
@@ -15,6 +16,7 @@ interface CartContextType {
   update: (id: string | number, qty: number) => void;
   remove: (id: string | number) => void;
   clear: () => void;
+  clearCartStorage: () => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -23,7 +25,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
-    setCart(loadCart());
+    setCart(loadCartStorage());
   }, []);
 
   const add = async (item: CartItem) => {
@@ -39,13 +41,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     let updatedCart = await removeCartItem(id);
     return setCart([...updatedCart]);
   };
+  const clearCartStorage = () => {
+    localStorage.removeItem(CART_KEY);
+    setCart([]);
+  };
   const clear = () => {
     clearCart();
     setCart([]);
   };
 
   return (
-    <CartContext.Provider value={{ cart, add, update, remove, clear }}>
+    <CartContext.Provider
+      value={{ cart, add, update, remove, clear, clearCartStorage }}
+    >
       {children}
     </CartContext.Provider>
   );

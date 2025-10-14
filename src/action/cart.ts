@@ -13,9 +13,9 @@ export interface CartItem {
   shop_id: number;
 }
 
-const CART_KEY = "myapp_cart";
+export const CART_KEY = "myapp_cart";
 
-export const loadCart = (): CartItem[] => {
+export const loadCartStorage = (): CartItem[] => {
   if (typeof window === "undefined") return [];
   const data = localStorage.getItem(CART_KEY);
   return data ? JSON.parse(data) : [];
@@ -59,7 +59,7 @@ export const addToCart = async (item: CartItem) => {
 
     return res?.data || [];
   } else {
-    const cart = loadCart();
+    const cart = loadCartStorage();
     const index = cart.findIndex((i) => i.id === item.id);
     if (index >= 0) {
       cart[index].quantity += item.quantity;
@@ -87,7 +87,7 @@ export const updateCartItem = async (
     });
     return res?.data || [];
   } else {
-    let cart = loadCart();
+    let cart = loadCartStorage();
     cart = cart.map((item) =>
       item.id === product_id ? { ...item, quantity: qty } : item
     );
@@ -108,7 +108,7 @@ export const removeCartItem = async (product_id: string | number) => {
     });
     return res?.data || [];
   } else {
-    let cart = loadCart().filter((i) => i.id !== product_id);
+    let cart = loadCartStorage().filter((i) => i.id !== product_id);
     saveCart(cart);
     return cart;
   }
@@ -128,6 +128,6 @@ export const getCartList = async () => {
     return res?.data || [];
   } else {
     // 🧩 Guest mode
-    return loadCart();
+    return loadCartStorage();
   }
 };

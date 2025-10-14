@@ -1,7 +1,7 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
-import { loadCart } from "@/action/cart";
+import { loadCartStorage } from "@/action/cart";
 import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ const breadcrumbData = [
 ];
 
 const syncCartWithBackend = async (auth: any) => {
-  const localCart = loadCart();
+  const localCart = loadCartStorage();
   const res = await fetchApi({
     url: "cart/list",
     method: "GET",
@@ -58,11 +58,11 @@ const syncCartWithBackend = async (auth: any) => {
 
 const CartPage = () => {
   const { data: auth } = useSelection("auth");
-  const { cart, update, remove, clear } = useCart();
+  const { cart, update, remove, clear, clearCartStorage } = useCart();
 
   useEffect(() => {
     if (auth?.access_token) {
-      // clear();
+      // clearCartStorage();
       // // merge local + backend cart
       // syncCartWithBackend(auth);
     }
