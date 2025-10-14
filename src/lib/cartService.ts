@@ -12,38 +12,60 @@ import {
   useUpdateCartMutation,
 } from "@/store/services/cartApi";
 
-import type { CartItem } from "@/action/cart";
 import { RootState } from "@/store";
-import { useEffect, useState } from "react";
+import { ImageType } from "@/utils/modelTypes";
+import { useEffect, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { useSelection } from "./useSelection";
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  salePrice?: number;
+  image: ImageType;
+};
+export interface CartItem {
+  quantity: number;
+  product: Product;
+  shop_id: number;
+}
+
 /**
  * Hook that automatically decides whether to use backend or local cart
  */
 export const useCartService = () => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  //   const [cart, setCart] = useState<CartItem[]>([]);
   const dispatch = useAppDispatch();
   const { data: auth } = useSelection("auth");
   const localCart = useAppSelector((s: RootState) => s.localCart.items);
   const isAuth = !!auth?.user?.id;
 
   // Backend RTK Query Hooks
-  const { data: backendCartData } = useGetCartQuery(undefined);
+  const {
+    data: backendCartData,
+    refetch: refetchBackend,
+    isLoading,
+  } = useGetCartQuery(undefined);
   const [addToBackend] = useAddToCartMutation();
   const [updateBackend] = useUpdateCartMutation();
   const [removeBackend] = useRemoveCartMutation();
   const [clearBackend] = useClearCartMutation();
+  // 🧠 Re-compute cart whenever auth/local/backend changes
+  const cart: CartItem[] = useMemo(
+    () => (isAuth ? backendCartData?.data || [] : localCart),
+    [isAuth, backendCartData, localCart]
+  );
 
+  // 🔁 Auto refetch cart when user logs in
   useEffect(() => {
-    const cartData = isAuth ? backendCartData?.data || [] : localCart;
-    console.log("cartData", cartData);
-    setCart(cartData);
-  }, []);
+    if (isAuth) refetchBackend();
+  }, [isAuth, refetchBackend]);
 
   const add = async (item: CartItem) => {
     if (isAuth) {
       await addToBackend({
-        product_id: item.id,
+        product_id: item.product.id,
         shop_id: item.shop_id,
         quantity: item.quantity,
       });
@@ -76,5 +98,5 @@ export const useCartService = () => {
     }
   };
 
-  return { cart, add, update, remove, clear, isAuth };
+  return { cart, add, update, remove, clear, isAuth, loading: isLoading };
 };

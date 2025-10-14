@@ -1,5 +1,4 @@
 "use client";
-import { CartProvider } from "@/context/cartContext";
 import { AppStore, makeStore } from "@/store";
 import { setAuth } from "@/store/features/authSlice";
 import { useRef } from "react";
@@ -26,9 +25,5 @@ export default function StoreProvider({
     store.dispatch(setAuth(serverAuth));
   }
 
-  return (
-    <Provider store={storeRef.current}>
-      <CartProvider>{children}</CartProvider>
-    </Provider>
-  );
+  return <Provider store={storeRef.current}>{children}</Provider>;
 }

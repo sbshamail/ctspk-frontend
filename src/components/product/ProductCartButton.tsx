@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/context/cartContext";
+import { useCartService } from "@/lib/cartService";
 import { Plus, ShoppingCart } from "lucide-react";
 import React, { FC } from "react";
 
@@ -16,7 +16,7 @@ export const ProductCartButton: FC<Props> = ({
   children,
   product,
 }) => {
-  const { add } = useCart();
+  const { add } = useCartService();
   return (
     <div onClick={(e) => e.preventDefault()}>
       <div className="relative">
@@ -24,13 +24,9 @@ export const ProductCartButton: FC<Props> = ({
           onClick={(e) => {
             e.preventDefault();
             add({
-              id: product.id,
-              shop_id: product.shop.id,
-              name: product.name,
-              price: product.price,
-              salePrice: product.salePrice,
-              image: product.image,
+              product: product,
               quantity: 1,
+              shop_id: product.shop.id,
             });
           }}
           className="relative inline-flex cursor-pointer items-center justify-center text-primary hover:text-primary/80"

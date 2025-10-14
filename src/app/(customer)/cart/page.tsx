@@ -1,13 +1,9 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
-import { loadCartStorage } from "@/action/cart";
-import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
-// import { useCart } from "@/context/cartContext";
 import { useCartService } from "@/lib/cartService";
-import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -18,61 +14,13 @@ const breadcrumbData = [
   { link: "/cart", name: "Cart" },
 ];
 
-const syncCartWithBackend = async (auth: any) => {
-  const localCart = loadCartStorage();
-  const res = await fetchApi({
-    url: "cart/list",
-    method: "GET",
-    token: auth.access_token,
-  });
-  const backendCart = res?.data || [];
-
-  for (const item of localCart) {
-    const exists = backendCart.find((p: any) => p.product_id === item.id);
-    if (exists) {
-      // ⚠️ show popup if conflict
-      alert(
-        `"${item.name}" already exists in your online cart. Choose version to keep.`
-      );
-      continue;
-    }
-
-    await fetchApi({
-      url: "cart/create",
-      method: "POST",
-      data: {
-        product_id: item.id,
-        shop_id: item.shop_id,
-        quantity: item.quantity,
-      },
-    });
-  }
-
-  // Refresh from server
-  const updatedList = await fetchApi({
-    url: "cart/list",
-    method: "GET",
-    token: auth.access_token,
-  });
-  return updatedList;
-};
-
 const CartPage = () => {
-  const { cart, update, remove, clear } = useCartService();
-  const { data: auth } = useSelection("auth");
-  console.log({ cart });
-  // const { cart, update, remove, clear, clearCartStorage } = useCart();
-
-  // useEffect(() => {
-  //   if (auth?.access_token) {
-  //     // clearCartStorage();
-  //     // // merge local + backend cart
-  //     // syncCartWithBackend(auth);
-  //   }
-  // }, [auth]);
+  const { cart, update, remove, clear, loading } = useCartService();
 
   // State for selected items
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [selectedItems, setSelectedItems] = useState<number[]>(
+    cart.map((item: any) => item.id)
+  );
 
   // Derived: selected items list
   const selectedProducts = useMemo(
@@ -84,7 +32,8 @@ const CartPage = () => {
   const selectedTotal = useMemo(
     () =>
       selectedProducts.reduce(
-        (acc, item) => acc + (item.salePrice ?? item.price) * item.quantity,
+        (acc, item) =>
+          acc + (item.product.salePrice ?? item.product.price) * item.quantity,
         0
       ),
     [selectedProducts]
@@ -96,7 +45,7 @@ const CartPage = () => {
     if (isAllSelected) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(cart.map((item: any) => item.id));
+      setSelectedItems(cart.map((item) => item.product.id));
     }
   };
 
@@ -111,6 +60,7 @@ const CartPage = () => {
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
+      {loading && <p>Loading...</p>}
       <div className=" mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2">Your Cart</h1>
         <p className="text-gray-500 mb-6">
@@ -138,34 +88,32 @@ const CartPage = () => {
               </div>
 
               {cart.map((item: any) => {
-                const unitPrice = item.salePrice ?? item.price;
+                const { salePrice, price, name, image, id } =
+                  item.product || {};
+                const unitPrice = salePrice ?? price;
                 const subtotal = unitPrice * item.quantity;
 
                 return (
                   <div
-                    key={item.id}
+                    key={id}
                     className="grid grid-cols-7 items-center border-t px-4 py-3 text-sm"
                   >
                     {/* Checkbox */}
                     <div>
                       <input
                         type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={() => toggleSelectOne(item.id)}
+                        checked={selectedItems.includes(id)}
+                        onChange={() => toggleSelectOne(id)}
                       />
                     </div>
 
                     {/* Product */}
                     <div className="col-span-2 flex items-center space-x-3">
                       <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                        {item?.image?.original ? (
+                        {image?.original ? (
                           <Image
-                            src={
-                              item.image.thumbnail ??
-                              item.image.original ??
-                              item.image
-                            }
-                            alt={item.name}
+                            src={image.thumbnail ?? image.original ?? image}
+                            alt={name}
                             width={64}
                             height={64}
                             className="object-cover"
@@ -177,7 +125,7 @@ const CartPage = () => {
                         )}
                       </div>
                       <div>
-                        <h2 className="font-medium">{item.name}</h2>
+                        <h2 className="font-medium">{name}</h2>
                         {/* <p className="text-xs text-gray-500">★★★★☆ (4.0)</p> */}
                       </div>
                     </div>
@@ -191,9 +139,7 @@ const CartPage = () => {
                         type="number"
                         min={1}
                         value={item.quantity}
-                        onChange={(e) =>
-                          update(item.id, parseInt(e.target.value))
-                        }
+                        onChange={(e) => update(id, parseInt(e.target.value))}
                         className="w-16 border rounded px-2 py-1 text-center"
                       />
                     </div>
@@ -204,7 +150,7 @@ const CartPage = () => {
                     {/* Remove */}
                     <div className="flex justify-center">
                       <button
-                        onClick={() => remove(item.id)}
+                        onClick={() => remove(id)}
                         className="text-gray-400 hover:text-red-500"
                       >
                         🗑

@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/context/cartContext";
+import { useCartService } from "@/lib/cartService";
 import { ImageType } from "@/utils/modelTypes";
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
     name: string;
     image: ImageType;
     price: number;
-    salePrice?: number;
+    sale_price?: number;
     max_price?: number;
     min_price?: number;
     category: { id: number; name: string };
@@ -26,10 +26,10 @@ interface Props {
 }
 
 const SingleProductAddToCart = ({ product }: Props) => {
-  const { cart, add, update } = useCart();
+  const { cart, add, update } = useCartService();
 
   // find if product already in cart
-  const existingItem = cart.find((item) => item.id === product.id);
+  const existingItem = cart.find((item) => item.product.id == product.id);
   const quantity = existingItem?.quantity ?? 1;
   const quota = product.quantity ?? 0;
 
@@ -44,13 +44,9 @@ const SingleProductAddToCart = ({ product }: Props) => {
       // if not in cart, add first
       if (!existingItem) {
         add({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          salePrice: product.salePrice,
-          image: product.image,
           quantity: 1,
           shop_id: product.shop.id,
+          product: product,
         });
       } else {
         update(product.id, quantity + 1);
@@ -61,13 +57,9 @@ const SingleProductAddToCart = ({ product }: Props) => {
   const handleAddToCart = () => {
     if (!existingItem) {
       add({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        salePrice: product.salePrice,
-        image: product.image,
         quantity: 1,
         shop_id: product.shop.id,
+        product: product,
       });
     }
   };
