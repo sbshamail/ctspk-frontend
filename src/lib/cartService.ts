@@ -45,6 +45,7 @@ export const useCartService = () => {
   const {
     data: backendCartData,
     refetch: refetchBackend,
+    isFetching,
     isLoading,
   } = useGetCartQuery(undefined);
   const [addToBackend] = useAddToCartMutation();
@@ -53,7 +54,7 @@ export const useCartService = () => {
   const [clearBackend] = useClearCartMutation();
   // 🧠 Re-compute cart whenever auth/local/backend changes
   const cart: CartItem[] = useMemo(
-    () => (isAuth ? backendCartData?.data || [] : localCart),
+    () => (isAuth ? backendCartData || [] : localCart),
     [isAuth, backendCartData, localCart]
   );
 

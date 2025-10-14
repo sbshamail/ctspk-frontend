@@ -55,12 +55,14 @@ export const cartApi = createApi({
         try {
           const { data: res } = await queryFulfilled;
           const updatedItem = res?.data;
+          console.log(updatedItem);
           dispatch(
             cartApi.util.updateQueryData("getCart", undefined, (draft) => {
               if (!Array.isArray(draft)) return;
               const idx = draft.findIndex(
-                (i: CartItem) => i.product.id === updatedItem.product.id
+                (i: CartItem) => i.product.id === updatedItem.product_id
               );
+
               if (idx >= 0) draft[idx] = updatedItem;
             })
           );
@@ -72,7 +74,20 @@ export const cartApi = createApi({
         url: `/delete/${product_id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(product_id, { dispatch, queryFulfilled }) {
+        // Optimistic remove
+        const patch = dispatch(
+          cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+            if (!Array.isArray(draft)) return;
+            return draft.filter((i: CartItem) => i.product.id !== product_id);
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo(); // rollback on failure
+        }
+      },
     }),
     clearCart: builder.mutation({
       query: () => ({

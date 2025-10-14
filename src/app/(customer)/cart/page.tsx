@@ -3,7 +3,7 @@
 import { Screen } from "@/@core/layout";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
-import { useCartService } from "@/lib/cartService";
+import { CartItem, useCartService } from "@/lib/cartService";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -19,12 +19,13 @@ const CartPage = () => {
 
   // State for selected items
   const [selectedItems, setSelectedItems] = useState<number[]>(
-    cart.map((item: any) => item.id)
+    cart.map((item: CartItem) => item.product.id)
   );
 
   // Derived: selected items list
   const selectedProducts = useMemo(
-    () => cart.filter((item: any) => selectedItems.includes(item.id)),
+    () =>
+      cart.filter((item: CartItem) => selectedItems.includes(item.product.id)),
     [cart, selectedItems]
   );
 
