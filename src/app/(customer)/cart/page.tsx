@@ -5,12 +5,13 @@ import { loadCartStorage } from "@/action/cart";
 import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/context/cartContext";
+// import { useCart } from "@/context/cartContext";
+import { useCartService } from "@/lib/cartService";
 import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -57,16 +58,18 @@ const syncCartWithBackend = async (auth: any) => {
 };
 
 const CartPage = () => {
+  const { cart, update, remove, clear } = useCartService();
   const { data: auth } = useSelection("auth");
-  const { cart, update, remove, clear, clearCartStorage } = useCart();
+  console.log({ cart });
+  // const { cart, update, remove, clear, clearCartStorage } = useCart();
 
-  useEffect(() => {
-    if (auth?.access_token) {
-      // clearCartStorage();
-      // // merge local + backend cart
-      // syncCartWithBackend(auth);
-    }
-  }, [auth]);
+  // useEffect(() => {
+  //   if (auth?.access_token) {
+  //     // clearCartStorage();
+  //     // // merge local + backend cart
+  //     // syncCartWithBackend(auth);
+  //   }
+  // }, [auth]);
 
   // State for selected items
   const [selectedItems, setSelectedItems] = useState<number[]>([]);

@@ -1,6 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./features/authSlice";
 import loadingReducer from "./features/loadingSlice";
+import cartReducer from "./features/localCartSlice";
+import { cartApi } from "./services/cartApi";
 import { categoryApi } from "./services/categoryApi";
 import { productApi } from "./services/productApi";
 export const makeStore = () =>
@@ -9,13 +11,16 @@ export const makeStore = () =>
       // Add API reducer when you create it
       [productApi.reducerPath]: productApi.reducer,
       [categoryApi.reducerPath]: categoryApi.reducer,
+      [cartApi.reducerPath]: cartApi.reducer,
+      localCart: cartReducer,
       auth: authReducer,
       loading: loadingReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(
         productApi.middleware,
-        categoryApi.middleware
+        categoryApi.middleware,
+        cartApi.middleware
       ), // Add API middleware(),
   });
 
