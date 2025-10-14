@@ -1,4 +1,4 @@
-import { AuthDataType } from "@/utils/modelTypes";
+import { AuthDataType, UserDataType } from "@/utils/modelTypes";
 import Cookies from "js-cookie";
 
 export const saveSession = (
@@ -46,6 +46,11 @@ export function getSession<T = AuthDataType>(
     return session as T;
   }
 }
+export const getAuth = () => {
+  const user = getSession<UserDataType>("user_session");
+  const token = getSession<"string">("access_token");
+  return { user, token };
+};
 export const clearSession = () => {
   console.log("clear session");
   Cookies.remove("access_token");

@@ -26,7 +26,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCart(loadCart());
   }, []);
 
-  const add = (item: CartItem) => setCart([...addToCart(item)]);
+  const add = (item: CartItem) => {
+    // console.log(item);
+    return setCart([...addToCart(item)]);
+  };
   const update = (id: string | number, qty: number) =>
     setCart([...updateCartItem(id, qty)]);
   const remove = (id: string | number) => setCart([...removeCartItem(id)]);

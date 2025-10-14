@@ -29,6 +29,10 @@ interface Product {
   category: { id: number; name: string };
   slug: string;
   gallery?: ImageType[];
+  shop: {
+    id: number;
+    name: string;
+  };
 
   rating: number;
   quantity: number;

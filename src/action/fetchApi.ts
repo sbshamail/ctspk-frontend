@@ -1,5 +1,5 @@
 import { API_URL } from "../../config";
-
+import { getSession } from "./auth";
 interface IFetchApi {
   url: string;
   token?: string;
@@ -15,6 +15,7 @@ export const fetchApi = async ({
   token,
   options,
 }: IFetchApi) => {
+  const sessionToken = await getSession("access_token");
   try {
     const baseUrl = `${API_URL}/${url}`;
 
@@ -24,13 +25,14 @@ export const fetchApi = async ({
     };
 
     // ✅ Add Authorization header if token exists
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    if (token || sessionToken) {
+      headers["Authorization"] = `Bearer ${token || sessionToken}`;
     }
 
     // Build request init
     let fetchOptions: RequestInit = {
       method,
+      headers,
       ...options,
     };
 

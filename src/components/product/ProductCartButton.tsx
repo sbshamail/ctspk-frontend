@@ -25,6 +25,7 @@ export const ProductCartButton: FC<Props> = ({
             e.preventDefault();
             add({
               id: product.id,
+              shop_id: product.shop.id,
               name: product.name,
               price: product.price,
               salePrice: product.salePrice,

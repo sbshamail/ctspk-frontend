@@ -1,4 +1,6 @@
 import { ImageType } from "@/utils/modelTypes";
+import { getAuth } from "./auth";
+import { fetchApi } from "./fetchApi";
 
 // utils/cart.ts
 export interface CartItem {
@@ -22,8 +24,34 @@ export const loadCart = (): CartItem[] => {
 export const saveCart = (cart: CartItem[]) => {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 };
+export const clearCart = () => {
+  localStorage.removeItem(CART_KEY);
+};
+/* ------------------------- 🧠 BACKEND SYNC HELPERS ------------------------ */
 
 export const addToCart = (item: CartItem) => {
+  const { user, token } = getAuth() || {};
+
+  // if (user?.id && token) {
+  //   // ✅ Logged-in user → save directly in backend
+  //   const body = {
+  //     product_id: item.id,
+  //     shop_id: item.shop_id,
+  //     quantity: item.quantity,
+  //   };
+  //   const res = await fetchApi({
+  //     url: "cart/create",
+  //     method: "POST",
+  //     data: body,
+  //     token,
+  //   });
+
+  //   // ✅ Clear local storage cart after sync
+  //   clearCart();
+
+  //   return res?.data || [];
+  // }
+
   const cart = loadCart();
   const index = cart.findIndex((i) => i.id === item.id);
   if (index >= 0) {
@@ -48,8 +76,4 @@ export const removeCartItem = (id: string | number) => {
   let cart = loadCart().filter((i) => i.id !== id);
   saveCart(cart);
   return cart;
-};
-
-export const clearCart = () => {
-  localStorage.removeItem(CART_KEY);
 };

@@ -11,7 +11,7 @@ import ProductImage from "./ProductImage";
 interface Props {
   name: string;
   slug?: string;
-  link?: string;
+  shop: { id: number; name: string };
   image: string;
   rating?: number;
   price: number;

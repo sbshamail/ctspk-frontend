@@ -39,30 +39,30 @@ const syncCartWithBackend = async (auth: any) => {
       method: "POST",
       data: {
         product_id: item.id,
-        shop_id: item.shop_id || 0,
+        shop_id: item.shop_id,
         quantity: item.quantity,
       },
     });
   }
 
   // Refresh from server
-  const updated = await fetchApi({
+  const updatedList = await fetchApi({
     url: "cart/list",
     method: "GET",
     token: auth.access_token,
   });
-  return updated;
+  return updatedList;
 };
 
 const CartPage = () => {
   const { data: auth } = useSelection("auth");
 
-  useEffect(() => {
-    if (auth?.access_token) {
-      // merge local + backend cart
-      syncCartWithBackend(auth);
-    }
-  }, [auth]);
+  // useEffect(() => {
+  //   if (auth?.access_token) {
+  //     // merge local + backend cart
+  //     syncCartWithBackend(auth);
+  //   }
+  // }, [auth]);
   const { cart, update, remove, clear } = useCart();
 
   // State for selected items
