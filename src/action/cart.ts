@@ -25,9 +25,18 @@ export const saveCart = (cart: CartItem[]) => {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 };
 export const clearCart = () => {
-  localStorage.removeItem(CART_KEY);
+  const { user, token } = getAuth() || {};
+  if (user?.id && token) {
+    // ✅ Logged-in user → delete from backend
+    fetchApi({
+      url: "cart/delete-all",
+      method: "DELETE",
+      token,
+    });
+  } else {
+    localStorage.removeItem(CART_KEY);
+  }
 };
-/* ------------------------- 🧠 BACKEND SYNC HELPERS ------------------------ */
 
 export const addToCart = async (item: CartItem) => {
   if (item.quantity <= 0 || !item.id || !item.shop_id) return;
@@ -49,42 +58,76 @@ export const addToCart = async (item: CartItem) => {
     });
 
     return res?.data || [];
-  }
-
-  const cart = loadCart();
-  const index = cart.findIndex((i) => i.id === item.id);
-  if (index >= 0) {
-    cart[index].quantity += item.quantity;
   } else {
-    cart.push(item);
+    const cart = loadCart();
+    const index = cart.findIndex((i) => i.id === item.id);
+    if (index >= 0) {
+      cart[index].quantity += item.quantity;
+    } else {
+      cart.push(item);
+    }
+    saveCart(cart);
+    return cart;
   }
-  saveCart(cart);
-  return cart;
 };
 
-export const updateCartItem = async (id: string | number, qty: number) => {
-  if (qty <= 0 || !id) return;
+export const updateCartItem = async (
+  product_id: string | number,
+  qty: number
+) => {
+  if (qty <= 0 || !product_id) return;
   const { user, token } = getAuth();
   if (user?.id && token) {
     // ✅ Backend update
     const res = await fetchApi({
-      url: `cart/update/${id}`,
+      url: `cart/update/${product_id}`,
       method: "PUT",
       data: { quantity: qty },
       token,
     });
     return res?.data || [];
+  } else {
+    let cart = loadCart();
+    cart = cart.map((item) =>
+      item.id === product_id ? { ...item, quantity: qty } : item
+    );
+    saveCart(cart);
+    return cart;
   }
-  let cart = loadCart();
-  cart = cart.map((item) =>
-    item.id === id ? { ...item, quantity: qty } : item
-  );
-  saveCart(cart);
-  return cart;
 };
 
-export const removeCartItem = (id: string | number) => {
-  let cart = loadCart().filter((i) => i.id !== id);
-  saveCart(cart);
-  return cart;
+export const removeCartItem = async (product_id: string | number) => {
+  const { user, token } = getAuth();
+
+  if (user?.id && token) {
+    // ✅ Backend delete
+    const res = await fetchApi({
+      url: `cart/delete/${product_id}`,
+      method: "DELETE",
+      token,
+    });
+    return res?.data || [];
+  } else {
+    let cart = loadCart().filter((i) => i.id !== product_id);
+    saveCart(cart);
+    return cart;
+  }
+};
+
+export const getCartList = async () => {
+  const { user, token } = getAuth();
+
+  if (user?.id && token) {
+    // ✅ Fetch backend cart
+    const res = await fetchApi({
+      url: "cart/list",
+      method: "GET",
+      token,
+    });
+    clearCart(); // clear local copy
+    return res?.data || [];
+  } else {
+    // 🧩 Guest mode
+    return loadCart();
+  }
 };

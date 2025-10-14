@@ -35,7 +35,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     let updatedCart = await updateCartItem(id, qty);
     setCart([...updatedCart]);
   };
-  const remove = (id: string | number) => setCart([...removeCartItem(id)]);
+  const remove = async (id: string | number) => {
+    let updatedCart = await removeCartItem(id);
+    return setCart([...updatedCart]);
+  };
   const clear = () => {
     clearCart();
     setCart([]);

@@ -10,7 +10,7 @@ import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -58,14 +58,15 @@ const syncCartWithBackend = async (auth: any) => {
 
 const CartPage = () => {
   const { data: auth } = useSelection("auth");
-
-  // useEffect(() => {
-  //   if (auth?.access_token) {
-  //     // merge local + backend cart
-  //     syncCartWithBackend(auth);
-  //   }
-  // }, [auth]);
   const { cart, update, remove, clear } = useCart();
+
+  useEffect(() => {
+    if (auth?.access_token) {
+      // clear();
+      // // merge local + backend cart
+      // syncCartWithBackend(auth);
+    }
+  }, [auth]);
 
   // State for selected items
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
