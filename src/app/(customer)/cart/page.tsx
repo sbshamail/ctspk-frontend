@@ -9,7 +9,9 @@ import { useCart } from "@/context/cartContext";
 import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+
+import { useMemo, useState } from "react";
+
 const breadcrumbData = [
   { link: "/", name: "Home" },
   { link: "/cart", name: "Cart" },

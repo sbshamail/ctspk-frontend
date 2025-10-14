@@ -29,28 +29,27 @@ export const clearCart = () => {
 };
 /* ------------------------- 🧠 BACKEND SYNC HELPERS ------------------------ */
 
-export const addToCart = (item: CartItem) => {
+export const addToCart = async (item: CartItem) => {
+  if (item.quantity <= 0 || !item.id || !item.shop_id) return;
+
   const { user, token } = getAuth() || {};
 
-  // if (user?.id && token) {
-  //   // ✅ Logged-in user → save directly in backend
-  //   const body = {
-  //     product_id: item.id,
-  //     shop_id: item.shop_id,
-  //     quantity: item.quantity,
-  //   };
-  //   const res = await fetchApi({
-  //     url: "cart/create",
-  //     method: "POST",
-  //     data: body,
-  //     token,
-  //   });
+  if (user?.id && token) {
+    // ✅ Logged-in user → save directly in backend
+    const body = {
+      product_id: item.id,
+      shop_id: item.shop_id,
+      quantity: item.quantity,
+    };
+    const res = await fetchApi({
+      url: "cart/create",
+      method: "POST",
+      data: body,
+      token,
+    });
 
-  //   // ✅ Clear local storage cart after sync
-  //   clearCart();
-
-  //   return res?.data || [];
-  // }
+    return res?.data || [];
+  }
 
   const cart = loadCart();
   const index = cart.findIndex((i) => i.id === item.id);
@@ -63,7 +62,19 @@ export const addToCart = (item: CartItem) => {
   return cart;
 };
 
-export const updateCartItem = (id: string | number, qty: number) => {
+export const updateCartItem = async (id: string | number, qty: number) => {
+  if (qty <= 0 || !id) return;
+  const { user, token } = getAuth();
+  if (user?.id && token) {
+    // ✅ Backend update
+    const res = await fetchApi({
+      url: `cart/update/${id}`,
+      method: "PUT",
+      data: { quantity: qty },
+      token,
+    });
+    return res?.data || [];
+  }
   let cart = loadCart();
   cart = cart.map((item) =>
     item.id === id ? { ...item, quantity: qty } : item

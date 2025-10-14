@@ -1,13 +1,13 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
 import {
-  CartItem,
-  loadCart,
   addToCart,
-  updateCartItem,
-  removeCartItem,
+  CartItem,
   clearCart,
+  loadCart,
+  removeCartItem,
+  updateCartItem,
 } from "@/action/cart";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface CartContextType {
   cart: CartItem[];
@@ -26,12 +26,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setCart(loadCart());
   }, []);
 
-  const add = (item: CartItem) => {
-    // console.log(item);
-    return setCart([...addToCart(item)]);
+  const add = async (item: CartItem) => {
+    const updatedCart = await addToCart(item); // ✅ wait for backend/local update
+    setCart([...updatedCart]);
   };
-  const update = (id: string | number, qty: number) =>
-    setCart([...updateCartItem(id, qty)]);
+
+  const update = async (id: string | number, qty: number) => {
+    let updatedCart = await updateCartItem(id, qty);
+    setCart([...updatedCart]);
+  };
   const remove = (id: string | number) => setCart([...removeCartItem(id)]);
   const clear = () => {
     clearCart();
