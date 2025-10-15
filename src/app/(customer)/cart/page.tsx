@@ -2,6 +2,7 @@
 
 import { Screen } from "@/@core/layout";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
+import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { Button } from "@/components/ui/button";
 import { CartItem, useCartService } from "@/lib/cartService";
 import Image from "next/image";
@@ -19,7 +20,7 @@ const CartPage = () => {
 
   // State for selected items
   const [selectedItems, setSelectedItems] = useState<number[]>(
-    cart.map((item: CartItem) => item.product.id)
+    cart.map((item: CartItem) => item?.product?.id)
   );
 
   // Derived: selected items list
@@ -56,12 +57,12 @@ const CartPage = () => {
     );
   };
 
+  if (loading) return <LayoutSkeleton main={true} />;
   if (cart.length === 0) return <p className="p-6">Your cart is empty.</p>;
 
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
-      {loading && <p>Loading...</p>}
       <div className=" mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2">Your Cart</h1>
         <p className="text-gray-500 mb-6">

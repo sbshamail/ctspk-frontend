@@ -54,7 +54,7 @@ export const fetchApi = async ({
     const response = await fetch(baseUrl, fetchOptions);
 
     if (!response.ok) {
-      console.error(`API error: ${response.status} - ${response.statusText}`);
+      console.log(`API error: ${response.status} - ${response.statusText}`);
       return null;
     }
 
@@ -65,7 +65,7 @@ export const fetchApi = async ({
     }
     return response.text();
   } catch (error) {
-    console.error("fetchApi error:", error);
+    console.log("fetchApi error:", error);
     return null;
   }
 };

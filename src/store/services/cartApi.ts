@@ -45,30 +45,40 @@ export const cartApi = createApi({
         } catch {}
       },
     }),
-    updateCart: builder.mutation({
-      query: ({ product_id, quantity }) => ({
-        url: `/update/${product_id}`,
-        method: "PUT",
-        body: { quantity },
-      }),
-      async onQueryStarted({ product_id }, { dispatch, queryFulfilled }) {
-        try {
-          const { data: res } = await queryFulfilled;
-          const updatedItem = res?.data;
-          console.log(updatedItem);
-          dispatch(
-            cartApi.util.updateQueryData("getCart", undefined, (draft) => {
-              if (!Array.isArray(draft)) return;
-              const idx = draft.findIndex(
-                (i: CartItem) => i.product.id === updatedItem.product_id
-              );
+    // not required for card
+    // updateCart: builder.mutation({
+    //   // 👇 Dummy query to satisfy RTK Query
+    //   query: ({ product_id, quantity }) => ({
+    //     url: `/cart/update/${product_id}`, // just placeholder
+    //     method: "PUT",
+    //     body: { quantity },
+    //   }),
 
-              if (idx >= 0) draft[idx] = updatedItem;
-            })
-          );
-        } catch {}
-      },
-    }),
+    //   // 👇 Pure Redux local update logic
+    //   async onQueryStarted({ product_id, quantity }, { dispatch }) {
+    //     console.log("Simulating local Redux update:", { product_id, quantity });
+
+    //     dispatch(
+    //       cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+    //         if (!Array.isArray(draft)) return;
+
+    //         const idx = draft.findIndex(
+    //           (i: CartItem) =>
+    //             i.product.id === product_id || i.product?.id === product_id
+    //         );
+
+    //         if (idx >= 0) {
+    //           // 🔥 Force new object & array reference for UI re-render
+    //           const updated = { ...draft[idx], quantity };
+    //           draft.splice(idx, 1, updated);
+    //         }
+    //       })
+    //     );
+
+    //     console.log("Redux cart updated successfully ✅");
+    //   },
+    // }),
+
     removeCart: builder.mutation({
       query: (product_id) => ({
         url: `/delete/${product_id}`,
@@ -102,7 +112,6 @@ export const cartApi = createApi({
 export const {
   useGetCartQuery,
   useAddToCartMutation,
-  useUpdateCartMutation,
   useRemoveCartMutation,
   useClearCartMutation,
 } = cartApi;
