@@ -111,7 +111,7 @@ const ProductPage = () => {
   ];
   return (
     <>
-      <div className="flex flex-1 gap-4 pt-10">
+      <div className="w-full flex flex-1 gap-4 pt-10">
         <div className=" hidden lg:flex relative ">
           <div className=" lg:w-80 h-full overflow-y-auto px-4 py-4">
             <ProductFilterSidebar
@@ -122,15 +122,15 @@ const ProductPage = () => {
           </div>
           <div className="absolute right-0 h-full border border-border"></div>
         </div>
-        <div>
-          <div className="flex justify-between items-center pb-4">
+        <div className="w-full">
+          <div className="w-full flex justify-between items-center pb-4">
             <BreadcrumbSimple data={breadcrumbData} />
             <div>
               <SortDropdown addQuery={addQuery} />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5 gap-4">
+          <div className="w-full grid  grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5 gap-4">
             <ProductInfiniteScroll
               defaultLimit={defaultLimit}
               data={result}

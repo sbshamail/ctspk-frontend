@@ -2,9 +2,9 @@ import React from "react";
 
 const ProductCardSkeleton = () => {
   return (
-    <div className="w-full rounded-lg border border-border bg-card shadow animate-pulse overflow-hidden">
+    <div className=" w-full  rounded-lg border border-border bg-card shadow animate-pulse overflow-hidden">
       {/* Image section */}
-      <div className="relative w-full h-56  bg-muted" />
+      <div className="relative max-w-full h-56  bg-muted" />
 
       {/* Badge / top-left */}
       <div className="absolute top-3 left-3 h-5 w-14 rounded-md bg-accent" />
