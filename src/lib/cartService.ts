@@ -120,14 +120,32 @@ export const useCartService = () => {
   const update = async (id: string | number, qty: number) => {
     if (isAuth) {
       // Instant Redux update
+
+      // dispatch(
+      //   cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+      //     if (!Array.isArray(draft)) return;
+      //     const idx = draft.findIndex((i) => i.product.id === id);
+      //     if (idx >= 0) draft[idx] = { ...draft[idx], quantity: qty };
+      //   })
+      // );
+      // Make sure the cache exists
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
-          const idx = draft.findIndex((i) => i.product.id === id);
-          if (idx >= 0) draft[idx] = { ...draft[idx], quantity: qty };
+
+          const idx = draft.findIndex(
+            (i) => i.product?.id === id || i.product_id === id || i.id === id
+          );
+
+          if (idx >= 0) {
+            draft[idx] = { ...draft[idx], quantity: qty };
+            console.log("✅ Cart updated locally", draft[idx]);
+          } else {
+            console.warn("❌ Cart item not found for id:", id);
+          }
         })
       );
-      debouncedUpdate(id, qty);
+      // debouncedUpdate(id, qty);
     } else {
       dispatch(updateItem({ id, qty }));
     }
