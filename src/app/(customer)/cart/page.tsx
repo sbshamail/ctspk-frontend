@@ -5,9 +5,11 @@ import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { Button } from "@/components/ui/button";
 import { CartItem, useCartService } from "@/lib/cartService";
+import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
+import { setReducer } from "@/store/common/action-reducer";
 import { useMemo, useState } from "react";
 
 const breadcrumbData = [
@@ -17,6 +19,8 @@ const breadcrumbData = [
 
 const CartPage = () => {
   const { cart, update, remove, clear, loading } = useCartService();
+  const setSelectedCart = setReducer("selectedCart");
+  const { data: selectedCart, dispatch } = useSelection("selectedCart", true);
 
   // State for selected items
   const [selectedItems, setSelectedItems] = useState<number[]>(

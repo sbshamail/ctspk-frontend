@@ -4,14 +4,14 @@ import { ThemeToggle } from "@/@core/theme/ThemeToggle";
 import SiginModal from "@/components/modals/SiginModal";
 import { cn } from "@/lib/utils";
 
+import { useSelection } from "@/lib/useSelection";
 import { Truck, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useSelection } from "@/lib/useSelection";
 import AuthHeaderDropdown from "../dropdown/AuthHeaderDropdown";
 export default function Topbar() {
   const [openSiginModal, setOpenSiginModal] = useState(false);
-  const { data: auth, isLoading } = useSelection("auth", true);
+  const { data: auth, isLoading } = useSelection("auth");
 
   return (
     <>

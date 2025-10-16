@@ -71,7 +71,6 @@ export const useCartService = () => {
     () => (isAuth ? backendCartData || [] : localCart),
     [isAuth, localCart, backendCartData]
   );
-  console.log(cart);
   // 🔁 Auto refetch cart when user logs in
   useDidUpdateEffect(() => {
     if (isAuth) refetchBackend();
@@ -96,16 +95,6 @@ export const useCartService = () => {
       })
     );
   };
-  function debounce<T extends (...args: any[]) => void>(fn: T, delay = 2000) {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    return (...args: Parameters<T>) => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        timer = null;
-        fn(...args);
-      }, delay);
-    };
-  }
 
   const syncCartUpdate = async (id: number | string, qty: number) => {
     try {
@@ -125,16 +114,11 @@ export const useCartService = () => {
     }
   };
 
-  // ✅ Create one debounced version
-  // const debouncedUpdate = useMemo(
-  //   () => debounce(syncCartUpdate, 2000),
-  //   [] // ✅ same instance for the lifetime of the component
-  // );
   const debouncedUpdate = useDebounce(syncCartUpdate, 1000, (id, qty) => id);
 
   const update = async (id: string | number, qty: number) => {
     if (isAuth) {
-      // Instant Redux update
+      // Instant Redux Query update manually
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
