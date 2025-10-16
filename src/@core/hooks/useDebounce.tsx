@@ -2,21 +2,28 @@ import { useMemo, useRef } from "react";
 
 export function useDebounce<T extends (...args: any[]) => void>(
   fn: T,
-  delay = 300
+  delay = 300,
+  getKey?: (...args: Parameters<T>) => string | number
 ) {
   const fnRef = useRef(fn);
-  fnRef.current = fn; // always latest fn
+  fnRef.current = fn;
+
+  const timers = useRef<Record<string | number, ReturnType<typeof setTimeout>>>(
+    {}
+  );
 
   const debouncedFn = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
     return (...args: Parameters<T>) => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        timer = null;
-        fnRef.current(...args); // use latest function
+      const key = getKey ? getKey(...args) : "default";
+
+      if (timers.current[key]) clearTimeout(timers.current[key]);
+
+      timers.current[key] = setTimeout(() => {
+        delete timers.current[key];
+        fnRef.current(...args);
       }, delay);
     };
-  }, [delay]); // 👈 only recreate if delay changes
+  }, [delay, getKey]);
 
   return debouncedFn;
 }

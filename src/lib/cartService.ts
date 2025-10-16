@@ -44,20 +44,34 @@ export const useCartService = () => {
   const isAuth = !!auth?.user?.id;
 
   // Backend RTK Query Hooks
+  // const {
+  //   data: backendCartData,
+  //   refetch: refetchBackend,
+  //   isFetching,
+  //   isLoading,
+  // } = useGetCartQuery(undefined);
   const {
-    data: backendCartData,
+    data: backendCartData = [],
     refetch: refetchBackend,
     isFetching,
     isLoading,
-  } = useGetCartQuery(undefined);
+  } = useGetCartQuery(undefined, {
+    selectFromResult: ({ data, isFetching, isLoading }) => ({
+      data,
+      isFetching,
+      isLoading,
+    }),
+  });
+
   const [addToBackend] = useAddToCartMutation();
   const [removeBackend] = useRemoveCartMutation();
   const [clearBackend] = useClearCartMutation();
   // 🧠 Re-compute cart whenever auth/local/backend changes
   const cart: CartItem[] = useMemo(
     () => (isAuth ? backendCartData || [] : localCart),
-    [isAuth, isFetching, localCart]
+    [isAuth, localCart, backendCartData]
   );
+  console.log(cart);
   // 🔁 Auto refetch cart when user logs in
   useDidUpdateEffect(() => {
     if (isAuth) refetchBackend();
@@ -116,36 +130,26 @@ export const useCartService = () => {
   //   () => debounce(syncCartUpdate, 2000),
   //   [] // ✅ same instance for the lifetime of the component
   // );
-  const debouncedUpdate = useDebounce(syncCartUpdate, 1000);
+  const debouncedUpdate = useDebounce(syncCartUpdate, 1000, (id, qty) => id);
+
   const update = async (id: string | number, qty: number) => {
     if (isAuth) {
       // Instant Redux update
-
-      // dispatch(
-      //   cartApi.util.updateQueryData("getCart", undefined, (draft) => {
-      //     if (!Array.isArray(draft)) return;
-      //     const idx = draft.findIndex((i) => i.product.id === id);
-      //     if (idx >= 0) draft[idx] = { ...draft[idx], quantity: qty };
-      //   })
-      // );
-      // Make sure the cache exists
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
 
-          const idx = draft.findIndex(
-            (i) => i.product?.id === id || i.product_id === id || i.id === id
-          );
+          const idx = draft.findIndex((i: CartItem) => i.product.id === id);
 
           if (idx >= 0) {
-            draft[idx] = { ...draft[idx], quantity: qty };
-            console.log("✅ Cart updated locally", draft[idx]);
-          } else {
-            console.warn("❌ Cart item not found for id:", id);
+            // 🔥 Force new object & array reference for UI re-render
+            const updated = { ...draft[idx], quantity: qty };
+            console.log({ updated });
+            draft.splice(idx, 1, updated);
           }
         })
       );
-      // debouncedUpdate(id, qty);
+      debouncedUpdate(id, qty);
     } else {
       dispatch(updateItem({ id, qty }));
     }
