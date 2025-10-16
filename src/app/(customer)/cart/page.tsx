@@ -50,12 +50,21 @@ const CartPage = () => {
   const toggleSelectAll = () => {
     if (isAllSelected) {
       setSelectedItems([]);
+      // dispatch(setSelectedCart([]));
     } else {
+      // dispatch(setSelectedCart(cart.map((item) => item.product.id)));
       setSelectedItems(cart.map((item) => item.product.id));
     }
   };
 
   const toggleSelectOne = (id: number) => {
+    // dispatch(
+    //   setSelectedCart(
+    //     selectedCart && selectedCart.includes(id)
+    //       ? selectedCart.filter((x) => x !== id)
+    //       : [...selectedCart, id]
+    //   )
+    // );
     setSelectedItems((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -108,6 +117,7 @@ const CartPage = () => {
                     <div>
                       <input
                         type="checkbox"
+                        // checked={selectedItems.includes(id)}
                         checked={selectedItems.includes(id)}
                         onChange={() => toggleSelectOne(id)}
                       />
