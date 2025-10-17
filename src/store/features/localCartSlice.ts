@@ -1,14 +1,14 @@
-import { CartItem } from "@/lib/cartService";
+import { CartItemType } from "@/utils/modelTypes";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 const CART_KEY = "myapp_cart";
 
-const loadCart = (): CartItem[] => {
+const loadCart = (): CartItemType[] => {
   if (typeof window === "undefined") return [];
   const data = localStorage.getItem(CART_KEY);
   return data ? JSON.parse(data) : [];
 };
-const saveCart = (cart: CartItem[]) =>
+const saveCart = (cart: CartItemType[]) =>
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 
 const initialState = {
@@ -19,7 +19,7 @@ const localCartSlice = createSlice({
   name: "localCart",
   initialState,
   reducers: {
-    addItem(state, action: PayloadAction<CartItem>) {
+    addItem(state, action: PayloadAction<CartItemType>) {
       const index = state.items.findIndex(
         (i) => i.product.id === action.payload.product.id
       );

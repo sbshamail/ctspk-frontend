@@ -4,13 +4,15 @@ import { Screen } from "@/@core/layout";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { Button } from "@/components/ui/button";
-import { CartItem, useCartService } from "@/lib/cartService";
+import { useCartService } from "@/lib/cartService";
 import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
+import { useMountFirstEffect } from "@/@core/hooks";
 import { setReducer } from "@/store/common/action-reducer";
-import { useMemo, useState } from "react";
+import { CartItemType } from "@/utils/modelTypes";
+import { useMemo } from "react";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -18,23 +20,27 @@ const breadcrumbData = [
 ];
 
 const CartPage = () => {
-  const { cart, update, remove, clear, loading } = useCartService();
+  const { cart, update, remove, clear, loading, isAuth } = useCartService();
   const setSelectedCart = setReducer("selectedCart");
-  const { data: selectedCart, dispatch } = useSelection("selectedCart", true);
-
-  // State for selected items
-  const [selectedItems, setSelectedItems] = useState<number[]>(
-    cart.map((item: CartItem) => item?.product?.id)
+  const { data: selectedCart = [], dispatch } = useSelection(
+    "selectedCart",
+    true
   );
+
+  useMountFirstEffect(() => {
+    dispatch(setSelectedCart(cart));
+  }, [cart]);
 
   // Derived: selected items list
   const selectedProducts = useMemo(
     () =>
-      cart.filter((item: CartItem) => selectedItems.includes(item.product.id)),
-    [cart, selectedItems]
+      cart.filter((item: CartItemType) =>
+        selectedCart?.some((s) => s?.product?.id === item.product.id)
+      ),
+    [cart, selectedCart]
   );
 
-  // Derived: total only for selected
+  // // Derived: total only for selected
   const selectedTotal = useMemo(
     () =>
       selectedProducts.reduce(
@@ -45,28 +51,25 @@ const CartPage = () => {
     [selectedProducts]
   );
 
-  const isAllSelected = cart.length > 0 && selectedItems.length === cart.length;
+  // const isAllSelected = cart.length > 0 && selectedItems.length === cart.length;
+  const isAllSelected = cart.length > 0 && selectedCart?.length === cart.length;
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedItems([]);
-      // dispatch(setSelectedCart([]));
+      dispatch(setSelectedCart([]));
     } else {
-      // dispatch(setSelectedCart(cart.map((item) => item.product.id)));
-      setSelectedItems(cart.map((item) => item.product.id));
+      dispatch(setSelectedCart(cart));
     }
   };
 
-  const toggleSelectOne = (id: number) => {
-    // dispatch(
-    //   setSelectedCart(
-    //     selectedCart && selectedCart.includes(id)
-    //       ? selectedCart.filter((x) => x !== id)
-    //       : [...selectedCart, id]
-    //   )
-    // );
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  const toggleSelectOne = (item: CartItemType) => {
+    dispatch(
+      setSelectedCart(
+        selectedCart &&
+          selectedCart.some((x) => x.product.id === item.product.id)
+          ? selectedCart.filter((x) => x.product.id !== item.product.id)
+          : [...(selectedCart ?? []), item]
+      )
     );
   };
 
@@ -118,8 +121,10 @@ const CartPage = () => {
                       <input
                         type="checkbox"
                         // checked={selectedItems.includes(id)}
-                        checked={selectedItems.includes(id)}
-                        onChange={() => toggleSelectOne(id)}
+                        checked={selectedCart?.some(
+                          (x) => x?.product?.id === id
+                        )}
+                        onChange={() => toggleSelectOne(item)}
                       />
                     </div>
 
@@ -185,8 +190,10 @@ const CartPage = () => {
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
-                  disabled={selectedItems.length === 0}
-                  onClick={() => selectedItems.forEach((id) => remove(id))}
+                  disabled={selectedCart?.length === 0}
+                  onClick={() =>
+                    selectedCart?.forEach((item) => remove(item.product.id))
+                  }
                 >
                   Remove Selected
                 </Button>
@@ -199,13 +206,13 @@ const CartPage = () => {
 
           {/* Summary only for selected */}
           <div className="border rounded-lg p-6 space-y-3 h-fit">
-            {selectedItems.length === 0 ? (
+            {selectedCart?.length === 0 ? (
               <p className="text-gray-500">No products selected</p>
             ) : (
               <>
                 <div className="flex justify-between">
                   <span>Selected Items</span>
-                  <span className="font-medium">{selectedItems.length}</span>
+                  <span className="font-medium">{selectedCart?.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Subtotal</span>

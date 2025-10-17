@@ -1,4 +1,4 @@
-import { CartItem } from "@/lib/cartService";
+import { CartItemType } from "@/utils/modelTypes";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "../../../config";
 
@@ -36,7 +36,7 @@ export const cartApi = createApi({
             cartApi.util.updateQueryData("getCart", undefined, (draft) => {
               if (!Array.isArray(draft)) return;
               const idx = draft.findIndex(
-                (i: CartItem) => i.product.id === newItem.product.id
+                (i: CartItemType) => i.product.id === newItem.product.id
               );
               if (idx >= 0) draft[idx] = newItem;
               else draft.push(newItem);
@@ -63,7 +63,7 @@ export const cartApi = createApi({
     //         if (!Array.isArray(draft)) return;
 
     //         const idx = draft.findIndex(
-    //           (i: CartItem) =>
+    //           (i: CartItemType) =>
     //             i.product.id === product_id || i.product?.id === product_id
     //         );
 
@@ -91,7 +91,9 @@ export const cartApi = createApi({
         const patch = dispatch(
           cartApi.util.updateQueryData("getCart", undefined, (draft) => {
             if (!Array.isArray(draft)) return;
-            return draft.filter((i: CartItem) => i.product.id !== product_id);
+            return draft.filter(
+              (i: CartItemType) => i.product.id !== product_id
+            );
           })
         );
         try {

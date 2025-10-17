@@ -1,3 +1,4 @@
+import { CartItemType } from "@/utils/modelTypes";
 import { configureStore } from "@reduxjs/toolkit";
 import { generateReducer } from "./common/action-reducer";
 import authReducer from "./features/authSlice";
@@ -16,7 +17,7 @@ export const makeStore = () =>
       localCart: cartReducer,
       auth: authReducer,
       loading: loadingReducer,
-      selectedCart: generateReducer<[]>("selectedCart").reducer,
+      selectedCart: generateReducer<CartItemType[]>("selectedCart").reducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(

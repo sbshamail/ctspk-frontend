@@ -5,11 +5,14 @@ export interface ImageType {
   media_type?: string;
 }
 export * from "./AuthType";
+export * from "./cartType";
 
 export interface CategoryDataType {
   [key: string]: any;
   id?: number;
   image?: ImageType;
+  description?: string;
+  root_id: number;
   is_active: boolean;
   name: string;
   slug: string;

@@ -12,27 +12,14 @@ import {
   useRemoveCartMutation,
 } from "@/store/services/cartApi";
 
+import { useMountAfterEffect } from "@/@core/hooks";
 import { useDebounce } from "@/@core/hooks/useDebounce";
-import { useDidUpdateEffect } from "@/@core/hooks/useDidUpdateEffect";
 import { fetchApi } from "@/action/fetchApi";
 import { RootState } from "@/store";
-import { ImageType } from "@/utils/modelTypes";
+import { CartItemType } from "@/utils/modelTypes";
 import { useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { useSelection } from "./useSelection";
-
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  salePrice?: number;
-  image: ImageType;
-};
-export interface CartItem {
-  quantity: number;
-  product: Product;
-  shop_id: number;
-}
 
 /**
  * Hook that automatically decides whether to use backend or local cart
@@ -67,16 +54,16 @@ export const useCartService = () => {
   const [removeBackend] = useRemoveCartMutation();
   const [clearBackend] = useClearCartMutation();
   // 🧠 Re-compute cart whenever auth/local/backend changes
-  const cart: CartItem[] = useMemo(
+  const cart: CartItemType[] = useMemo(
     () => (isAuth ? backendCartData || [] : localCart),
     [isAuth, localCart, backendCartData]
   );
   // 🔁 Auto refetch cart when user logs in
-  useDidUpdateEffect(() => {
+  useMountAfterEffect(() => {
     if (isAuth) refetchBackend();
   }, [isAuth]);
 
-  const add = async (item: CartItem) => {
+  const add = async (item: CartItemType) => {
     if (isAuth) {
       await addToBackend({
         product_id: item.product.id,
@@ -123,7 +110,7 @@ export const useCartService = () => {
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
 
-          const idx = draft.findIndex((i: CartItem) => i.product.id === id);
+          const idx = draft.findIndex((i: CartItemType) => i.product.id === id);
 
           if (idx >= 0) {
             // 🔥 Force new object & array reference for UI re-render

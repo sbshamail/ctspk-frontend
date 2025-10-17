@@ -196,9 +196,14 @@ export default ProductInfiniteScroll;
 
 ```
 
-## redux query
+// =======================================
+
+## Redux Query ===========================
+
+// =======================================
 
 ```js
+// =========================================
 // productApi
 // src/redux/services/productApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
@@ -295,22 +300,185 @@ export const productApi = createApi({
 });
 
 export const { useGetProductsQuery } = productApi;
+// ====================================================
+// CategoryApi
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { API_URL } from "../../../config";
+
+export const categoryApi = createApi({
+  reducerPath: "categoryApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: `${API_URL}`,
+  }),
+  tagTypes: ["Categories"],
+  endpoints: (builder) => ({
+    getCategories: builder.query<{ data: any[] }, void>({
+      query: () => ({
+        url: "/category/list",
+        method: "GET",
+      }),
+      providesTags: ["Categories"],
+    }),
+  }),
+});
+// Cart api
+export const cartApi = createApi({
+  reducerPath: "cartApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: `${API_URL}/cart`,
+    prepareHeaders: (headers, { getState }) => {
+      const token = (getState() as any).auth?.data?.access_token;
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      return headers;
+    },
+  }),
+  tagTypes: ["Cart"],
+  endpoints: (builder) => ({
+    // ---------- GET CART ----------
+    getCart: builder.query<any, void>({
+      query: () => "/list",
+      providesTags: ["Cart"],
+      transformResponse: (res: any) => res.data ?? [], // keep only array
+    }),
+    // ---------- ADD CART ----------
+    addToCart: builder.mutation({
+      query: (body) => ({
+        url: "/create",
+        method: "POST",
+        body,
+      }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: res } = await queryFulfilled;
+          const newItem = res?.data;
+          // Patch local cache of getCart
+          dispatch(
+            cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+              if (!Array.isArray(draft)) return;
+              const idx = draft.findIndex(
+                (i: CartItemType) => i.product.id === newItem.product.id
+              );
+              if (idx >= 0) draft[idx] = newItem;
+              else draft.push(newItem);
+            })
+          );
+        } catch {}
+      },
+    }),
+      }),
+});
+
+
+export const { useGetCategoriesQuery } = categoryApi;
 
 ```
 
-# Types
+// =======================================
+
+# Reuse Reducer ========================
+
+// =======================================
 
 ```ts
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+interface InitialState<T> {
+  data: T | null;
+}
+
+export const generateReducer = <T>(name: string) => {
+  const initialState: InitialState<T> = { data: null };
+  const slice = createSlice({
+    name,
+    initialState,
+    reducers: {
+      setData: (state, action: PayloadAction<any>) => {
+        state.data = action.payload;
+      },
+    },
+  });
+  return { reducer: slice.reducer, actions: slice.actions };
+};
+
+export const setReducer = <T>(name: string) => {
+  const myReducer = generateReducer<T>(name);
+  const { setData } = myReducer.actions;
+  return setData;
+};
+// how to work
+//save on reducer first "name: generateReducer<[]>('name').reducer,"
+// const setName = setReducer('name');
+// dispatch(setName(data))
+
+// ================================
+// Store
+import { CartItemType } from "@/utils/modelTypes";
+import { configureStore } from "@reduxjs/toolkit";
+import { generateReducer } from "./common/action-reducer";
+import authReducer from "./features/authSlice";
+import loadingReducer from "./features/loadingSlice";
+import cartReducer from "./features/localCartSlice";
+import { cartApi } from "./services/cartApi";
+import { categoryApi } from "./services/categoryApi";
+import { productApi } from "./services/productApi";
+export const makeStore = () =>
+  configureStore({
+    reducer: {
+      // Add API reducer when you create it
+      [productApi.reducerPath]: productApi.reducer,
+      [categoryApi.reducerPath]: categoryApi.reducer,
+      [cartApi.reducerPath]: cartApi.reducer,
+      localCart: cartReducer,
+      auth: authReducer,
+      loading: loadingReducer,
+      selectedCart: generateReducer<CartItemType[]>("selectedCart").reducer,
+    },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(
+        productApi.middleware,
+        categoryApi.middleware,
+        cartApi.middleware
+      ), // Add API middleware(),
+  });
+
+// Infer the type of makeStore
+export type AppStore = ReturnType<typeof makeStore>;
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<AppStore["getState"]>;
+export type AppDispatch = AppStore["dispatch"];
+```
+
+// =======================================
+
+# Types ===========================
+
+// =======================================
+
+```ts
+// ===========================
 // react Types
 export type InputElementType = React.ChangeEvent<HTMLInputElement>;
 export type ChildrenType = React.ReactNode;
 export type ClassNameType = React.ComponentProps<"div">["className"];
 
+// ===========================
 // model Types
+
+export interface ImageType {
+  original: string;
+  filename: string;
+  thumbnail?: string;
+  media_type?: string;
+}
+export * from "./AuthType";
+export * from "./cartType";
+
 export interface CategoryDataType {
   [key: string]: any;
   id?: number;
-  image?: string;
+  image?: ImageType;
+  description?: string;
+  root_id: number;
   is_active: boolean;
   name: string;
   slug: string;
@@ -321,9 +489,10 @@ export interface CategoryDataType {
 
 export interface ProductDataType {
   [key: string]: any;
-  id?: number;
-  title?: string;
-  images?: string[];
+  id: number;
+  name: string;
+  gallery?: ImageType[];
+  image?: ImageType;
   rating?: number;
   price?: number;
   salePrice?: number;
@@ -331,9 +500,67 @@ export interface ProductDataType {
   sku?: string;
   category?: { id: number; name: string };
 }
+
+//cartType
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  salePrice?: number;
+  image: ImageType;
+};
+export interface CartItemType {
+  quantity: number;
+  product: Product;
+  shop_id: number;
+}
+
+// Role type
+export interface RoleType {
+  id: number;
+  name: string;
+  permissions: string[];
+  created_at: string;
+  updated_at?: string | null;
+  user_id?: number;
+}
+
+// Shop type
+export interface AuthShopType {
+  id: number;
+  name: string;
+}
+
+// User type (nested inside Auth)
+export interface UserDataType {
+  id: number;
+  name: string;
+  phone_no?: string;
+  image?: ImageType;
+  email: string;
+  is_active: boolean;
+  roles: RoleType[];
+  shops: AuthShopType[];
+  created_at: string;
+  updated_at?: string | null;
+}
+
+// Auth response root type
+export interface AuthDataType {
+  message: string;
+  token_type: string; // "bearer"
+  access_token: string;
+  refresh_token: string;
+  user: UserDataType;
+  exp: string; // ISO timestamp like "2025-10-12T12:46:29.929459+00:00"
+}
 ```
 
-# helpers
+// =======================================
+
+# Helper ===========================
+
+// =======================================
 
 ```js
 // if you start with [1, 2, 3, 4, 5], the shuffled array might be [3, 2, 5, 1, 4] or [5, 1, 4, 3, 2], depending on the random indices generated during the shuffle process.
@@ -404,40 +631,93 @@ export function seoTitle(title: string): string {
 }
 ```
 
-# action
+// =======================================
+
+# Action ===========================
+
+// =======================================
 
 ```js
 // fetchapi
 import { API_URL } from "../../config";
-
+import { getSession } from "./auth";
 interface IFetchApi {
   url: string;
-  method?: "GET" | "POST" | "PUT" | "DELETE";
-  options?: RequestInit;
+  token?: string;
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  data?: Record<string, any> | FormData; // JSON body or FormData
+  options?: RequestInit; // Extra fetch options (headers, etc.)
 }
 
-export const fetchApi = async ({ url, method = "GET", options }: IFetchApi) => {
+export const fetchApi = async ({
+  url,
+  method = "GET",
+  data,
+  token,
+  options,
+}: IFetchApi) => {
+  const sessionToken = await getSession("access_token");
   try {
     const baseUrl = `${API_URL}/${url}`;
-    const response = await fetch(baseUrl, {
-      method,
-      ...options,
-    });
 
-    if (!response.ok) {
-      console.error(`API error: ${response.status} - ${response.statusText}`);
-      return null; // 👈 instead of throwing
+    // ✅ Start building headers
+    const headers: Record<string, string> = {
+      ...(options?.headers as Record<string, string>),
+    };
+
+    // ✅ Add Authorization header if token exists
+    if (token || sessionToken) {
+      headers["Authorization"] = `Bearer ${token || sessionToken}`;
     }
 
-    return response.json();
+    // Build request init
+    let fetchOptions: RequestInit = {
+      method,
+      headers,
+      ...options,
+    };
+
+    // Handle body data
+    if (data) {
+      if (data instanceof FormData) {
+        // ✅ FormData (let browser set headers automatically)
+        fetchOptions.body = data;
+      } else {
+        // ✅ JSON data
+        fetchOptions.body = JSON.stringify(data);
+        fetchOptions.headers = {
+          ...headers,
+          "Content-Type": "application/json",
+        };
+      }
+    }
+
+    const response = await fetch(baseUrl, fetchOptions);
+
+    if (!response.ok) {
+      console.log(`API error: ${response.status} - ${response.statusText}`);
+      return null;
+    }
+
+    // Try to parse JSON safely
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return response.json();
+    }
+    return response.text();
   } catch (error) {
-    console.error("fetchApi error:", error);
-    return null; // 👈 safe fallback
+    console.log("fetchApi error:", error);
+    return null;
   }
 };
+
 ```
 
-# @core
+// =======================================
+
+# Core ===========================
+
+// =======================================
 
 ```js
 import { cn } from "@/lib/utils";
@@ -463,4 +743,56 @@ export const Screen = ({
     </div>
   );
 };
+
+// ==================
+// Hooks
+import { useEffect, useRef } from "react";
+/**
+ * Run effect only on updates (not on first mount)
+ */
+export function useDidUpdateEffect(
+  effect: React.EffectCallback,
+  deps: React.DependencyList
+) {
+  const isFirst = useRef(true);
+
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+    return effect();
+  }, deps);
+}
+import { useMemo, useRef } from "react";
+
+export function useDebounce<T extends (...args: any[]) => void>(
+  fn: T,
+  delay = 300,
+  getKey?: (...args: Parameters<T>) => string | number
+) {
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+
+  const timers = useRef<Record<string | number, ReturnType<typeof setTimeout>>>(
+    {}
+  );
+
+  const debouncedFn = useMemo(() => {
+    return (...args: Parameters<T>) => {
+      const key = getKey ? getKey(...args) : "default";
+
+      if (timers.current[key]) clearTimeout(timers.current[key]);
+
+      timers.current[key] = setTimeout(() => {
+        delete timers.current[key];
+        fnRef.current(...args);
+      }, delay);
+    };
+  }, [delay, getKey]);
+
+  return debouncedFn;
+}
+
+
 ```
