@@ -2,6 +2,7 @@ import {
   addItem,
   clearCart as clearLocal,
   removeItem,
+  removeSelectedItem,
   updateItem,
 } from "@/store/features/localCartSlice";
 import {
@@ -10,6 +11,7 @@ import {
   useClearCartMutation,
   useGetCartQuery,
   useRemoveCartMutation,
+  useRemoveSelectedCartMutation,
 } from "@/store/services/cartApi";
 
 import { useMountAfterEffect } from "@/@core/hooks";
@@ -30,16 +32,9 @@ export const useCartService = () => {
   const localCart = useAppSelector((s: RootState) => s.localCart.items);
   const isAuth = !!auth?.user?.id;
 
-  // Backend RTK Query Hooks
-  // const {
-  //   data: backendCartData,
-  //   refetch: refetchBackend,
-  //   isFetching,
-  //   isLoading,
-  // } = useGetCartQuery(undefined);
   const {
     data: backendCartData = [],
-    refetch: refetchBackend,
+    refetch: refetchCart,
     isFetching,
     isLoading,
   } = useGetCartQuery(undefined, {
@@ -52,6 +47,7 @@ export const useCartService = () => {
 
   const [addToBackend] = useAddToCartMutation();
   const [removeBackend] = useRemoveCartMutation();
+  const [removeSelectedBackend] = useRemoveSelectedCartMutation();
   const [clearBackend] = useClearCartMutation();
   // 🧠 Re-compute cart whenever auth/local/backend changes
   const cart: CartItemType[] = useMemo(
@@ -60,7 +56,7 @@ export const useCartService = () => {
   );
   // 🔁 Auto refetch cart when user logs in
   useMountAfterEffect(() => {
-    if (isAuth) refetchBackend();
+    if (isAuth) refetchCart();
   }, [isAuth]);
 
   const add = async (item: CartItemType) => {
@@ -103,7 +99,7 @@ export const useCartService = () => {
 
   const debouncedUpdate = useDebounce(syncCartUpdate, 1000, (id, qty) => id);
 
-  const update = async (id: string | number, qty: number) => {
+  const update = async (id: number, qty: number) => {
     if (isAuth) {
       // Instant Redux Query update manually
       dispatch(
@@ -126,11 +122,18 @@ export const useCartService = () => {
     }
   };
 
-  const remove = async (id: string | number) => {
+  const remove = async (id: number) => {
     if (isAuth) {
       await removeBackend(id);
     } else {
       dispatch(removeItem(id));
+    }
+  };
+  const removeSelected = async (ids: number[]) => {
+    if (isAuth) {
+      await removeSelectedBackend(ids);
+    } else {
+      dispatch(removeSelectedItem(ids));
     }
   };
 
@@ -142,5 +145,15 @@ export const useCartService = () => {
     }
   };
 
-  return { cart, add, update, remove, clear, isAuth, loading: isLoading };
+  return {
+    cart,
+    add,
+    update,
+    remove,
+    removeSelected,
+    clear,
+    isAuth,
+    loading: isLoading,
+    refetchCart,
+  };
 };

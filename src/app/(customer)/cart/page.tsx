@@ -9,7 +9,7 @@ import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
-import { useMountFirstEffect } from "@/@core/hooks";
+import { useMountAfterEffect, useMountFirstEffect } from "@/@core/hooks";
 import { setReducer } from "@/store/common/action-reducer";
 import { CartItemType } from "@/utils/modelTypes";
 import { useMemo } from "react";
@@ -20,7 +20,8 @@ const breadcrumbData = [
 ];
 
 const CartPage = () => {
-  const { cart, update, remove, clear, loading, isAuth } = useCartService();
+  const { cart, update, remove, clear, loading, removeSelected, isAuth } =
+    useCartService();
   const setSelectedCart = setReducer("selectedCart");
   const { data: selectedCart = [], dispatch } = useSelection(
     "selectedCart",
@@ -30,6 +31,10 @@ const CartPage = () => {
   useMountFirstEffect(() => {
     dispatch(setSelectedCart(cart));
   }, [cart]);
+
+  useMountAfterEffect(() => {
+    setSelectedCart(cart);
+  }, [isAuth]);
 
   // Derived: selected items list
   const selectedProducts = useMemo(
@@ -74,8 +79,13 @@ const CartPage = () => {
   };
 
   if (loading) return <LayoutSkeleton main={true} />;
-  if (cart.length === 0) return <p className="p-6">Your cart is empty.</p>;
 
+  if (cart.length === 0)
+    return (
+      <Screen>
+        <p className="p-6">Your cart is empty.</p>
+      </Screen>
+    );
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -192,7 +202,7 @@ const CartPage = () => {
                   variant="outline"
                   disabled={selectedCart?.length === 0}
                   onClick={() =>
-                    selectedCart?.forEach((item) => remove(item.product.id))
+                    removeSelected(selectedCart?.map((x) => x.product.id) ?? [])
                   }
                 >
                   Remove Selected

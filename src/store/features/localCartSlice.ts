@@ -27,10 +27,7 @@ const localCartSlice = createSlice({
       else state.items.push(action.payload);
       saveCart(state.items);
     },
-    updateItem(
-      state,
-      action: PayloadAction<{ id: string | number; qty: number }>
-    ) {
+    updateItem(state, action: PayloadAction<{ id: number; qty: number }>) {
       state.items = state.items.map((i) =>
         i.product.id === action.payload.id
           ? { ...i, quantity: action.payload.qty }
@@ -38,10 +35,18 @@ const localCartSlice = createSlice({
       );
       saveCart(state.items);
     },
-    removeItem(state, action: PayloadAction<string | number>) {
+    removeItem(state, action: PayloadAction<number>) {
       state.items = state.items.filter((i) => i.product.id !== action.payload);
       saveCart(state.items);
     },
+    removeSelectedItem(state, action: PayloadAction<number[]>) {
+      const idsToRemove = action.payload; // e.g. [1, 2, 4]
+      state.items = state.items.filter(
+        (i) => !idsToRemove.includes(i.product.id)
+      );
+      saveCart(state.items);
+    },
+
     clearCart(state) {
       state.items = [];
       localStorage.removeItem(CART_KEY);
@@ -49,6 +54,11 @@ const localCartSlice = createSlice({
   },
 });
 
-export const { addItem, updateItem, removeItem, clearCart } =
-  localCartSlice.actions;
+export const {
+  addItem,
+  updateItem,
+  removeItem,
+  removeSelectedItem,
+  clearCart,
+} = localCartSlice.actions;
 export default localCartSlice.reducer;

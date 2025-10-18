@@ -103,12 +103,48 @@ export const cartApi = createApi({
         }
       },
     }),
+    removeSelectedCart: builder.mutation({
+      query: (product_ids) => ({
+        url: `/delete-many`,
+        method: "DELETE",
+        body: { product_ids },
+      }),
+      async onQueryStarted(product_ids, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+            if (!Array.isArray(draft)) return;
+            // ✅ safer reassign approach (Immer supports direct assignment)
+            const remaining = draft.filter(
+              (i) => !product_ids.includes(i.product.id)
+            );
+            draft.splice(0, draft.length, ...remaining);
+          })
+        );
+
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo(); // rollback on failure
+        }
+      },
+    }),
     clearCart: builder.mutation({
       query: () => ({
         url: `/delete-all`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Cart"],
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+            if (Array.isArray(draft)) draft.length = 0;
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
   }),
 });
@@ -117,5 +153,6 @@ export const {
   useGetCartQuery,
   useAddToCartMutation,
   useRemoveCartMutation,
+  useRemoveSelectedCartMutation,
   useClearCartMutation,
 } = cartApi;

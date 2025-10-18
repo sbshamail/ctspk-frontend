@@ -20,12 +20,14 @@ import SiginModal from "@/components/modals/SiginModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useCartService } from "@/lib/cartService";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [openSiginModal, setOpenSiginModal] = useState(false);
   const { data: auth, isLoading } = useSelection("auth");
   const { data: selectedCart } = useSelection("selectedCart");
+  const { refetchCart, cart } = useCartService();
   const [serverError, setServerError] = useState<string | null>(null);
   const { user } = auth || {};
   const {
@@ -59,6 +61,10 @@ export default function CheckoutPage() {
     setServerError(null);
     toast.success("Order completed successfully!");
     reset();
+    if (!user) {
+      setOpenSiginModal(true);
+      return;
+    }
     router.push("/product");
     // alert("Order completed successfully!");
     // try {
@@ -144,23 +150,23 @@ export default function CheckoutPage() {
                   {currencyFormatter(total ?? 0)}/-
                 </span>
               </div>
-              {auth ? (
-                <Button onClick={handleSubmit(onSubmit)} className="w-full">
-                  Cash On Delivery →
-                </Button>
-              ) : (
-                <SiginModal
-                  open={openSiginModal}
-                  setOpen={setOpenSiginModal}
-                  trigger={
-                    <Button
-                      className={cn("w-full ", isLoading && "animate-pulse")}
-                    >
-                      Login to Proceed →
-                    </Button>
-                  }
-                />
-              )}
+              {/* {auth ? ( */}
+              <Button onClick={handleSubmit(onSubmit)} className="w-full">
+                Cash On Delivery →
+              </Button>
+              {/* // ) : (
+                // <SiginModal
+                //   open={openSiginModal}
+                //   setOpen={setOpenSiginModal}
+                //   trigger={
+                //     <Button
+                //       className={cn("w-full ", isLoading && "animate-pulse")}
+                //     >
+                //       Login to Proceed →
+                //     </Button>
+                //   }
+                // />
+              // )} */}
             </CardContent>
           </Card>
         </div>
