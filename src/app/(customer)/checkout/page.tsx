@@ -31,7 +31,7 @@ export default function CheckoutPage() {
   const isAuth = !!auth?.user?.id;
   const setSelectedCart = setReducer("selectedCart");
   const { data: selectedCart, dispatch } = useSelection("selectedCart", true);
-  const { refetchCart, cart } = useCartService();
+  const { refetchCart, cart, removeSelected } = useCartService();
   const [serverError, setServerError] = useState<string | null>(null);
   const { user } = auth || {};
   // if auth then selected cart state will be updated
@@ -69,31 +69,33 @@ export default function CheckoutPage() {
     []
   );
   const onSubmit = async (values: CheckoutSchemaType) => {
-    setServerError(null);
-    toast.success("Order completed successfully!");
-    reset();
-    if (!user) {
-      setOpenSiginModal(true);
-      return;
-    }
-    router.push("/product");
-    // alert("Order completed successfully!");
-    // try {
-    //   const res = await fetchApi({
-    //     url: "order/creates",
-    //     method: "POST",
-    //     data: values,
-    //   });
-    //     reset();
+    const data = {
+      shipping_address: values,
+      cart: selectedCart?.map((item) => ({
+        id: item.id,
+        quantity: item.id,
+        product_id: item.product.id,
+      })),
+    };
 
-    //   if (res?.success) {
-    //     alert("Order completed successfully!");
-    //   } else {
-    //     setServerError(res?.detail || "Something went wrong.");
-    //   }
-    // } catch (err) {
-    //   setServerError("Network error. Please try again.");
-    // }
+    try {
+      const res = await fetchApi({
+        url: "order/create",
+        method: "POST",
+        data,
+      });
+
+      if (res?.success) {
+        removeSelected(selectedCart?.map((x) => x?.product?.id) ?? []);
+
+        toast.success(res.detail);
+        router.push("/product");
+      } else {
+        setServerError(res?.detail || "Something went wrong.");
+      }
+    } catch (err) {
+      setServerError("Network error. Please try again.");
+    }
   };
   if (!selectedCart || selectedCart?.length == 0) {
     return router.push("/cart");
