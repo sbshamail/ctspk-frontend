@@ -115,7 +115,7 @@ const CartPage = () => {
                 <div className="text-center">Remove</div>
               </div>
 
-              {cart.map((item: CartItemType) => {
+              {cart?.map((item: CartItemType) => {
                 const { salePrice, price, name, image, id } =
                   item.product || {};
                 const unitPrice = salePrice ?? price;
@@ -143,7 +143,7 @@ const CartPage = () => {
                       <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
                         {image?.original ? (
                           <Image
-                            src={image.thumbnail ?? image.original ?? image}
+                            src={image?.thumbnail ?? image.original ?? image}
                             alt={name}
                             width={64}
                             height={64}
@@ -202,7 +202,9 @@ const CartPage = () => {
                   variant="outline"
                   disabled={selectedCart?.length === 0}
                   onClick={() =>
-                    removeSelected(selectedCart?.map((x) => x.product.id) ?? [])
+                    removeSelected(
+                      selectedCart?.map((x) => x?.product?.id) ?? []
+                    )
                   }
                 >
                   Remove Selected

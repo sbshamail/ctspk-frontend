@@ -21,15 +21,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCartService } from "@/lib/cartService";
+import { setReducer } from "@/store/common/action-reducer";
+import { useMountAfterEffect } from "@/@core/hooks";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [openSiginModal, setOpenSiginModal] = useState(false);
   const { data: auth, isLoading } = useSelection("auth");
-  const { data: selectedCart } = useSelection("selectedCart");
+  const isAuth = !!auth?.user?.id;
+  const setSelectedCart = setReducer("selectedCart");
+  const { data: selectedCart, dispatch } = useSelection("selectedCart", true);
   const { refetchCart, cart } = useCartService();
   const [serverError, setServerError] = useState<string | null>(null);
   const { user } = auth || {};
+  // if auth then selected cart state will be updated
+  useMountAfterEffect(() => {
+    if (cart) {
+      setSelectedCart(cart);
+    }
+  }, [isAuth]);
+
   const {
     register,
     handleSubmit,
