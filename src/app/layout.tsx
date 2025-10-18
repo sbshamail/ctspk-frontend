@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ReactNode } from "react";
 import StoreProvider from "./StoreProvider";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -43,6 +44,7 @@ export default async function RootLayout({
             {children}
             {modal}
           </StoreProvider>
+          <Toaster />
           {/* {children} */}
         </ThemeProvider>
       </body>

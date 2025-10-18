@@ -32,10 +32,9 @@ export interface UserDataType {
 
 // Auth response root type
 export interface AuthDataType {
-  message: string;
-  token_type: string; // "bearer"
+  token_type?: string; // "bearer"
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
   user: UserDataType;
-  exp: string; // ISO timestamp like "2025-10-12T12:46:29.929459+00:00"
+  exp?: string; // ISO timestamp like "2025-10-12T12:46:29.929459+00:00"
 }

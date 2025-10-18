@@ -105,7 +105,7 @@ const CartPage = () => {
                 <div className="text-center">Remove</div>
               </div>
 
-              {cart.map((item: any) => {
+              {cart.map((item: CartItemType) => {
                 const { salePrice, price, name, image, id } =
                   item.product || {};
                 const unitPrice = salePrice ?? price;
@@ -206,33 +206,29 @@ const CartPage = () => {
 
           {/* Summary only for selected */}
           <div className="border rounded-lg p-6 space-y-3 h-fit">
-            {selectedCart?.length === 0 ? (
-              <p className="text-gray-500">No products selected</p>
-            ) : (
-              <>
-                <div className="flex justify-between">
-                  <span>Selected Items</span>
-                  <span className="font-medium">{selectedCart?.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span className="font-medium">Rs {selectedTotal}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span className="text-green-600">Free</span>
-                </div>
-                <div className="flex justify-between border-t pt-3 font-semibold text-lg">
-                  <span>Total</span>
-                  <span>Rs {selectedTotal}</span>
-                </div>
-                <Link href="/checkout">
-                  <Button className="w-full bg-primary text-white">
-                    Proceed To Checkout →
-                  </Button>
-                </Link>
-              </>
-            )}
+            <>
+              <div className="flex justify-between">
+                <span>Selected Items</span>
+                <span className="font-medium">{selectedCart?.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span className="font-medium">Rs {selectedTotal}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping</span>
+                <span className="text-green-600">Free</span>
+              </div>
+              <div className="flex justify-between border-t pt-3 font-semibold text-lg">
+                <span>Total</span>
+                <span>Rs {selectedTotal}</span>
+              </div>
+              <Link href="/checkout">
+                <Button className="w-full bg-primary text-white">
+                  Proceed To Checkout →
+                </Button>
+              </Link>
+            </>
           </div>
         </div>
       </div>

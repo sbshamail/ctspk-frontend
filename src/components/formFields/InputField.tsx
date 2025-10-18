@@ -3,8 +3,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { FieldError } from "react-hook-form";
-import { InputElementType } from "@/utils/reactTypes";
+import { FieldError, UseFormRegister } from "react-hook-form";
+import { ClassNameType, InputElementType } from "@/utils/reactTypes";
 
 interface InputFieldProps {
   id: string;
@@ -14,10 +14,11 @@ interface InputFieldProps {
   value?: string;
   onChange?: (e: InputElementType) => void;
   error?: FieldError | string | null;
-  register?: any; // react-hook-form register
+  register?: UseFormRegister<any>; // react-hook-form register
   disabled?: boolean;
   required?: boolean;
   autoComplete?: string;
+  className?: ClassNameType;
 }
 
 export const InputField = ({
@@ -32,13 +33,14 @@ export const InputField = ({
   disabled,
   required,
   autoComplete,
+  className,
 }: InputFieldProps) => {
   const inputProps = register
     ? { ...register(id) }
     : { id, value, onChange, required, autoComplete };
 
   return (
-    <div className="grid gap-2">
+    <div className={cn("grid gap-2", className)}>
       {label && <Label htmlFor={id}>{label}</Label>}
 
       <Input

@@ -4,7 +4,17 @@
 
 # in this project we use next15, typscript, shadcn, rtk and redux query
 
+## Forms
+
+```js
+
+```
+
+//=========================================
+
 ## skeleton
+
+// =======================================
 
 ```js
 //  product skeleton
@@ -106,7 +116,11 @@ export default LayoutSkeleton;
 
 ```
 
+// =======================================
+
 ## infinite scroll
+
+// =======================================
 
 ```js
 "use client";

@@ -1,8 +1,9 @@
 import { clearSession } from "@/action/auth";
+import { AuthDataType } from "@/utils/modelTypes";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
-  data: any | null;
+  data: AuthDataType | null;
   isLoading: boolean; // initial load (e.g., check session)
   isError: string | null; // error message if any
 }

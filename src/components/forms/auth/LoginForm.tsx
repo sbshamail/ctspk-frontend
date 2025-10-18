@@ -11,7 +11,7 @@ import { saveSession } from "@/action/auth";
 import { useAppDispatch } from "@/lib/hooks";
 import { authLoading, setAuth } from "@/store/features/authSlice";
 
-import { loginSchema, LoginSchemaType } from "@/schemas/authSchemas";
+import { loginSchema, LoginSchemaType } from "@/schemas";
 import { InputField } from "@/components/formFields/InputField";
 import { PasswordField } from "@/components/formFields/PasswordField";
 

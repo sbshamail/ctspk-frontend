@@ -5,7 +5,7 @@ import { InputField } from "@/components/formFields/InputField";
 import { PasswordField } from "@/components/formFields/PasswordField";
 import { Button } from "@/components/ui/button";
 
-import { registerSchema, RegisterSchemaType } from "@/schemas/authSchemas";
+import { registerSchema, RegisterSchemaType } from "@/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import * as React from "react";
