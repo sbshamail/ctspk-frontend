@@ -8,6 +8,7 @@ export const cartApi = createApi({
     baseUrl: `${API_URL}/cart`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as any).auth?.data?.access_token;
+
       if (token) headers.set("Authorization", `Bearer ${token}`);
       return headers;
     },
