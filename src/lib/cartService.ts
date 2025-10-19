@@ -14,7 +14,7 @@ import {
   useRemoveSelectedCartMutation,
 } from "@/store/services/cartApi";
 
-import { useMountAfterEffect } from "@/@core/hooks";
+import { useMountAfterEffect, useMountFirstEffect } from "@/@core/hooks";
 import { useDebounce } from "@/@core/hooks/useDebounce";
 import { fetchApi } from "@/action/fetchApi";
 import { RootState } from "@/store";
@@ -55,8 +55,13 @@ export const useCartService = () => {
     [isAuth, localCart, backendCartData]
   );
   // 🔁 Auto refetch cart when user logs in
-  useMountAfterEffect(() => {
-    if (isAuth) refetchCart();
+  // useMountAfterEffect(() => {
+  //   if (isAuth) refetchCart();
+  // }, [isAuth]);
+  useMountFirstEffect(() => {
+    if (isAuth && !backendCartData.length) {
+      refetchCart();
+    }
   }, [isAuth]);
 
   const add = async (item: CartItemType) => {
