@@ -11,8 +11,9 @@ import Link from "next/link";
 
 import { useMountAfterEffect, useMountFirstEffect } from "@/@core/hooks";
 import { setReducer } from "@/store/common/action-reducer";
-import { CartItemType } from "@/utils/modelTypes";
 import { useMemo } from "react";
+// Types
+import { CartItemType } from "@/utils/modelTypes";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -50,7 +51,7 @@ const CartPage = () => {
     () =>
       selectedProducts.reduce(
         (acc, item) =>
-          acc + (item.product.salePrice ?? item.product.price) * item.quantity,
+          acc + (item.product.sale_price ?? item.product.price) * item.quantity,
         0
       ),
     [selectedProducts]
@@ -116,9 +117,9 @@ const CartPage = () => {
               </div>
 
               {cart?.map((item: CartItemType) => {
-                const { salePrice, price, name, image, id } =
+                const { sale_price, price, name, image, id } =
                   item.product || {};
-                const unitPrice = salePrice ?? price;
+                const unitPrice = sale_price ?? price;
                 const subtotal = unitPrice * item.quantity;
 
                 return (

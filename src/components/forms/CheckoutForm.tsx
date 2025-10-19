@@ -76,13 +76,14 @@ export default function CheckoutForm({
             register={register}
             error={errors.zip}
           />
-          <InputField
+          {/* <InputField
             id="country"
+            disabled
             label="Country"
             placeholder="Pakistan"
             register={register}
             error={errors.country}
-          />
+          /> */}
           <InputField
             id="phone"
             label="Phone"

@@ -54,7 +54,7 @@ export default function CheckoutPage() {
       address: "",
       city: "",
       zip: "",
-      country: "",
+      // country: "Pakistan",
       phone: user?.phone_no || "",
     },
   });
@@ -63,7 +63,7 @@ export default function CheckoutPage() {
     () =>
       selectedCart?.reduce(
         (acc, item) =>
-          acc + (item.product.salePrice ?? item.product.price) * item.quantity,
+          acc + (item.product.sale_price ?? item.product.price) * item.quantity,
         0
       ),
     []
@@ -73,14 +73,14 @@ export default function CheckoutPage() {
       shipping_address: values,
       cart: selectedCart?.map((item) => ({
         id: item.id,
-        quantity: item.id,
+        quantity: item.quantity,
         product_id: item.product.id,
       })),
     };
 
     try {
       const res = await fetchApi({
-        url: "order/create",
+        url: "order/cartcreate",
         method: "POST",
         data,
       });
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
       <main className="mt-10">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Checkout Form */}
-          <Card className="lg:col-span-2">
+          <Card className="xl:col-span-2">
             <CardHeader>
               <CardTitle>Checkout</CardTitle>
             </CardHeader>
@@ -127,10 +127,10 @@ export default function CheckoutPage() {
             <CardContent className="space-y-4">
               {selectedCart?.map((item, index) => {
                 const {
-                  product: { name, price, salePrice, image, id },
+                  product: { name, price, sale_price, image, id },
                   quantity,
                 } = item || {};
-                const actualPrice = salePrice ?? price;
+                const actualPrice = sale_price ?? price;
                 return (
                   <div
                     key={id}
@@ -163,23 +163,17 @@ export default function CheckoutPage() {
                   {currencyFormatter(total ?? 0)}/-
                 </span>
               </div>
-              {/* {auth ? ( */}
+              {/* {isAuth ? ( */}
               <Button onClick={handleSubmit(onSubmit)} className="w-full">
                 Cash On Delivery →
               </Button>
-              {/* // ) : (
-                // <SiginModal
-                //   open={openSiginModal}
-                //   setOpen={setOpenSiginModal}
-                //   trigger={
-                //     <Button
-                //       className={cn("w-full ", isLoading && "animate-pulse")}
-                //     >
-                //       Login to Proceed →
-                //     </Button>
-                //   }
-                // />
-              // )} */}
+              {!isAuth && (
+                <>
+                  <Separator />
+                  <p className="italic text-xs">Offline Order</p>
+                  <Separator />
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

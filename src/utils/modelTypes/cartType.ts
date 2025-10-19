@@ -4,7 +4,7 @@ type Product = {
   id: number;
   name: string;
   price: number;
-  salePrice?: number;
+  sale_price?: number;
   image: ImageType;
 };
 export interface CartItemType {

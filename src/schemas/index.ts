@@ -34,7 +34,6 @@ export const checkoutSchema = z.object({
   address: zodType.address,
   city: zodType.city,
   zip: zodType.zip,
-  country: zodType.country,
   phone: zodType.phone_no,
 });
 
