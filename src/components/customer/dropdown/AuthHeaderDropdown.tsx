@@ -45,15 +45,15 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="center" className="w-56">
-        <DropdownMenuItem asChild>
+        {/* <DropdownMenuItem asChild>
           <Link href="/my-orders" className="cursor-pointer">
             My Orders
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/wishlist">Wishlist</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
+        </DropdownMenuItem> */}
+        {/* <DropdownMenuItem asChild>
           <Link href="/my-coupons" className="cursor-pointer">
             My Coupons
           </Link>
@@ -77,7 +77,7 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
           <Link href="/become-seller" className="cursor-pointer">
             Become a Seller
           </Link>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => handleLogout()}
