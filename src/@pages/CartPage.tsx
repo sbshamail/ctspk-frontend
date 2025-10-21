@@ -87,8 +87,104 @@ const CartPage = () => {
         <p className="p-6">Your cart is empty.</p>
       </Screen>
     );
+
+  // const columns: ColumnType<CartItemType>[] = [
+  //   {
+  //     title: "Product",
+  //     accessor: "product.name",
+  //     render: ({ row }) => {
+  //       const { image, name } = row.product;
+  //       return (
+  //         <div className="flex items-center space-x-3">
+  //           <div className="w-16 h-16 bg-muted rounded flex items-center justify-center overflow-hidden">
+  //             {image?.original ? (
+  //               <Image
+  //                 src={image.thumbnail ?? image.original}
+  //                 alt={name}
+  //                 width={64}
+  //                 height={64}
+  //                 className="object-cover"
+  //               />
+  //             ) : (
+  //               <span className="text-xs text-muted-foreground">No image</span>
+  //             )}
+  //           </div>
+  //           <div>
+  //             <h2 className="font-medium">{name}</h2>
+  //           </div>
+  //         </div>
+  //       );
+  //     },
+  //     className: "col-span-2",
+  //   },
+  //   {
+  //     title: "Unit Price",
+  //     type: "currency",
+  //     render: ({ row }) => row?.product?.sale_price ?? row?.product?.price,
+  //     className: "text-center",
+  //   },
+  //   {
+  //     title: "Quantity",
+  //     type: "number",
+  //     render: ({ row }) => (
+  //       <div className="flex justify-center">
+  //         <input
+  //           type="number"
+  //           min={1}
+  //           value={row.quantity}
+  //           onChange={(e) =>
+  //             update(row.product.id, parseInt(e.target.value, 10))
+  //           }
+  //           className="w-16 border rounded px-2 py-1 text-center bg-background"
+  //         />
+  //       </div>
+  //     ),
+  //     className: "text-center",
+  //   },
+  //   {
+  //     title: "Subtotal",
+  //     render: ({ row }) => {
+  //       const unitPrice = row.product.sale_price ?? row.product.price;
+  //       return (
+  //         <div className="text-center font-medium">
+  //           {unitPrice * row.quantity}
+  //         </div>
+  //       );
+  //     },
+  //   },
+  //   {
+  //     title: "Remove",
+  //     render: ({ row }) => (
+  //       <div className="flex justify-center">
+  //         <button
+  //           onClick={() => remove(row.product.id)}
+  //           className="text-muted-foreground hover:text-destructive"
+  //           title="Remove item"
+  //         >
+  //           🗑
+  //         </button>
+  //       </div>
+  //     ),
+  //   },
+  // ];
+
   return (
     <Screen>
+      {/* <MainTable<CartItemType>
+        data={cart}
+        columns={columns}
+        rowId="product.id"
+        selectedRows={selectedCart ?? []}
+        setSelectedRows={setSelectedCart}
+        striped={false}
+        tableClass="border-0"
+        tableInsideClass="border-0 text-sm text-left p-3"
+        trBodyClass="border-0"
+        tBodyClass="border-0"
+        stripedClass="bg-transparent"
+        thHeadClass="bg-muted text-muted-foreground font-medium border-b"
+        tableWrapperClass="max-h-none"
+      /> */}
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
       <div className=" mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2">Your Cart</h1>
