@@ -8,7 +8,6 @@ import { Suspense } from "react";
 const page = () => {
   return (
     <div>
-      <Separator />
       <Screen>
         <Suspense fallback={<LayoutSkeleton sidebar={true} main={true} />}>
           <ProductPage />

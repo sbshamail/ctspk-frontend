@@ -91,6 +91,7 @@ const Header = ({}: IHeader) => {
             <HeaderNav y={y} />
           </Screen>
         </div>
+        <Separator className="bg-border/80" />
       </header>
     </>
   );
