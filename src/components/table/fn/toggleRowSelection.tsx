@@ -16,7 +16,9 @@ export function toggleRowSelection<T extends Record<string, any>>(
   row: T,
   idProperty: keyof T | string,
   selectedRows: T[],
-  setSelectedRows: React.Dispatch<React.SetStateAction<T[]>>
+  setSelectedRows:
+    | React.Dispatch<React.SetStateAction<T[]>>
+    | ((rows: T[]) => void)
 ) {
   const id = getNestedProperty(row, idProperty as string);
 

@@ -11,9 +11,10 @@ import Link from "next/link";
 
 import { useMountAfterEffect, useMountFirstEffect } from "@/@core/hooks";
 import { setReducer } from "@/store/common/action-reducer";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 // Types
 import { CartItemType } from "@/utils/modelTypes";
+import MainTable, { ColumnType } from "@/components/table/MainTable";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -28,13 +29,17 @@ const CartPage = () => {
     "selectedCart",
     true
   );
-
+  const [selected, setSelected] = useState<CartItemType[]>([]);
+  useEffect(() => {
+    dispatch(setSelectedCart(selected));
+  }, [selected]);
+  console.log(selected);
   useMountFirstEffect(() => {
-    dispatch(setSelectedCart(cart));
+    setSelected(cart);
   }, [cart]);
 
   useMountAfterEffect(() => {
-    setSelectedCart(cart);
+    setSelected(cart);
   }, [isAuth]);
 
   // Derived: selected items list
@@ -57,134 +62,93 @@ const CartPage = () => {
     [selectedProducts]
   );
 
-  // const isAllSelected = cart.length > 0 && selectedItems.length === cart.length;
-  const isAllSelected = cart.length > 0 && selectedCart?.length === cart.length;
-
-  const toggleSelectAll = () => {
-    if (isAllSelected) {
-      dispatch(setSelectedCart([]));
-    } else {
-      dispatch(setSelectedCart(cart));
-    }
-  };
-
-  const toggleSelectOne = (item: CartItemType) => {
-    dispatch(
-      setSelectedCart(
-        selectedCart &&
-          selectedCart.some((x) => x.product.id === item.product.id)
-          ? selectedCart.filter((x) => x.product.id !== item.product.id)
-          : [...(selectedCart ?? []), item]
-      )
-    );
-  };
-
-  if (loading) return <LayoutSkeleton main={true} />;
-
-  if (cart.length === 0)
-    return (
-      <Screen>
-        <p className="p-6">Your cart is empty.</p>
-      </Screen>
-    );
-
-  // const columns: ColumnType<CartItemType>[] = [
-  //   {
-  //     title: "Product",
-  //     accessor: "product.name",
-  //     render: ({ row }) => {
-  //       const { image, name } = row.product;
-  //       return (
-  //         <div className="flex items-center space-x-3">
-  //           <div className="w-16 h-16 bg-muted rounded flex items-center justify-center overflow-hidden">
-  //             {image?.original ? (
-  //               <Image
-  //                 src={image.thumbnail ?? image.original}
-  //                 alt={name}
-  //                 width={64}
-  //                 height={64}
-  //                 className="object-cover"
-  //               />
-  //             ) : (
-  //               <span className="text-xs text-muted-foreground">No image</span>
-  //             )}
-  //           </div>
-  //           <div>
-  //             <h2 className="font-medium">{name}</h2>
-  //           </div>
-  //         </div>
-  //       );
-  //     },
-  //     className: "col-span-2",
-  //   },
-  //   {
-  //     title: "Unit Price",
-  //     type: "currency",
-  //     render: ({ row }) => row?.product?.sale_price ?? row?.product?.price,
-  //     className: "text-center",
-  //   },
-  //   {
-  //     title: "Quantity",
-  //     type: "number",
-  //     render: ({ row }) => (
-  //       <div className="flex justify-center">
-  //         <input
-  //           type="number"
-  //           min={1}
-  //           value={row.quantity}
-  //           onChange={(e) =>
-  //             update(row.product.id, parseInt(e.target.value, 10))
-  //           }
-  //           className="w-16 border rounded px-2 py-1 text-center bg-background"
-  //         />
-  //       </div>
-  //     ),
-  //     className: "text-center",
-  //   },
-  //   {
-  //     title: "Subtotal",
-  //     render: ({ row }) => {
-  //       const unitPrice = row.product.sale_price ?? row.product.price;
-  //       return (
-  //         <div className="text-center font-medium">
-  //           {unitPrice * row.quantity}
-  //         </div>
-  //       );
-  //     },
-  //   },
-  //   {
-  //     title: "Remove",
-  //     render: ({ row }) => (
-  //       <div className="flex justify-center">
-  //         <button
-  //           onClick={() => remove(row.product.id)}
-  //           className="text-muted-foreground hover:text-destructive"
-  //           title="Remove item"
-  //         >
-  //           🗑
-  //         </button>
-  //       </div>
-  //     ),
-  //   },
-  // ];
+  const columns: ColumnType<CartItemType>[] = [
+    {
+      title: "Product",
+      accessor: "product.name",
+      render: ({ row }) => {
+        const { image, name } = row.product;
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="w-16 h-16 bg-muted rounded flex items-center justify-center overflow-hidden">
+              {image?.original ? (
+                <Image
+                  src={image.thumbnail ?? image.original}
+                  alt={name}
+                  width={64}
+                  height={64}
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-xs text-muted-foreground">No image</span>
+              )}
+            </div>
+            <div>
+              <h2 className="font-medium">{name}</h2>
+            </div>
+          </div>
+        );
+      },
+      className: "col-span-2",
+    },
+    {
+      title: "Unit Price",
+      type: "currency",
+      render: ({ row }) => row?.product?.sale_price ?? row?.product?.price,
+      className: "text-center",
+    },
+    {
+      title: "Quantity",
+      type: "number",
+      render: ({ row }) => (
+        <div className="flex justify-center">
+          <input
+            type="number"
+            min={1}
+            value={row.quantity}
+            onChange={(e) =>
+              update(row.product.id, parseInt(e.target.value, 10))
+            }
+            className="w-16 border rounded px-2 py-1 text-center bg-background"
+          />
+        </div>
+      ),
+      className: "text-center",
+    },
+    {
+      title: "Subtotal",
+      render: ({ row }) => {
+        const unitPrice = row.product.sale_price ?? row.product.price;
+        return (
+          <div className="text-center font-medium">
+            {unitPrice * row.quantity}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Remove",
+      render: ({ row }) => (
+        <div className="flex justify-center">
+          <button
+            onClick={() => {
+              remove(row.product.id);
+              setSelected(
+                selected.filter((x) => x.product.id !== row.product.id)
+              );
+            }}
+            className="text-muted-foreground hover:text-destructive"
+            title="Remove item"
+          >
+            🗑
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <Screen>
-      {/* <MainTable<CartItemType>
-        data={cart}
-        columns={columns}
-        rowId="product.id"
-        selectedRows={selectedCart ?? []}
-        setSelectedRows={setSelectedCart}
-        striped={false}
-        tableClass="border-0"
-        tableInsideClass="border-0 text-sm text-left p-3"
-        trBodyClass="border-0"
-        tBodyClass="border-0"
-        stripedClass="bg-transparent"
-        thHeadClass="bg-muted text-muted-foreground font-medium border-b"
-        tableWrapperClass="max-h-none"
-      /> */}
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
       <div className=" mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2">Your Cart</h1>
@@ -195,124 +159,17 @@ const CartPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cart Table */}
           <div className="lg:col-span-2">
-            <div className="border rounded-lg overflow-hidden">
-              {/* Header row */}
-              <div className="grid grid-cols-7 bg-muted font-medium text-muted-foreground px-4 py-2 items-center">
-                <div>
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={toggleSelectAll}
-                  />
-                </div>
-                <div className="col-span-2">Product</div>
-                <div className="text-center">Unit Price</div>
-                <div className="text-center">Quantity</div>
-                <div className="text-center">Subtotal</div>
-                <div className="text-center">Remove</div>
-              </div>
-
-              {cart?.map((item: CartItemType) => {
-                const { sale_price, price, name, image, id } =
-                  item.product || {};
-                const unitPrice = sale_price ?? price;
-                const subtotal = unitPrice * item.quantity;
-
-                return (
-                  <div
-                    key={id}
-                    className="grid grid-cols-7 items-center border-t px-4 py-3 text-sm"
-                  >
-                    {/* Checkbox */}
-                    <div>
-                      <input
-                        type="checkbox"
-                        // checked={selectedItems.includes(id)}
-                        checked={selectedCart?.some(
-                          (x) => x?.product?.id === id
-                        )}
-                        onChange={() => toggleSelectOne(item)}
-                      />
-                    </div>
-
-                    {/* Product */}
-                    <div className="col-span-2 flex items-center space-x-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                        {image?.original ? (
-                          <Image
-                            src={image?.thumbnail ?? image.original ?? image}
-                            alt={name}
-                            width={64}
-                            height={64}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs text-gray-400">
-                            Product Image
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <h2 className="font-medium">{name}</h2>
-                        {/* <p className="text-xs text-gray-500">★★★★☆ (4.0)</p> */}
-                      </div>
-                    </div>
-
-                    {/* Unit Price */}
-                    <div className="text-center">Rs {unitPrice}</div>
-
-                    {/* Quantity */}
-                    <div className="flex justify-center">
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={(e) => update(id, parseInt(e.target.value))}
-                        className="w-16 border rounded px-2 py-1 text-center"
-                      />
-                    </div>
-
-                    {/* Subtotal */}
-                    <div className="text-center font-medium">Rs {subtotal}</div>
-
-                    {/* Remove */}
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => remove(id)}
-                        className="text-gray-400 hover:text-red-500"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Footer buttons */}
-            <div className="flex justify-between mt-4">
-              <Link href="/product">
-                <Button variant="outline">← Continue Shopping</Button>
-              </Link>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  disabled={selectedCart?.length === 0}
-                  onClick={() =>
-                    removeSelected(
-                      selectedCart?.map((x) => x?.product?.id) ?? []
-                    )
-                  }
-                >
-                  Remove Selected
-                </Button>
-                <Button onClick={clear} variant="outline">
-                  Clear Cart
-                </Button>
-              </div>
-            </div>
+            <MainTable<CartItemType>
+              data={cart}
+              isLoading={loading}
+              columns={columns}
+              rowId="product.id"
+              selectedRows={selected ?? []}
+              setSelectedRows={setSelected}
+              tableClass="border border-border rounded-lg "
+              tableInsideClass="border-b border-border text-left p-3"
+            />
           </div>
-
           {/* Summary only for selected */}
           <div className="border rounded-lg p-6 space-y-3 h-fit">
             <>

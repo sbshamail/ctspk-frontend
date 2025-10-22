@@ -1,3 +1,18 @@
+# My way to code FrontEnd Doc Ai For Custom Table
+
+## We are making the multivender ecommerce website in modern and professional way
+
+## in this project we use next15, typscript, shadcn, rtk and redux query
+
+## Custom Table
+
+//=========================================
+
+## Main Table
+
+// =======================================
+
+```js
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,7 +45,6 @@ export type ColumnType<T> = {
 
 interface TableProps<T> {
   data: T[];
-  isLoading?: boolean;
   columns: ColumnType<T>[];
   rowId?: keyof T | string;
   selectedRows?: T[];
@@ -61,7 +75,6 @@ interface TableProps<T> {
  */
 export function MainTable<T extends Record<string, any>>({
   data,
-  isLoading,
   columns,
   rowId = "id",
   selectedRows = [],
@@ -83,8 +96,8 @@ export function MainTable<T extends Record<string, any>>({
   thHeadClass = "bg-muted text-muted-foreground border-b",
   tableInsideClass = "border border-border shadow-sm text-sm text-left p-3",
   tBodyClass,
-  trBodyClass = "dark:hover:bg-muted/20 hover:bg-muted/30",
-  stripedClass = "dark:bg-muted/10  bg-muted/40",
+  trBodyClass = "hover:bg-accent/50",
+  stripedClass = "bg-muted/40",
 }: TableProps<T>) {
   const [selectAll, setSelectAll] = useState(false);
 
@@ -106,13 +119,7 @@ export function MainTable<T extends Record<string, any>>({
     <thead className={cn("border-none", tHeadClass)}>
       <tr className={cn("sticky top-0 z-10", trHeadClass)}>
         {setSelectedRows && (
-          <th
-            className={cn(
-              tableInsideClass,
-              thHeadClass,
-              isLoading && "animate-pulse "
-            )}
-          >
+          <th className={cn(tableInsideClass, thHeadClass)}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -131,11 +138,7 @@ export function MainTable<T extends Record<string, any>>({
         )}
         {columns.map((col, idx) => (
           <th key={idx} className={cn("px-5", tableInsideClass, thHeadClass)}>
-            <span
-              className={cn("font-semibold ", isLoading && "animate-pulse")}
-            >
-              {col.title}
-            </span>
+            <span className="font-semibold">{col.title}</span>
           </th>
         ))}
       </tr>
@@ -154,13 +157,7 @@ export function MainTable<T extends Record<string, any>>({
           )}
         >
           {setSelectedRows && (
-            <td
-              className={cn(
-                tableInsideClass,
-                tdBodyClass?.(row),
-                isLoading && "animate-pulse border border-border/10 bg-muted/10"
-              )}
-            >
+            <td className={cn(tableInsideClass, tdBodyClass?.(row))}>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -186,8 +183,7 @@ export function MainTable<T extends Record<string, any>>({
                 "p-0 m-0 px-5 overflow-hidden",
                 tableInsideClass,
                 tdBodyClass?.(row),
-                column.className,
-                isLoading && "animate-pulse border border-border/10 bg-muted/10"
+                column.className
               )}
             >
               {renderCell(row, column, index, data)}
@@ -218,3 +214,117 @@ export function MainTable<T extends Record<string, any>>({
 }
 
 export default MainTable;
+
+```
+
+//=========================================
+
+## renderCell
+
+// =======================================
+
+```js
+import { currencyFormatter } from "@/utils/helper";
+import React from "react";
+import { ColumnType } from "../MainTable";
+
+export const renderCell = <T,>(
+  item: T,
+  column: ColumnType<T>,
+  index: number,
+  data: T[]
+) => {
+  const accessors = column.accessor?.toString().split(".");
+  let value: any = item;
+  accessors?.forEach((key) => {
+    value = value?.[key as keyof typeof value];
+  });
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !React.isValidElement(value)
+  ) {
+    value = JSON.stringify(value);
+  }
+
+  if (column.render) {
+    const result = column.render({ row: item, index, data, cell: value });
+    if (
+      React.isValidElement(result) ||
+      typeof result === "string" ||
+      typeof result === "number"
+    )
+      return result;
+    return <span className="text-destructive">Invalid Render</span>;
+  }
+
+  if (value === null || value === undefined)
+    return <span className="text-muted-foreground">N/A</span>;
+
+  switch (column.type) {
+    // case "date":
+    //   return formatDate(value);
+    // case "number":
+    //   return formatNumber(value);
+    case "currency":
+      return currencyFormatter(value, column.currency, column.format);
+    default:
+      return value;
+  }
+};
+
+```
+
+//=========================================
+
+## toggleRowSelection
+
+// =======================================
+
+```js
+import { Checkbox } from "@/components/ui/checkbox";
+import React from "react";
+
+/**
+ * Safely access nested property in an object using dot notation.
+ * Example: getNestedProperty(row, "product.id")
+ */
+function getNestedProperty(obj: any, path: string): any {
+  return path.split(".").reduce((acc, key) => acc?.[key], obj);
+}
+
+/**
+ * Toggles the selection of a single row in a table (supports nested ids like "product.id")
+ */
+export function toggleRowSelection<T extends Record<string, any>>(
+  row: T,
+  idProperty: keyof T | string,
+  selectedRows: T[],
+  setSelectedRows:
+    | React.Dispatch<React.SetStateAction<T[]>>
+    | ((rows: T[]) => void)
+) {
+  const id = getNestedProperty(row, idProperty as string);
+
+  const isSelected = selectedRows.some(
+    (s) => getNestedProperty(s, idProperty as string) === id
+  );
+
+  const toggle = () => {
+    if (isSelected) {
+      setSelectedRows(
+        selectedRows.filter(
+          (s) => getNestedProperty(s, idProperty as string) !== id
+        )
+      );
+    } else {
+      setSelectedRows([...selectedRows, row]);
+    }
+  };
+
+  return <Checkbox checked={isSelected} onCheckedChange={toggle} />;
+}
+
+```
