@@ -4,13 +4,14 @@ import { Screen } from "@/@core/layout";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Clock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
-import { DesktopBottomBar } from "./DesktopBottomBar";
-import { MobileBottomBar } from "./MobileBottomBar";
+
 import { useSelection } from "@/lib/useSelection";
 import { useState } from "react";
+import SiginModal from "@/components/modals/SiginModal"; // Add this import
 
 const Footer = ({ auth }) => {
   const [openSiginModal, setOpenSiginModal] = useState(false);
+  
   const renderLink = (item) => {
     if (item.link === "special://signin") {
       if (auth) {
@@ -35,35 +36,36 @@ const Footer = ({ auth }) => {
       </a>
     );
   };
+
   const footerSections = [
-  {
-    title: "About Us",
-    links: [
-      { name: "About Us", link: "/about" },
-      { name: "Contact Us", link: "/contact" },
-      { name: "About team", link: "/team" },
-      { name: "Customer Support", link: "/support" }
-    ],
-  },
-  {
-    title: "Information",
-    links: [
-      { name: "Privacy Policy", link: "/privacy" },
-      { name: "Terms & Conditions", link: "/terms" },
-      { name: "Returns Policy", link: "/returns" },
-      { name: "Sitemap", link: "/sitemap" },
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { name: "Sign In", link: "special://signin" },
-      { name: "View Cart", link: "/cart" },
-      { name: "My Wishlist", link: "/wishlist" },
-      { name: "Track My Order", link: "/track-order" },
-    ],
-  },
-];
+    {
+      title: "About Us",
+      links: [
+        { name: "About Us", link: "/about" },
+        { name: "Contact Us", link: "/contact" },
+        { name: "About team", link: "/team" },
+        { name: "Customer Support", link: "/support" }
+      ],
+    },
+    {
+      title: "Information",
+      links: [
+        { name: "Privacy Policy", link: "/privacy" },
+        { name: "Terms & Conditions", link: "/terms" },
+        { name: "Returns Policy", link: "/returns" },
+        { name: "Sitemap", link: "/sitemap" },
+      ],
+    },
+    {
+      title: "Account",
+      links: [
+        { name: "Sign In", link: "special://signin" },
+        { name: "View Cart", link: "/cart" },
+        { name: "My Wishlist", link: "/wishlist" },
+        { name: "Track My Order", link: "/track-order" },
+      ],
+    },
+  ];
 
   return (
     <footer className=" mt-12">
@@ -153,40 +155,37 @@ const Footer = ({ auth }) => {
 
               {/* Footer Links */}
               {footerSections.map((section, index) => (
-              <div key={index}>
-                <h4 className="font-semibold text-lg lg:text-xl mb-4">
-                  {section.title}
-                </h4>
-                <ul className="space-y-3">
-                  {section.links.map((item, linkIndex) => {
-                    // Skip rendering Sign In link if user is authenticated
-                    if (item.link === "special://signin" && auth) {
-                      return null;
-                    }
-                    return (
-                      <li key={linkIndex}>
-                        {renderLink(item)}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+                <div key={index}>
+                  <h4 className="font-semibold text-lg lg:text-xl mb-4">
+                    {section.title}
+                  </h4>
+                  <ul className="space-y-3">
+                    {section.links.map((item, linkIndex) => {
+                      // Skip rendering Sign In link if user is authenticated
+                      if (item.link === "special://signin" && auth) {
+                        return null;
+                      }
+                      return (
+                        <li key={linkIndex}>
+                          {renderLink(item)}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
         </Screen>
       </div>
 
-      {/* Bottom Bar */}
-      <div>
-        <div className="hidden lg:block">
-          {" "}
-          <DesktopBottomBar />
-        </div>
-        <div className="block lg:hidden">
-          <MobileBottomBar />
-        </div>
-      </div>
+      
+
+      {/* Add the SiginModal component here */}
+      <SiginModal
+        open={openSiginModal}
+        setOpen={setOpenSiginModal}
+      />
     </footer>
   );
 };
