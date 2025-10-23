@@ -14,6 +14,7 @@
 
 ```js
 "use client";
+"use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -45,6 +46,7 @@ export type ColumnType<T> = {
 
 interface TableProps<T> {
   data: T[];
+  isLoading?: boolean;
   columns: ColumnType<T>[];
   rowId?: keyof T | string;
   selectedRows?: T[];
@@ -75,6 +77,7 @@ interface TableProps<T> {
  */
 export function MainTable<T extends Record<string, any>>({
   data,
+  isLoading,
   columns,
   rowId = "id",
   selectedRows = [],
@@ -96,8 +99,8 @@ export function MainTable<T extends Record<string, any>>({
   thHeadClass = "bg-muted text-muted-foreground border-b",
   tableInsideClass = "border border-border shadow-sm text-sm text-left p-3",
   tBodyClass,
-  trBodyClass = "hover:bg-accent/50",
-  stripedClass = "bg-muted/40",
+  trBodyClass = "dark:hover:bg-muted/20 hover:bg-muted/30",
+  stripedClass = "dark:bg-muted/10  bg-muted/40",
 }: TableProps<T>) {
   const [selectAll, setSelectAll] = useState(false);
 
@@ -119,7 +122,13 @@ export function MainTable<T extends Record<string, any>>({
     <thead className={cn("border-none", tHeadClass)}>
       <tr className={cn("sticky top-0 z-10", trHeadClass)}>
         {setSelectedRows && (
-          <th className={cn(tableInsideClass, thHeadClass)}>
+          <th
+            className={cn(
+              tableInsideClass,
+              thHeadClass,
+              isLoading && "animate-pulse "
+            )}
+          >
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -138,7 +147,11 @@ export function MainTable<T extends Record<string, any>>({
         )}
         {columns.map((col, idx) => (
           <th key={idx} className={cn("px-5", tableInsideClass, thHeadClass)}>
-            <span className="font-semibold">{col.title}</span>
+            <span
+              className={cn("font-semibold ", isLoading && "animate-pulse")}
+            >
+              {col.title}
+            </span>
           </th>
         ))}
       </tr>
@@ -157,7 +170,13 @@ export function MainTable<T extends Record<string, any>>({
           )}
         >
           {setSelectedRows && (
-            <td className={cn(tableInsideClass, tdBodyClass?.(row))}>
+            <td
+              className={cn(
+                tableInsideClass,
+                tdBodyClass?.(row),
+                isLoading && "animate-pulse border border-border/10 bg-muted/10"
+              )}
+            >
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -183,7 +202,8 @@ export function MainTable<T extends Record<string, any>>({
                 "p-0 m-0 px-5 overflow-hidden",
                 tableInsideClass,
                 tdBodyClass?.(row),
-                column.className
+                column.className,
+                isLoading && "animate-pulse border border-border/10 bg-muted/10"
               )}
             >
               {renderCell(row, column, index, data)}
