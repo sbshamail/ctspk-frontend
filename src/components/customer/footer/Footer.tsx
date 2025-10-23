@@ -4,18 +4,31 @@ import { Screen } from "@/@core/layout";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Clock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
-
+import { DesktopBottomBar } from "./DesktopBottomBar";
+import { MobileBottomBar } from "./MobileBottomBar";
 import { useSelection } from "@/lib/useSelection";
 import { useState } from "react";
-import SiginModal from "@/components/modals/SiginModal"; // Add this import
+import SiginModal from "@/components/modals/SiginModal";
+// Define types for the link items
+interface FooterLink {
+  name: string;
+  link: string;
+}
 
-const Footer = ({ auth }) => {
+interface FooterSection {
+  title: string;
+  links: FooterLink[];
+}
+
+const Footer = () => {
   const [openSiginModal, setOpenSiginModal] = useState(false);
-  
-  const renderLink = (item) => {
+  const { data: auth, isLoading } = useSelection("auth");
+
+  const renderLink = (item: FooterLink) => {
     if (item.link === "special://signin") {
-      if (auth) {
-        return null; // Don't show Sign In if authenticated
+      // Don't show Sign In if authenticated or still loading
+      if (auth || isLoading) {
+        return null;
       }
       return (
         <button
@@ -37,7 +50,7 @@ const Footer = ({ auth }) => {
     );
   };
 
-  const footerSections = [
+  const footerSections: FooterSection[] = [
     {
       title: "About Us",
       links: [
@@ -161,8 +174,8 @@ const Footer = ({ auth }) => {
                   </h4>
                   <ul className="space-y-3">
                     {section.links.map((item, linkIndex) => {
-                      // Skip rendering Sign In link if user is authenticated
-                      if (item.link === "special://signin" && auth) {
+                      // Skip rendering Sign In link if user is authenticated or loading
+                      if (item.link === "special://signin" && (auth || isLoading)) {
                         return null;
                       }
                       return (
@@ -179,7 +192,16 @@ const Footer = ({ auth }) => {
         </Screen>
       </div>
 
-      
+      {/* Bottom Bar */}
+      <div>
+        <div className="hidden lg:block">
+          {" "}
+          <DesktopBottomBar />
+        </div>
+        <div className="block lg:hidden">
+          <MobileBottomBar />
+        </div>
+      </div>
 
       {/* Add the SiginModal component here */}
       <SiginModal
