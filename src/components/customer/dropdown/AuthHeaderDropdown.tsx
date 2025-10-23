@@ -45,12 +45,12 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="center" className="w-56">
-        {/* <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild>
           <Link href="/my-orders" className="cursor-pointer">
             My Orders
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
+        {/* <DropdownMenuItem asChild>
           <Link href="/wishlist">Wishlist</Link>
         </DropdownMenuItem> */}
         {/* <DropdownMenuItem asChild>
