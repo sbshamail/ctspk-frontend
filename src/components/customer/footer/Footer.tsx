@@ -6,27 +6,64 @@ import { Clock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
 import { DesktopBottomBar } from "./DesktopBottomBar";
 import { MobileBottomBar } from "./MobileBottomBar";
+import { useSelection } from "@/lib/useSelection";
+import { useState } from "react";
 
-const Footer = () => {
+const Footer = ({ auth }) => {
+  const [openSiginModal, setOpenSiginModal] = useState(false);
+  const renderLink = (item) => {
+    if (item.link === "special://signin") {
+      if (auth) {
+        return null; // Don't show Sign In if authenticated
+      }
+      return (
+        <button
+          onClick={() => setOpenSiginModal(true)}
+          className="text-base text-foreground hover:text-primary transition-colors cursor-pointer"
+        >
+          {item.name}
+        </button>
+      );
+    }
+    
+    return (
+      <a
+        href={item.link}
+        className="text-base text-foreground hover:text-primary transition-colors"
+      >
+        {item.name}
+      </a>
+    );
+  };
   const footerSections = [
-    {
-      title: "About Us",
-      links: ["About Us", "Contact Us", "About team", "Customer Support"],
-    },
-    {
-      title: "Information",
-      links: [
-        "Privacy Policy",
-        "Terms & Conditions",
-        "Returns Policy",
-        "Sitemap",
-      ],
-    },
-    {
-      title: "Account",
-      links: ["Sign In", "View Cart", "My Wishlist", "Track My Order"],
-    },
-  ];
+  {
+    title: "About Us",
+    links: [
+      { name: "About Us", link: "/about" },
+      { name: "Contact Us", link: "/contact" },
+      { name: "About team", link: "/team" },
+      { name: "Customer Support", link: "/support" }
+    ],
+  },
+  {
+    title: "Information",
+    links: [
+      { name: "Privacy Policy", link: "/privacy" },
+      { name: "Terms & Conditions", link: "/terms" },
+      { name: "Returns Policy", link: "/returns" },
+      { name: "Sitemap", link: "/sitemap" },
+    ],
+  },
+  {
+    title: "Account",
+    links: [
+      { name: "Sign In", link: "special://signin" },
+      { name: "View Cart", link: "/cart" },
+      { name: "My Wishlist", link: "/wishlist" },
+      { name: "Track My Order", link: "/track-order" },
+    ],
+  },
+];
 
   return (
     <footer className=" mt-12">
@@ -116,24 +153,25 @@ const Footer = () => {
 
               {/* Footer Links */}
               {footerSections.map((section, index) => (
-                <div key={index}>
-                  <h4 className="font-semibold text-lg lg:text-xl mb-4 ">
-                    {section.title}
-                  </h4>
-                  <ul className="space-y-3">
-                    {section.links.map((link, linkIndex) => (
+              <div key={index}>
+                <h4 className="font-semibold text-lg lg:text-xl mb-4">
+                  {section.title}
+                </h4>
+                <ul className="space-y-3">
+                  {section.links.map((item, linkIndex) => {
+                    // Skip rendering Sign In link if user is authenticated
+                    if (item.link === "special://signin" && auth) {
+                      return null;
+                    }
+                    return (
                       <li key={linkIndex}>
-                        <a
-                          href="#"
-                          className="text-base text-foreground hover:text-primary transition-colors"
-                        >
-                          {link}
-                        </a>
+                        {renderLink(item)}
                       </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
             </div>
           </div>
         </Screen>
