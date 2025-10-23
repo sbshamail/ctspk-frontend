@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import MainTable, { ColumnType } from "@/components/table/MainTable";
-import { currencyFormatter } from "@/utils/helper";
-import { useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { useGetOrdersQuery } from "@/store/services/orderApi";
 import { Screen } from "@/@core/layout";
+import Table from "@/components/table";
+import { ColumnType } from "@/components/table/MainTable";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGetOrdersQuery } from "@/store/services/orderApi";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type OrderType = {
   id: number;
@@ -25,7 +25,7 @@ type OrderType = {
 export default function OrdersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data, isLoading, isFetching } = useGetOrdersQuery({
@@ -122,11 +122,17 @@ export default function OrdersPage() {
       {isLoading ? (
         <OrderTableSkeleton />
       ) : (
-        <MainTable<OrderType>
+        <Table<OrderType>
           data={orders}
           columns={columns}
           isLoading={isFetching}
-          striped
+          striped={true}
+          dataLimit={limit}
+          setDataLimit={setLimit}
+          total={total}
+          currentPage={page}
+          setCurrentPage={setPage}
+          showPagination={true}
         />
       )}
 

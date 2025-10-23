@@ -28,7 +28,7 @@ export type ColumnType<T> = {
   className?: string;
 };
 
-interface TableProps<T> {
+export interface MainTableProps<T = any> {
   data: T[];
   isLoading?: boolean;
   columns: ColumnType<T>[];
@@ -85,7 +85,7 @@ export function MainTable<T extends Record<string, any>>({
   tBodyClass,
   trBodyClass = "dark:hover:bg-muted/20 hover:bg-muted/30",
   stripedClass = "dark:bg-muted/10  bg-muted/40",
-}: TableProps<T>) {
+}: MainTableProps<T>) {
   const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
