@@ -6,109 +6,219 @@ import { Button } from "@/components/ui/button";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
   { link: "/wishlist", name: "Wishlist" },
 ];
 
-interface WishlistItem {
-  id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    sale_price?: number;
-    image: {
-      original: string;
-      thumbnail: string;
-    };
-    in_stock: boolean;
-    slug: string;
-  };
-  added_date: string;
+interface ProductImage {
+  id: number;
+  filename: string;
+  extension: string;
+  original: string;
+  size_mb: number;
+  thumbnail: string;
+  media_type: string;
 }
 
-const WishlistPage = () => {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([
-    {
-      id: "1",
-      product: {
-        id: "101",
-        name: "Wireless Bluetooth Headphones",
-        price: 129.99,
-        sale_price: 99.99,
-        image: {
-          original: "/products/headphones.jpg",
-          thumbnail: "/products/headphones-thumb.jpg"
-        },
-        in_stock: true,
-        slug: "wireless-bluetooth-headphones"
-      },
-      added_date: "2024-01-15"
-    },
-    {
-      id: "2",
-      product: {
-        id: "102",
-        name: "Smart Fitness Watch",
-        price: 199.99,
-        image: {
-          original: "/products/smartwatch.jpg",
-          thumbnail: "/products/smartwatch-thumb.jpg"
-        },
-        in_stock: true,
-        slug: "smart-fitness-watch"
-      },
-      added_date: "2024-01-10"
-    },
-    {
-      id: "3",
-      product: {
-        id: "103",
-        name: "Organic Cotton T-Shirt",
-        price: 29.99,
-        sale_price: 24.99,
-        image: {
-          original: "/products/tshirt.jpg",
-          thumbnail: "/products/tshirt-thumb.jpg"
-        },
-        in_stock: false,
-        slug: "organic-cotton-tshirt"
-      },
-      added_date: "2024-01-08"
-    },
-    {
-      id: "4",
-      product: {
-        id: "104",
-        name: "Stainless Steel Water Bottle",
-        price: 34.99,
-        image: {
-          original: "/products/water-bottle.jpg",
-          thumbnail: "/products/water-bottle-thumb.jpg"
-        },
-        in_stock: true,
-        slug: "stainless-steel-water-bottle"
-      },
-      added_date: "2024-01-05"
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  sale_price: number;
+  image: ProductImage;
+  in_stock: boolean;
+  slug: string;
+}
+
+interface WishlistItem {
+  id: number;
+  user_id: number;
+  product_id: number;
+  variation_option_id: number | null;
+  product: Product;
+  created_at: string;
+}
+
+interface ApiResponse {
+  success: number;
+  detail: string;
+  data: WishlistItem[];
+  total: number;
+}
+
+// Utility function to get access token from cookies
+const getAccessToken = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'access_token') {
+      return decodeURIComponent(value);
     }
-  ]);
+  }
+  return null;
+};
 
-  const [loading, setLoading] = useState(false);
+// API client with authorization
+const apiClient = {
+  async get(url: string) {
+    const token = getAccessToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
-  const removeFromWishlist = (itemId: string) => {
-    setWishlist(prev => prev.filter(item => item.id !== itemId));
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  async delete(url: string) {
+    const token = getAccessToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+
+  async put(url: string, data: any) {
+    const token = getAccessToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
+};
+
+const WishlistPage = () => {
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [operationLoading, setOperationLoading] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
+
+  const fetchWishlist = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data: ApiResponse = await apiClient.get('https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=200');
+      
+      if (data.success === 1) {
+        setWishlist(data.data);
+      } else {
+        throw new Error(data.detail || 'Failed to fetch wishlist');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error fetching wishlist:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const moveAllToCart = () => {
-    // Implementation for moving all items to cart
-    console.log("Moving all items to cart");
+  const removeFromWishlist = async (itemId: number) => {
+    try {
+      setOperationLoading(itemId);
+      const response = await apiClient.delete(`https://api.ctspk.com/wishlist/remove/${itemId}`);
+      
+      if (response.success === 1) {
+        setWishlist(prev => prev.filter(item => item.id !== itemId));
+      } else {
+        throw new Error(response.detail || 'Failed to remove item from wishlist');
+      }
+    } catch (err) {
+      console.error('Error removing item from wishlist:', err);
+      alert('Failed to remove item from wishlist. Please try again.');
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
+  const updateWishlistItem = async (itemId: number, updateData: any) => {
+    try {
+      setOperationLoading(itemId);
+      const response = await apiClient.put(`https://api.ctspk.com/wishlist/update/${itemId}`, updateData);
+      
+      if (response.success === 1) {
+        // Refresh the wishlist to get updated data
+        await fetchWishlist();
+      } else {
+        throw new Error(response.detail || 'Failed to update wishlist item');
+      }
+    } catch (err) {
+      console.error('Error updating wishlist item:', err);
+      alert('Failed to update wishlist item. Please try again.');
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
+  const moveAllToCart = async () => {
+    try {
+      setOperationLoading(-1); // Use -1 to indicate bulk operation
+      
+      // Implementation for moving all in-stock items to cart
+      const inStockItems = wishlist.filter(item => item.product.in_stock);
+      
+      // Here you would typically call your cart API for each item
+      for (const item of inStockItems) {
+        console.log("Adding to cart:", item.product.id);
+        // Example: await addToCartAPI(item.product.id, item.variation_option_id);
+        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API call
+      }
+      
+      // Optionally remove moved items from wishlist
+      // Or keep them in wishlist as some users prefer
+      console.log(`Moved ${inStockItems.length} items to cart`);
+      
+    } catch (err) {
+      console.error('Error moving items to cart:', err);
+      alert('Failed to move items to cart. Please try again.');
+    } finally {
+      setOperationLoading(null);
+    }
   };
 
   const shareWishlist = () => {
-    // Implementation for sharing wishlist
     if (navigator.share) {
       navigator.share({
         title: 'My Wishlist',
@@ -116,15 +226,28 @@ const WishlistPage = () => {
         url: window.location.href,
       });
     } else {
-      // Fallback for browsers that don't support Web Share API
       navigator.clipboard.writeText(window.location.href);
       alert('Wishlist link copied to clipboard!');
     }
   };
 
-  const clearWishlist = () => {
+  const clearWishlist = async () => {
     if (confirm('Are you sure you want to clear your entire wishlist?')) {
-      setWishlist([]);
+      try {
+        setOperationLoading(-2); // Use -2 to indicate clear operation
+        
+        // Remove all items one by one
+        for (const item of wishlist) {
+          await apiClient.delete(`https://api.ctspk.com/wishlist/remove/${item.id}`);
+        }
+        
+        setWishlist([]);
+      } catch (err) {
+        console.error('Error clearing wishlist:', err);
+        alert('Failed to clear wishlist. Please try again.');
+      } finally {
+        setOperationLoading(null);
+      }
     }
   };
 
@@ -147,6 +270,29 @@ const WishlistPage = () => {
       <Screen>
         <BreadcrumbSimple data={breadcrumbData} className="py-6" />
         <LayoutSkeleton />
+      </Screen>
+    );
+  }
+
+  if (error) {
+    return (
+      <Screen>
+        <BreadcrumbSimple data={breadcrumbData} className="py-6" />
+        <div className="text-center py-16">
+          <div className="w-24 h-24 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+            <ErrorIcon className="w-12 h-12 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Wishlist</h2>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            {error}
+          </p>
+          <Button 
+            onClick={fetchWishlist}
+            className="bg-primary text-white hover:bg-primary-dark"
+          >
+            Try Again
+          </Button>
+        </div>
       </Screen>
     );
   }
@@ -179,18 +325,19 @@ const WishlistPage = () => {
                 <Button 
                   variant="outline" 
                   onClick={moveAllToCart}
-                  disabled={inStockItems.length === 0}
+                  disabled={inStockItems.length === 0 || operationLoading === -1}
                   className="flex items-center gap-2"
                 >
                   <CartIcon />
-                  Add All to Cart ({inStockItems.length})
+                  {operationLoading === -1 ? 'Adding...' : `Add All to Cart (${inStockItems.length})`}
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={clearWishlist}
+                  disabled={operationLoading === -2}
                   className="text-red-600 border-red-200 hover:bg-red-50"
                 >
-                  Clear All
+                  {operationLoading === -2 ? 'Clearing...' : 'Clear All'}
                 </Button>
               </div>
             )}
@@ -228,6 +375,8 @@ const WishlistPage = () => {
                           key={item.id}
                           item={item}
                           onRemove={removeFromWishlist}
+                          onUpdate={updateWishlistItem}
+                          isLoading={operationLoading === item.id}
                         />
                       ))}
                     </div>
@@ -246,6 +395,8 @@ const WishlistPage = () => {
                           key={item.id}
                           item={item}
                           onRemove={removeFromWishlist}
+                          onUpdate={updateWishlistItem}
+                          isLoading={operationLoading === item.id}
                         />
                       ))}
                     </div>
@@ -278,11 +429,11 @@ const WishlistPage = () => {
                       <span className="text-gray-900 font-semibold">Total Value</span>
                       <div className="text-right">
                         <div className="text-lg font-bold text-primary">
-                          ${getTotalPrice().toFixed(2)}
+                          Rs.{getTotalPrice().toFixed(2)}
                         </div>
                         {getTotalPrice() < getOriginalTotal() && (
                           <div className="text-sm text-gray-500 line-through">
-                            ${getOriginalTotal().toFixed(2)}
+                            Rs.{getOriginalTotal().toFixed(2)}
                           </div>
                         )}
                       </div>
@@ -291,9 +442,10 @@ const WishlistPage = () => {
 
                   <Button 
                     className="w-full bg-primary text-white hover:bg-primary-dark mb-3"
-                    disabled={inStockItems.length === 0}
+                    onClick={moveAllToCart}
+                    disabled={inStockItems.length === 0 || operationLoading === -1}
                   >
-                    Add All to Cart
+                    {operationLoading === -1 ? 'Adding...' : 'Add All to Cart'}
                   </Button>
                   
                   <Button variant="outline" className="w-full" onClick={shareWishlist}>
@@ -320,10 +472,14 @@ const WishlistPage = () => {
 // Wishlist Item Card Component
 const WishlistItemCard = ({ 
   item, 
-  onRemove 
+  onRemove,
+  onUpdate,
+  isLoading = false
 }: { 
   item: WishlistItem; 
-  onRemove: (id: string) => void;
+  onRemove: (id: number) => void;
+  onUpdate: (id: number, data: any) => void;
+  isLoading?: boolean;
 }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
@@ -345,18 +501,21 @@ const WishlistItemCard = ({
         {/* Product Image */}
         <Link href={`/products/${item.product.slug}`} className="flex-shrink-0">
           <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-              <span className="text-gray-400 text-xs">Product</span>
-            </div>
-            {/* Replace with actual Image component:
             <Image
               src={item.product.image.thumbnail}
               alt={item.product.name}
               width={80}
               height={80}
-              className="object-cover"
+              className="object-cover w-full h-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
             />
-            */}
+            <div className="hidden w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+              <span className="text-gray-400 text-xs">Product</span>
+            </div>
           </div>
         </Link>
 
@@ -371,11 +530,11 @@ const WishlistItemCard = ({
           <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center gap-2">
               <span className={`text-lg font-semibold ${hasSale ? 'text-red-600' : 'text-gray-900'}`}>
-                ${price.toFixed(2)}
+                Rs.{price.toFixed(2)}
               </span>
               {hasSale && (
                 <span className="text-sm text-gray-500 line-through">
-                  ${item.product.price.toFixed(2)}
+                  Rs.{item.product.price.toFixed(2)}
                 </span>
               )}
             </div>
@@ -392,7 +551,7 @@ const WishlistItemCard = ({
             <Button
               size="sm"
               onClick={addToCart}
-              disabled={!item.product.in_stock || isAddingToCart}
+              disabled={!item.product.in_stock || isAddingToCart || isLoading}
               className="bg-primary text-white hover:bg-primary-dark text-xs"
             >
               {isAddingToCart ? 'Adding...' : 'Add to Cart'}
@@ -402,9 +561,10 @@ const WishlistItemCard = ({
               size="sm"
               variant="outline"
               onClick={() => onRemove(item.id)}
+              disabled={isLoading}
               className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
             >
-              Remove
+              {isLoading ? 'Removing...' : 'Remove'}
             </Button>
           </div>
         </div>
@@ -413,7 +573,7 @@ const WishlistItemCard = ({
   );
 };
 
-// Icons
+// Icons (keep the same as before)
 const HeartIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -429,6 +589,12 @@ const ShareIcon = ({ className = "w-4 h-4" }) => (
 const CartIcon = ({ className = "w-4 h-4" }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+  </svg>
+);
+
+const ErrorIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
 );
 
