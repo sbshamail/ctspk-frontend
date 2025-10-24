@@ -8,12 +8,165 @@
 
 //=========================================
 
+## Using
+
+// =======================================
+
+```js
+import Table from "@/components/table";
+import { Skeleton } from "@/components/ui/skeleton";
+
+  const columns: ColumnType<OrderType>[] = [
+    {
+      title: "No.",
+      render: ({ index }) => {
+        const serial = (page - 1) * limit + (index + 1);
+        return <span className="font-medium">{serial}</span>;
+      },
+      className: "w-[60px] text-center",
+    },
+    { title: "Tracking #", accessor: "tracking_number" },
+    { title: "Customer", accessor: "customer_name" },
+    { title: "Contact", accessor: "customer_contact" },
+    {
+      title: "Total",
+      accessor: "total",
+      type: "currency",
+      currency: "PKR",
+    },
+  ]
+{isLoading ? (
+        <OrderTableSkeleton />
+      ) : (
+        <Table<OrderType>
+          data={orders}
+          columns={columns}
+          isLoading={isFetching}
+          striped={true}
+          dataLimit={limit}
+          setDataLimit={setLimit}
+          total={total}
+          currentPage={page}
+          setCurrentPage={setPage}
+          showPagination={true}
+        />
+      )}
+
+      function OrderTableSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array(5)
+        .fill(0)
+        .map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full rounded-md" />
+        ))}
+    </div>
+  );
+}
+
+```
+
+//=========================================
+
+## Table
+
+// =======================================
+
+```js
+import FullScreenDom from "@/@core/layout/FullScreenDom";
+import { cn } from "@/lib/utils";
+import { useRef, useState } from "react";
+import MainTable, { MainTableProps } from "./MainTable";
+import Pagination, { PaginationProps } from "./fn/Pagination";
+import TableHeader from "./fn/TableHeader";
+
+// Case 1: With Pagination
+interface TableWithPagination<T = any>
+  extends MainTableProps<T>,
+    PaginationProps<T> {
+  showPagination: true;
+}
+
+// Case 2: Without Pagination
+interface TableWithoutPagination<T = any> extends MainTableProps<T> {
+  showPagination?: false;
+}
+
+// Union type
+export type TableProps<T = any> =
+  | TableWithPagination<T>
+  | TableWithoutPagination<T>;
+
+export function Table<T extends Record<string, any>>(props: TableProps<T>) {
+  const {
+    data,
+    columns,
+    selectedRows,
+    setSelectedRows,
+    showPagination,
+    ...rest
+  } = props;
+  const [fullScreen, setFullScreen] = useState(false);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  return (
+    <FullScreenDom open={fullScreen}>
+      <div
+        className={cn(
+          { "": !fullScreen },
+          "shadow-2xl rounded-[20px] gap-2 bg-card",
+          { "p-0 m-0 space-y-0 h-full": fullScreen }
+        )}
+      >
+        <div ref={headerRef}>
+          <TableHeader
+            columns={columns}
+            dates={{
+              fromDate: null,
+              setFromDate: () => {},
+              toDate: null,
+              setToDate: () => {},
+            }}
+            globalFilters={{ globalFilter: null, setGlobalFilter: () => {} }}
+            showFullScreen={{ fullScreen, setFullScreen }}
+          />
+        </div>
+        <MainTable<T>
+          data={data}
+          columns={columns}
+          selectedRows={selectedRows}
+          setSelectedRows={setSelectedRows}
+          {...rest}
+        />
+
+        {showPagination && (
+          <Pagination<T>
+            currentPage={props.currentPage}
+            setCurrentPage={props.setCurrentPage}
+            dataLimit={props.dataLimit}
+            setDataLimit={props.setDataLimit}
+            total={props.total}
+            dataLimitDisable={props.dataLimitDisable}
+            setSelectedRows={props.setSelectedRows}
+            removeSelection={props.removeSelection}
+          />
+        )}
+      </div>
+    </FullScreenDom>
+  );
+}
+
+export default Table;
+
+```
+
+//=========================================
+
 ## Main Table
 
 // =======================================
 
 ```js
-"use client";
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,7 +197,7 @@ export type ColumnType<T> = {
   className?: string;
 };
 
-interface TableProps<T> {
+export interface MainTableProps<T = any> {
   data: T[];
   isLoading?: boolean;
   columns: ColumnType<T>[];
@@ -101,7 +254,7 @@ export function MainTable<T extends Record<string, any>>({
   tBodyClass,
   trBodyClass = "dark:hover:bg-muted/20 hover:bg-muted/30",
   stripedClass = "dark:bg-muted/10  bg-muted/40",
-}: TableProps<T>) {
+}: MainTableProps<T>) {
   const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
@@ -347,4 +500,306 @@ export function toggleRowSelection<T extends Record<string, any>>(
   return <Checkbox checked={isSelected} onCheckedChange={toggle} />;
 }
 
+```
+
+//=========================================
+
+## Table Header
+
+// =======================================
+
+```js
+// components/table/TableHeader.tsx
+"use client";
+
+import { useRef } from "react";
+
+import FromToDateFilter, {
+  FromToDateFilterTypes,
+} from "../filters/FromToDateFilter";
+import GlobalFilter, { GlobalFilterType } from "../filters/GlobalFilter";
+import FullScreenTable, { FullScreenTableType } from "./FullScreenTable";
+
+export interface HeaderType {
+  // @ts-ignore
+  headerAction?: () => JSX.Element;
+  dates?: FromToDateFilterTypes;
+  globalFilters?: GlobalFilterType;
+  columnsFilter?: any;
+  showColumnFilterFields?: any;
+  showFullScreen?: FullScreenTableType;
+  // ColumnHideShowType extends ...
+  showOnlyColumns?: any;
+  setShowOnlyColumns?: (c: any) => void;
+}
+
+interface Props extends HeaderType {
+  columns: any[]; // use your ColumnType[] here
+}
+
+export default function TableHeader({
+  dates,
+  headerAction,
+  globalFilters,
+  columnsFilter,
+  showColumnFilterFields,
+  showFullScreen,
+}: Props) {
+  const { fromDate, setFromDate, toDate, setToDate } = dates || {};
+
+  showColumnFilterFields || {};
+  const { setGlobalFilter, globalFilter } = globalFilters || {};
+  const headerRef = (useRef < HTMLDivElement) | (null > null);
+
+  return (
+    <div ref={headerRef}>
+      <div className="flex flex-col font-semibold space-y-3 p-4 rounded-t-2xl border border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {setFromDate && setToDate && (
+              <FromToDateFilter
+                fromDate={fromDate}
+                setFromDate={setFromDate}
+                toDate={toDate}
+                setToDate={setToDate}
+              />
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {setGlobalFilter && (
+              <GlobalFilter
+                setGlobalFilter={setGlobalFilter}
+                globalFilter={globalFilter}
+              />
+            )}
+
+            {showFullScreen && (
+              <FullScreenTable
+                fullScreen={showFullScreen.fullScreen}
+                setFullScreen={showFullScreen.setFullScreen}
+              />
+            )}
+          </div>
+        </div>
+
+        {headerAction && <div>{headerAction()}</div>}
+      </div>
+    </div>
+  );
+}
+```
+
+//=========================================
+
+## Pagination
+
+// =======================================
+
+```js
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
+import * as React from "react";
+
+export interface PaginationProps<T = any> {
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  dataLimit: number;
+  setDataLimit: (limit: number) => void;
+  total: number;
+  dataLimitDisable?: boolean;
+  setSelectedRows?:
+    | React.Dispatch<React.SetStateAction<T[]>>
+    | ((rows: T[]) => void);
+  removeSelection?: boolean;
+}
+
+export function Pagination<T extends Record<string, any>>({
+  currentPage = 1,
+  setCurrentPage,
+  dataLimit,
+  setDataLimit,
+  total,
+  dataLimitDisable,
+  setSelectedRows,
+  removeSelection = true,
+}: PaginationProps<T>) {
+  const pageCount = Math.ceil(total / dataLimit);
+
+  const handlePageChange = (page: number) => {
+    if (removeSelection && setSelectedRows) setSelectedRows([]);
+    setCurrentPage(page);
+  };
+
+  const handleDataLimitChange = (size: number) => {
+    setDataLimit(size);
+    setCurrentPage(1);
+  };
+
+  const getPageNumbers = () => {
+    const pages: number[] = [];
+    let leftSide = currentPage - 2;
+    let rightSide = currentPage + 2;
+
+    if (leftSide <= 1) {
+      rightSide = 5;
+      leftSide = 1;
+    }
+    if (rightSide > pageCount) {
+      leftSide = pageCount - 4;
+      rightSide = pageCount;
+      if (leftSide < 1) leftSide = 1;
+    }
+
+    for (let number = leftSide; number <= rightSide; number++) {
+      if (number > 0 && number <= pageCount) pages.push(number);
+    }
+
+    return pages;
+  };
+
+  if (pageCount === 0) return null;
+
+  return (
+    <div className="w-full sticky right-0 bottom-0 z-10 flex justify-end items-center p-2 px-4 gap-4 bg-card shadow border border-border rounded-lg rounded-t-none text-card-foreground">
+      {/* Total and Limit */}
+      <div className="flex items-center space-x-2">
+        <span className="font-bold select-none">Total: {total}</span>
+        {!dataLimitDisable && total > dataLimit && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 select-none"
+              >
+                Limit {dataLimit}
+                <ChevronDown className="w-4 h-4 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {[10, 20, 30, 40, 50]
+                .filter((size) => size <= total)
+                .map((size) => (
+                  <DropdownMenuItem
+                    key={size}
+                    onClick={() => handleDataLimitChange(size)}
+                    className="cursor-pointer"
+                  >
+                    {size}
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
+      {/* Page Controls */}
+      <div className="flex items-center space-x-2 select-none">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handlePageChange(1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        {getPageNumbers().map((number) => (
+          <Button
+            key={number}
+            size="sm"
+            variant={currentPage === number ? "default" : "outline"}
+            onClick={() => handlePageChange(number)}
+          >
+            {number}
+          </Button>
+        ))}
+
+        {currentPage < pageCount - 2 && <span className="mx-1">...</span>}
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === pageCount}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => handlePageChange(pageCount)}
+          disabled={currentPage === pageCount}
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default Pagination;
+
+```
+
+//=========================================
+
+## Full Screen Icon
+
+// =======================================
+
+```js
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Maximize, Minimize } from "lucide-react";
+
+export type FullScreenTableType = {
+  fullScreen?: boolean,
+  setFullScreen?: (v: boolean) => void,
+};
+
+export default function FullScreenTable({
+  fullScreen,
+  setFullScreen,
+}: FullScreenTableType) {
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => setFullScreen?.(!fullScreen)}
+      aria-pressed={fullScreen}
+      title={fullScreen ? "Exit fullscreen" : "Fullscreen"}
+    >
+      {fullScreen ? (
+        <Minimize className="w-4 h-4" />
+      ) : (
+        <Maximize className="w-4 h-4" />
+      )}
+    </Button>
+  );
+}
 ```

@@ -2,25 +2,16 @@
 
 import { Screen } from "@/@core/layout";
 import Table from "@/components/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ColumnType } from "@/components/table/MainTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useGetOrdersQuery } from "@/store/services/orderApi";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-type OrderType = {
-  id: number;
-  tracking_number: string;
-  customer_name: string;
-  customer_contact: string;
-  total: number;
-  order_status: string;
-  payment_status: string;
-  created_at: string;
-};
+import Image from "next/image";
+import { OrderReadNestedType } from "@/utils/modelTypes/orderType";
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -38,7 +29,7 @@ export default function OrdersPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
 
-  const columns: ColumnType<OrderType>[] = [
+  const columns: ColumnType<OrderReadNestedType>[] = [
     {
       title: "No.",
       render: ({ index }) => {
@@ -47,6 +38,7 @@ export default function OrdersPage() {
       },
       className: "w-[60px] text-center",
     },
+
     { title: "Tracking #", accessor: "tracking_number" },
     { title: "Customer", accessor: "customer_name" },
     { title: "Contact", accessor: "customer_contact" },
@@ -122,7 +114,7 @@ export default function OrdersPage() {
       {isLoading ? (
         <OrderTableSkeleton />
       ) : (
-        <Table<OrderType>
+        <Table<OrderReadNestedType>
           data={orders}
           columns={columns}
           isLoading={isFetching}
