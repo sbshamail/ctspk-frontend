@@ -133,7 +133,7 @@ const ContactUs = () => {
                 <div className="mb-6">
                   <h2 className="text-3xl font-bold">Contact Us</h2>
                   <p className="text-gray-600 mt-4">
-                    Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+                    We’re here to help! Whether you have a question about your order, need help with the website, or want to share feedback — we’d love to hear from you
                   </p>
                 </div>
 
@@ -255,28 +255,27 @@ const ContactUs = () => {
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-medium text-gray-900">Email</h4>
-                          <p className="text-gray-600">support@example.com</p>
+                          <p className="text-gray-600">support@ghertak.com</p>
                         </div>
                         
                         <div>
                           <h4 className="font-medium text-gray-900">Phone</h4>
-                          <p className="text-gray-600">+1 (555) 123-4567</p>
+                          <p className="text-gray-600">+92 300 1234567</p>
                         </div>
                         
                         <div>
                           <h4 className="font-medium text-gray-900">Address</h4>
                           <p className="text-gray-600">
-                            123 Business Street<br />
-                            Suite 100<br />
-                            City, State 12345
+                            Plot 123, Street 45, <br />
+                            Sector G-8/4, <br />
+                            Islamabad, Pakistan
                           </p>
                         </div>
                         
                         <div>
                           <h4 className="font-medium text-gray-900">Business Hours</h4>
                           <p className="text-gray-600">
-                            Monday - Friday: 9:00 AM - 6:00 PM<br />
-                            Saturday: 10:00 AM - 4:00 PM<br />
+                            Monday - Saturday: 9:00 AM - 8:00 PM<br />                            
                             Sunday: Closed
                           </p>
                         </div>
@@ -288,9 +287,9 @@ const ContactUs = () => {
                       <p className="text-gray-600 text-sm mb-4">
                         Check our FAQ section for quick answers to common questions.
                       </p>
-                      <Button variant="outline" className="w-full">
+                      <a href="/faq"  className="w-full">
                         Visit FAQ
-                      </Button>
+                      </a>
                     </div>
                   </div>
                 </div>

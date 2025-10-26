@@ -71,7 +71,20 @@ const AboutUs = () => {
       description: "Continuing to innovate and serve clients worldwide with cutting-edge solutions."
     },
   ];
-
+  const values2 = [
+    {
+      title: "Easy",
+      description: "We simplify life by removing friction for consumers and partners."
+    },
+    {
+      title: "Reliable",
+      description: "We deliver what we promise with consistent quality and build trust with every interaction."
+    },
+    {
+      title: "Ownership", 
+      description: "We take responsibility for outcomes and consumer experience."
+    }
+  ];
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -138,7 +151,7 @@ const AboutUs = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Purpose</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Driving innovation and creating value through technology and collaboration
+              To transform everyday household shopping into an easy, reliable , enjoyable, and delightful experience through consistent fulfilment through technology and human touch.
             </p>
           </div>
 
@@ -164,13 +177,53 @@ const AboutUs = () => {
               >
                 Our Vision
               </button>
+              <button
+                onClick={() => setActiveTab("everyday")}
+                className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors ${
+                  activeTab === "everyday"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Our everyday LIFE
+              </button>
+              <button
+                onClick={() => setActiveTab("culture")}
+                className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors ${
+                  activeTab === "culture"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Our Culture
+              </button>
+              <button
+                onClick={() => setActiveTab("Leadership")}
+                className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors ${
+                  activeTab === "Leadership"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Leadership We Demonstrate
+              </button>
+              <button
+                onClick={() => setActiveTab("People")}
+                className={`px-6 py-3 font-medium text-lg border-b-2 transition-colors ${
+                  activeTab === "People"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Our People
+              </button>
             </div>
 
             <div className="text-center">
               {activeTab === "mission" && (
                 <div className="space-y-6">
                   <h3 className="text-2xl font-bold text-gray-900">Empowering Progress Through Innovation</h3>
-                  <p className="text-lg text-gray-600 leading-relaxed">
+                  <p className="text-lg text-gray-600 leading-relaxed text-left">
                     Our mission is to deliver cutting-edge solutions that solve complex challenges, 
                     empower businesses to thrive in the digital age, and create meaningful impact 
                     for our clients and their customers. We combine technical expertise with 
@@ -182,11 +235,61 @@ const AboutUs = () => {
               {activeTab === "vision" && (
                 <div className="space-y-6">
                   <h3 className="text-2xl font-bold text-gray-900">Shaping a Better Future</h3>
-                  <p className="text-lg text-gray-600 leading-relaxed">
+                  <p className="text-lg text-gray-600 leading-relaxed  text-left">
                     We envision a world where technology seamlessly enhances human potential, 
                     where businesses operate with greater efficiency and purpose, and where 
                     innovative solutions create sustainable value for generations to come. 
                     We strive to be the catalyst for positive change in every industry we touch.
+                  </p>
+                </div>
+              )}
+              {activeTab === "everyday" && (
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Our everyday LIFE</h3>
+                  <p className="text-lg text-gray-600 leading-relaxed text-left">
+                    <ol className="list-decimal list-outside ml-6 space-y-2">
+                      {values2.map((value, index) => (
+                        <li key={index} className="pl-2">
+                          <strong>{value.title}:</strong> {value.description}
+                        </li>
+                      ))}
+                    </ol>
+                  </p>
+                </div>
+              )}
+              {activeTab === "culture" && (
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Our culture</h3>
+                  <p className="text-lg text-gray-600 leading-relaxed text-left">
+                    We are known for continuous learning, data-driven decision-making, and bold experimentation. Our teams collaborate across operations, technology, and partner management to respond rapidly to real-world insights. We celebrate curiosity, encourage feedback, and empower people to make decisions close to the consumer.
+                    <ul className="list-disc list-outside ml-6 space-y-2 mt-4">
+                      <li  className="pl-2">Human-centric, digitally fluent, and purpose-driven.</li>
+                      <li  className="pl-2">A place where everyone’s voice matters</li>
+                      <li  className="pl-2">Performance and kindness coexist; learning never stops.</li>
+                      <li  className="pl-2">Teams delight customers and enable each other.</li>
+                      </ul>
+                  </p>
+                </div>
+              )}
+              {activeTab === "Leadership" && (
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Leadership We Demonstrate</h3>
+                  <p className="text-lg text-gray-600 leading-relaxed  text-left">
+                    Our leaders are digitally confident, emotionally intelligent, and relentlessly consumer-centric, shaping Gher Tak into one of Pakistan’s most admired tech-enabled consumer service brands.
+                    <ul className="list-disc list-outside ml-6 space-y-2 mt-4">
+                      <li  className="pl-2">Inspire trust through transparency and consistency.</li>
+                      <li  className="pl-2">Foster innovation with safe experimentation and rapid iteration.</li>
+                      <li  className="pl-2">Balance digital precision with human empathy.</li>
+                      <li  className="pl-2">Create clarity amid complexity and act with accountability.</li>
+                      </ul>
+                  </p>
+                </div>
+              )}
+              {activeTab === "People" && (
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-bold text-gray-900">Our People</h3>
+                  <p className="text-lg text-gray-600 leading-relaxed  text-left">
+                    Our people are the energy behind Gher Tak’s promise to every household. They are riders, planners, designers, technologists, and dreamers who share one mission: to make everyday life simpler for our consumers. We invest in people who believe that technology should serve humanity, not replace it.
                   </p>
                 </div>
               )}
