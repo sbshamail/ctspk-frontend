@@ -1,9 +1,9 @@
 import { Screen } from "@/@core/layout";
 import { ProductDetail } from "@/components/customer/ProductDetail";
 import ProductSlider from "@/components/customer/slider/ProductSlider";
-
 import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
+import { notFound } from "next/navigation";
 
 interface ProductPageProps {
   params: {
@@ -12,15 +12,29 @@ interface ProductPageProps {
 }
 
 export default async function page({ params }: ProductPageProps) {
-  const product = await fetchApi({
-    url: `product/read/${params.slug}`,
-    options: { cache: "no-store" }, // fresh each request
-  });
+  let product;
+  
+  try {
+    product = await fetchApi({
+      url: `product/read/${params.slug}`,
+      options: { cache: "no-store" },
+    });
+
+    if (!product?.data) {
+      notFound();
+    }
+
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    notFound();
+  }
+
   const breadcrumbData = [
     { link: "/", name: "Home" },
     { link: "/product", name: "Product" },
-    { name: product?.data?.name },
+    { name: product.data.name },
   ];
+
   return (
     <div className="min-h-screen bg-background">
       <Screen>
@@ -28,7 +42,7 @@ export default async function page({ params }: ProductPageProps) {
         <main className="">
           <ProductDetail product={product.data} />
         </main>
-        <div className="shadow p-4 rounded-lg">
+        <div className="shadow p-4 rounded-lg mt-8">
           <ProductSlider title="You might also like" />
         </div>
       </Screen>

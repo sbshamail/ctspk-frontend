@@ -6,6 +6,7 @@ import { ReactNode } from "react";
 import StoreProvider from "./StoreProvider";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,8 +30,9 @@ export default async function RootLayout({
   modal: ReactNode;
 }>) {
   const serverAuth = await getServerSession();
+  
   return (
-    <html lang="en">
+    <html lang="en" className="light" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -39,13 +41,13 @@ export default async function RootLayout({
           defaultTheme="light"
           enableSystem
           disableTransitionOnChange
+          forcedTheme="light" // Force light theme to prevent hydration mismatch
         >
           <StoreProvider serverAuth={serverAuth}>
             {children}
             {modal}
           </StoreProvider>
           <Toaster />
-          {/* {children} */}
         </ThemeProvider>
       </body>
     </html>

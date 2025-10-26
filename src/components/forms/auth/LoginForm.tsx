@@ -31,6 +31,51 @@ export function LoginForm({ close }: LoginFormProps) {
 
   const [error, setError] = React.useState<string | null>(null);
 
+  // Function to sync local cart to backend after successful login
+  const syncCartToBackend = async (accessToken: string) => {
+    try {
+      // Get cart from localStorage
+      const localCart = localStorage.getItem('myapp_cart');
+      console.log('cart',localCart);
+      if (localCart) {
+        const cartItems = JSON.parse(localCart);
+        console.log('cartItems',cartItems);
+        if (Array.isArray(cartItems) && cartItems.length > 0) {
+          // Transform cart items to match backend format
+          const items = cartItems.map(item => ({
+            product_id: item.product?.id || 0,
+            shop_id: item.shop_id || 0,
+            quantity: item.quantity || 1,
+            variation_option_id: item.variation_option_id || null
+          }));
+
+          // Call bulk create API
+          const response = await fetchApi({
+            url: "cart/bulk-create",
+            method: "POST",
+            data: { items },
+            options: {
+              headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json"
+              }
+            }
+          });
+
+          if (response?.success) {
+            // Clear local cart after successful sync
+            localStorage.removeItem('myapp_cart');
+            console.log('Cart synced successfully');
+          } else {
+            console.warn('Failed to sync cart:', response?.detail);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing cart:', error);
+    }
+  };
+
   const onSubmit = async (values: LoginSchemaType) => {
     dispatch(authLoading(true));
     setError(null);
@@ -47,8 +92,14 @@ export function LoginForm({ close }: LoginFormProps) {
 
       if (login?.data) {
         const { access_token, refresh_token, user, exp } = login.data;
+        
+        // Set auth in Redux store and save session
         dispatch(setAuth(login.data));
         saveSession(user, access_token, refresh_token, exp);
+        
+        // Sync cart to backend after successful login
+        await syncCartToBackend(access_token);
+        
         close();
       } else {
         setError("Invalid email or password.");

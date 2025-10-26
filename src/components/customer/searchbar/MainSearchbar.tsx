@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, Search, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface MainSearchbarProps {
   className?: string;
@@ -18,6 +18,56 @@ const MainSearchbar = ({ className }: MainSearchbarProps) => {
   const searchParams = useSearchParams();
 
   const [term, setTerm] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // ✅ Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Use type assertion to access the speech recognition API
+      const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
+      if (SpeechRecognitionAPI) {
+        recognitionRef.current = new SpeechRecognitionAPI();
+        
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setTerm(transcript);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (recognitionRef.current && isListening) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // ✅ Auto-search after voice input completes
+  useEffect(() => {
+    if (!isListening && term && recognitionRef.current) {
+      const timer = setTimeout(() => {
+        handleSearch();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isListening, term]);
 
   // ✅ Sync with URL param if on /product page
   useEffect(() => {
@@ -56,6 +106,26 @@ const MainSearchbar = ({ className }: MainSearchbarProps) => {
     }
   };
 
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in your browser.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error("Failed to start speech recognition:", error);
+        setIsListening(false);
+      }
+    }
+  };
+
   return (
     <div className={cn("hidden lg:flex flex-1 max-w-2xl", className)}>
       <div className="flex w-full border border-border rounded-md">
@@ -75,8 +145,13 @@ const MainSearchbar = ({ className }: MainSearchbarProps) => {
                 <X className="h-4 w-4" />
               </Button>
             )}
-            <Button size="sm" variant="ghost">
-              <Mic className="h-4 w-4" />
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={toggleListening}
+              className={isListening ? "bg-red-100 text-red-600" : ""}
+            >
+              <Mic className={`h-4 w-4 ${isListening ? "animate-pulse" : ""}`} />
             </Button>
             <Separator orientation="vertical" />
             <Button size="sm" variant="ghost" onClick={handleSearch}>

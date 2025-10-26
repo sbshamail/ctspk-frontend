@@ -234,7 +234,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                 {/* Navigation Icons */}
                 <div className="flex items-center space-x-2 border-l border-border pl-4">
                   <Link
-                    href="/"
+                    href="/wishlist"
                     className="p-2 hover:bg-accent/50 rounded-md transition-colors"
                   >
                     <HeartIcon />

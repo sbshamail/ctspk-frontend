@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 import { renderCell } from "./fn/renderCell";
 import { toggleRowSelection } from "./fn/toggleRowSelection";
@@ -88,18 +88,25 @@ export function MainTable<T extends Record<string, any>>({
 }: MainTableProps<T>) {
   const [selectAll, setSelectAll] = useState(false);
 
+  // Use useMemo to avoid unnecessary recalculations and infinite loops
+  const shouldSelectAll = useMemo(() => {
+    return data.length > 0 && selectedRows.length === data.length;
+  }, [data.length, selectedRows.length]);
+
+  // Only update state when the condition actually changes
   useEffect(() => {
-    if (data.length > 0 && selectedRows.length === data.length) {
-      setSelectAll(true);
-    } else {
-      setSelectAll(false);
+    if (shouldSelectAll !== selectAll) {
+      setSelectAll(shouldSelectAll);
     }
-  }, [selectedRows, data]);
+  }, [shouldSelectAll, selectAll]);
+
   const toggleAll = useCallback(() => {
     if (!setSelectedRows) return;
-    if (selectAll) setSelectedRows([]);
-    else setSelectedRows(data);
-    setSelectAll(!selectAll);
+    if (selectAll) {
+      setSelectedRows([]);
+    } else {
+      setSelectedRows([...data]);
+    }
   }, [selectAll, data, setSelectedRows]);
 
   const TableHead = () => (

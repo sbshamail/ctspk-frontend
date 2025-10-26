@@ -64,15 +64,19 @@ export const useCartService = () => {
     }
   }, [isAuth]);
 
-  const add = async (item: CartItemType) => {
+  const add = async (item: CartItemType & { variation_option_id?: number | null }) => {
     if (isAuth) {
       await addToBackend({
         product_id: item.product.id,
         shop_id: item.shop_id,
         quantity: item.quantity,
+        variation_option_id: item.variation_option_id || null, // ✅ Add variation_option_id
       });
     } else {
-      dispatch(addItem(item));
+      dispatch(addItem({
+        ...item,
+        variation_option_id: item.variation_option_id || null // ✅ Add to local cart
+      }));
     }
   };
 

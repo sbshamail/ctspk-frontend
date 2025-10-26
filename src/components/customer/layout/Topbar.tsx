@@ -23,7 +23,7 @@ export default function Topbar() {
               <ul className="flex gap-4 text-muted-foreground">
                 <li>
                   <Link
-                    href="#"
+                    href="/about"
                     className="hover:text-primary transition-colors flex items-center gap-1"
                   >
                     <User className="w-4 h-4" />
@@ -32,7 +32,7 @@ export default function Topbar() {
                 </li>
                 <li>
                   <Link
-                    href="#"
+                    href="/track-order"
                     className="hover:text-primary transition-colors flex items-center gap-1"
                   >
                     <Truck className="w-4 h-4" />

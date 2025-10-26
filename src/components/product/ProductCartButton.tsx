@@ -17,6 +17,7 @@ export const ProductCartButton: FC<Props> = ({
   product,
 }) => {
   const { add } = useCartService();
+  
   return (
     <div onClick={(e) => e.preventDefault()}>
       <div className="relative">
@@ -27,6 +28,7 @@ export const ProductCartButton: FC<Props> = ({
               product: product,
               quantity: 1,
               shop_id: product.shop.id,
+              variation_option_id: product.variation_option_id || null // ✅ Add variation_option_id support
             });
           }}
           className="relative inline-flex cursor-pointer items-center justify-center text-primary hover:text-primary/80"
