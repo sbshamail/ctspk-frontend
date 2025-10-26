@@ -33,6 +33,18 @@ const SingleProductAddToCart = ({ product }: Props) => {
   const quantity = existingItem?.quantity ?? 1;
   const quota = product.quantity ?? 0;
 
+  // Create a cart-compatible product object
+  const createCartProduct = () => ({
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    sale_price: product.sale_price ?? null,
+    image: {
+      original: product.image.original,
+      thumbnail: product.image.thumbnail || product.image.original,
+    },
+  });
+
   const handleDecrease = () => {
     if (quantity > 1) {
       update(product.id, quantity - 1);
@@ -46,7 +58,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
         add({
           quantity: 1,
           shop_id: product.shop.id,
-          product: product,
+          product: createCartProduct(),
         });
       } else {
         update(product.id, quantity + 1);
@@ -59,7 +71,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
       add({
         quantity: 1,
         shop_id: product.shop.id,
-        product: product,
+        product: createCartProduct(),
       });
     }
   };
@@ -71,6 +83,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
         <button
           onClick={handleDecrease}
           className="px-3 py-2 hover:bg-muted transition-colors"
+          disabled={!existingItem || quantity <= 1}
         >
           -
         </button>
@@ -78,6 +91,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
         <button
           onClick={handleIncrease}
           className="px-3 py-2 hover:bg-muted transition-colors"
+          disabled={quantity >= quota}
         >
           +
         </button>
@@ -88,6 +102,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
         <Button
           onClick={handleAddToCart}
           className="bg-primary text-white hover:bg-primary/90"
+          disabled={quota <= 0}
         >
           Add to Cart
         </Button>

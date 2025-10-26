@@ -21,45 +21,58 @@ const breadcrumbData = [
   { link: "/cart", name: "Cart" },
 ];
 
+// Helper function to get the effective price
+const getEffectivePrice = (product: any): number => {
+  // If sale_price exists and is greater than 0, use sale_price, otherwise use regular price
+  return product.sale_price && product.sale_price > 0 ? product.sale_price : product.price;
+};
+
+// Helper to get variation options text
+const getVariationOptionsText = (item: CartItemType): string => {
+  if (!item.variation_option_id || !item.product.variation_options) return "";
+  
+  const variation = item.product.variation_options.find(
+    (v: any) => v.id === item.variation_option_id
+  );
+  
+  if (!variation) return "";
+  
+  // Format variation options for display
+  if (variation.title) {
+    return variation.title;
+  }
+  
+  // Fallback: show options as key-value pairs
+  if (variation.options) {
+    return Object.entries(variation.options)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+  }
+  
+  return "";
+};
+
 const CartPage = () => {
   const { cart, update, remove, clear, loading, removeSelected, isAuth } =
     useCartService();
+
   const setSelectedCart = setReducer("selectedCart");
   const { data: selectedCart = [], dispatch } = useSelection(
     "selectedCart",
     true
   );
-  const [selected, setSelected] = useState<CartItemType[]>([]);
-  useEffect(() => {
-    dispatch(setSelectedCart(selected));
-  }, [selected]);
-  console.log(selected);
-  useMountFirstEffect(() => {
-    setSelected(cart);
-  }, [cart]);
 
-  useMountAfterEffect(() => {
-    setSelected(cart);
-  }, [isAuth]);
+  // Calculate totals for ALL products
+  const totalItems = useMemo(() => cart.length, [cart]);
 
-  // Derived: selected items list
-  const selectedProducts = useMemo(
+  const totalAmount = useMemo(
     () =>
-      cart.filter((item: CartItemType) =>
-        selectedCart?.some((s) => s?.product?.id === item.product.id)
-      ),
-    [cart, selectedCart]
-  );
-
-  // // Derived: total only for selected
-  const selectedTotal = useMemo(
-    () =>
-      selectedProducts.reduce(
+      cart.reduce(
         (acc, item) =>
-          acc + (item.product.sale_price ?? item.product.price) * item.quantity,
+          acc + getEffectivePrice(item.product) * item.quantity,
         0
       ),
-    [selectedProducts]
+    [cart]
   );
 
   const columns: ColumnType<CartItemType>[] = [
@@ -68,12 +81,25 @@ const CartPage = () => {
       accessor: "product.name",
       render: ({ row }) => {
         const { image, name } = row.product;
+        const variationText = getVariationOptionsText(row);
+        
+        // Use variation image if available, otherwise product image
+        let displayImage = image?.original;
+        if (row.variation_option_id && row.product.variation_options) {
+          const variation = row.product.variation_options.find(
+            (v: any) => v.id === row.variation_option_id
+          );
+          if (variation?.image?.original) {
+            displayImage = variation.image.original;
+          }
+        }
+
         return (
           <div className="flex items-center space-x-3">
             <div className="w-16 h-16 bg-muted rounded flex items-center justify-center overflow-hidden">
-              {image?.original ? (
+              {displayImage ? (
                 <Image
-                  src={image.thumbnail ?? image.original}
+                  src={displayImage}
                   alt={name}
                   width={64}
                   height={64}
@@ -83,8 +109,21 @@ const CartPage = () => {
                 <span className="text-xs text-muted-foreground">No image</span>
               )}
             </div>
-            <div>
-              <h2 className="font-medium">{name}</h2>
+            <div className="flex-1">
+              <h2 className="font-medium text-sm">{name}</h2>
+              {variationText && (
+                <div className="mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    Variation: {variationText}
+                  </p>
+                </div>
+              )}
+              {/* Show variation option ID for debugging */}
+              {row.variation_option_id && (
+                <p className="text-xs text-gray-500">
+                  Variation ID: {row.variation_option_id}
+                </p>
+              )}
             </div>
           </div>
         );
@@ -93,22 +132,42 @@ const CartPage = () => {
     },
     {
       title: "Unit Price",
-      type: "currency",
-      render: ({ row }) => row?.product?.sale_price ?? row?.product?.price,
+      render: ({ row }) => {
+        // For variable products, use the variation price if available
+        let price = getEffectivePrice(row.product);
+        
+        if (row.variation_option_id && row.product.variation_options) {
+          const variation = row.product.variation_options.find(
+            (v: any) => v.id === row.variation_option_id
+          );
+          if (variation?.price) {
+            price = parseFloat(variation.price);
+          }
+        }
+        
+        return (
+          <div className="text-center font-medium">
+            Rs {price?.toLocaleString()}
+          </div>
+        );
+      },
       className: "text-center",
     },
     {
       title: "Quantity",
-      type: "number",
       render: ({ row }) => (
         <div className="flex justify-center">
           <input
             type="number"
             min={1}
             value={row.quantity}
-            onChange={(e) =>
-              update(row.product.id, parseInt(e.target.value, 10))
-            }
+            onChange={(e) => {
+              const newQuantity = parseInt(e.target.value, 10);
+              if (newQuantity > 0) {
+                // ✅ Updated to handle variation products correctly
+                update(row.product.id, newQuantity);
+              }
+            }}
             className="w-16 border rounded px-2 py-1 text-center bg-background"
           />
         </div>
@@ -118,10 +177,22 @@ const CartPage = () => {
     {
       title: "Subtotal",
       render: ({ row }) => {
-        const unitPrice = row.product.sale_price ?? row.product.price;
+        // For variable products, use the variation price if available
+        let unitPrice = getEffectivePrice(row.product);
+        
+        if (row.variation_option_id && row.product.variation_options) {
+          const variation = row.product.variation_options.find(
+            (v: any) => v.id === row.variation_option_id
+          );
+          if (variation?.price) {
+            unitPrice = parseFloat(variation.price);
+          }
+        }
+        
+        const subtotal = unitPrice * row.quantity;
         return (
           <div className="text-center font-medium">
-            {unitPrice * row.quantity}
+            Rs {subtotal.toLocaleString()}
           </div>
         );
       },
@@ -131,12 +202,7 @@ const CartPage = () => {
       render: ({ row }) => (
         <div className="flex justify-center">
           <button
-            onClick={() => {
-              remove(row.product.id);
-              setSelected(
-                selected.filter((x) => x.product.id !== row.product.id)
-              );
-            }}
+            onClick={() => remove(row.product.id)}
             className="text-muted-foreground hover:text-destructive"
             title="Remove item"
           >
@@ -150,36 +216,46 @@ const CartPage = () => {
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
-      <div className=" mx-auto p-4">
+      <div className="mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2">Your Cart</h1>
         <p className="text-gray-500 mb-6">
-          There are {cart.length} products in your cart
+          There are {totalItems} products in your cart
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Cart Table */}
           <div className="lg:col-span-2">
-            <MainTable<CartItemType>
-              data={cart}
-              isLoading={loading}
-              columns={columns}
-              rowId="product.id"
-              selectedRows={selected ?? []}
-              setSelectedRows={setSelected}
-              tableClass="border border-border rounded-lg "
-              tableInsideClass="border-b border-border text-left p-3"
-            />
+            {loading ? (
+              <LayoutSkeleton />
+            ) : cart.length > 0 ? (
+              <MainTable<CartItemType>
+                data={cart}
+                isLoading={loading}
+                columns={columns}
+                rowId="product.id"
+                tableClass="border border-border rounded-lg"
+                tableInsideClass="border-b border-border text-left p-3"
+              />
+            ) : (
+              <div className="border border-border rounded-lg p-8 text-center">
+                <p className="text-lg text-muted-foreground">Your cart is empty</p>
+                <Link href="/">
+                  <Button className="mt-4">Continue Shopping</Button>
+                </Link>
+              </div>
+            )}
           </div>
-          {/* Summary only for selected */}
-          <div className="border rounded-lg p-6 space-y-3 h-fit">
-            <>
+          
+          {/* Summary for ALL products */}
+          {cart.length > 0 && (
+            <div className="border rounded-lg p-6 space-y-3 h-fit">
               <div className="flex justify-between">
-                <span>Selected Items</span>
-                <span className="font-medium">{selectedCart?.length}</span>
+                <span>Total Items</span>
+                <span className="font-medium">{totalItems}</span>
               </div>
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-medium">Rs {selectedTotal}</span>
+                <span className="font-medium">Rs {totalAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -187,15 +263,15 @@ const CartPage = () => {
               </div>
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
-                <span>Rs {selectedTotal}</span>
+                <span>Rs {totalAmount.toLocaleString()}</span>
               </div>
               <Link href="/checkout">
                 <Button className="w-full bg-primary text-white">
                   Proceed To Checkout →
                 </Button>
               </Link>
-            </>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </Screen>

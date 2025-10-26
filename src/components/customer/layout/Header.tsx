@@ -37,7 +37,7 @@ export const MainHeader = ({ y = 0 }: { y?: number }) => {
               {/* Right Actions */}
               <div className="flex items-center gap-4 text-base  ">
                 <Link href="/product" className="hover:underline Transition">
-                  Shop
+                  All Products
                 </Link>
 
                 <Button variant="ghost" size="sm" className="md:hidden">
