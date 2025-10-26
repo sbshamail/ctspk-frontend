@@ -6,6 +6,7 @@ export interface ImageType {
 }
 export * from "./AuthType";
 export * from "./cartType";
+export * from "./productType";
 
 export interface CategoryDataType {
   [key: string]: any;
@@ -19,18 +20,4 @@ export interface CategoryDataType {
   children?: CategoryDataType[];
   created_at: string;
   parent_id?: number;
-}
-
-export interface ProductDataType {
-  [key: string]: any;
-  id: number;
-  name: string;
-  gallery?: ImageType[];
-  image?: ImageType;
-  rating?: number;
-  price?: number;
-  salePrice?: number;
-  reviews?: number;
-  sku?: string;
-  category?: { id: number; name: string };
 }

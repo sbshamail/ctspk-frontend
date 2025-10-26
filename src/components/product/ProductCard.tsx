@@ -7,31 +7,23 @@ import { Card } from "../ui/card";
 import { ProductCartButton } from "./ProductCartButton";
 import { ProductFavorite } from "./ProductFavorite";
 import ProductImage from "./ProductImage";
+import { ProductDataType } from "@/utils/modelTypes";
 
-interface Props {
-  name: string;
-  slug?: string;
-  shop: { id: number; name: string };
-  image: string;
+interface Props extends ProductDataType {
+  // name: string;
+  // shop: { id: number; name: string };
+  // image: string;
   rating?: number;
-  price: number;
-  quantity: number;
-  salePrice?: number;
+  // price: number;
+  // quantity: number;
+  // salePrice?: number;
   showPercentage?: boolean;
   Tags?: () => React.ReactNode;
   CartButton?: () => React.ReactNode;
 }
 
 const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
-  const {
-    name,
-    price,
-    slug = "#",
-    salePrice,
-    quantity,
-    image,
-    rating,
-  } = props || {};
+  const { name, price, slug = "#", sale_price, quantity, image } = props || {};
   return (
     <div className=" ">
       <Link href={`/product/${slug}`} className="z-0">
@@ -42,7 +34,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
               {/* Tags */}
 
               <div className="absolute  left-0 top-0 mt-3">
-                {Tags ? Tags() : <ProductTag title={"Sale"} />}
+                {Tags ? Tags() : sale_price && <ProductTag title={"Sale"} />}
               </div>
 
               <div className="absolute right-0 top-0 m-2 z-10 ">
@@ -60,12 +52,12 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
               <div className="w-full flex items-center justify-between ">
                 <div className="w-full flex flex-col mt-2 space-y-2">
                   <div>
-                    <StarRating averageRating={rating} disabled />
+                    <StarRating averageRating={props?.rating ?? 0} disabled />
                   </div>
                   <div className="w-full flex justify-between">
                     <PriceAndSalePrice
                       price={price}
-                      salePrice={salePrice}
+                      salePrice={sale_price}
                       showPercentage={showPercentage}
                     />
                   </div>
