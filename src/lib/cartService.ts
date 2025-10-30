@@ -14,7 +14,7 @@ import {
   useRemoveSelectedCartMutation,
 } from "@/store/services/cartApi";
 
-import { useMountAfterEffect, useMountFirstEffect } from "@/@core/hooks";
+import { useMountFirstEffect } from "@/@core/hooks";
 import { useDebounce } from "@/@core/hooks/useDebounce";
 import { fetchApi } from "@/action/fetchApi";
 import { RootState } from "@/store";
@@ -38,11 +38,7 @@ export const useCartService = () => {
     isFetching,
     isLoading,
   } = useGetCartQuery(undefined, {
-    selectFromResult: ({ data, isFetching, isLoading }) => ({
-      data,
-      isFetching,
-      isLoading,
-    }),
+    skip: !isAuth,
   });
 
   const [addToBackend] = useAddToCartMutation();
@@ -54,40 +50,53 @@ export const useCartService = () => {
     () => (isAuth ? backendCartData || [] : localCart),
     [isAuth, localCart, backendCartData]
   );
-  // 🔁 Auto refetch cart when user logs in
-  // useMountAfterEffect(() => {
-  //   if (isAuth) refetchCart();
-  // }, [isAuth]);
+
   useMountFirstEffect(() => {
-    if (isAuth && !backendCartData.length) {
+    if (!isAuth) return;
+    const hasFetched = sessionStorage.getItem("cartFetched");
+    if (!hasFetched) {
       refetchCart();
+      sessionStorage.setItem("cartFetched", "true");
     }
   }, [isAuth]);
 
-  const add = async (item: CartItemType & { variation_option_id?: number | null }) => {
-    if (isAuth) {
-      await addToBackend({
-        product_id: item.product.id,
-        shop_id: item.shop_id,
-        quantity: item.quantity,
-        variation_option_id: item.variation_option_id || null, // ✅ Add variation_option_id
+  // ##########################################
+  // ### Method to update redux immediately and call backend after 1 second
+  // ##########################################
+  const syncCartCreate = async (
+    product_id: number,
+    shop_id: number,
+    quantity: number,
+    variation_option_id?: number | null
+  ) => {
+    try {
+      const res = await fetchApi({
+        url: `cart/create`,
+        method: "POST",
+        data: { product_id, shop_id, quantity, variation_option_id },
       });
-    } else {
-      dispatch(addItem({
-        ...item,
-        variation_option_id: item.variation_option_id || null // ✅ Add to local cart
-      }));
+      const newItem = res?.data;
+      if (!newItem) return;
+
+      if (res?.success !== 1) {
+        console.warn("Cart update failed:", res?.detail || res?.message);
+        initiateRefetch();
+      }
+      dispatch(
+        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+          if (!Array.isArray(draft)) return;
+          const idx = draft.findIndex(
+            (i: CartItemType) => i.product.id === newItem.product.id
+          );
+          if (idx >= 0) draft[idx] = newItem;
+          else draft.push(newItem);
+        })
+      );
+    } catch (err) {
+      console.error("Cart update error:", err);
+      initiateRefetch();
     }
   };
-
-  const initiateRefetch = () => {
-    dispatch(
-      cartApi.endpoints.getCart.initiate(undefined, {
-        forceRefetch: true,
-      })
-    );
-  };
-
   const syncCartUpdate = async (id: number | string, qty: number) => {
     try {
       const res = await fetchApi({
@@ -105,8 +114,69 @@ export const useCartService = () => {
       initiateRefetch();
     }
   };
+  const syncCartDelete = async (id: number | string) => {
+    try {
+      const res = await fetchApi({
+        url: `cart/delete/${id}`,
+        method: "DELETE",
+      });
 
+      if (res?.success !== 1) {
+        console.warn("Cart delete failed:", res?.detail || res?.message);
+        initiateRefetch();
+      }
+    } catch (err) {
+      console.error("Cart update error:", err);
+      initiateRefetch();
+    }
+  };
+  // ######## This debounced function is called backend fn after 1 second
+  const debouncedAdd = useDebounce(
+    syncCartCreate,
+    1000,
+    (product_id, shop_id, quantity, variation_option_id) => product_id
+  );
   const debouncedUpdate = useDebounce(syncCartUpdate, 1000, (id, qty) => id);
+  const debouncedDelete = useDebounce(syncCartDelete, 1000, (id) => id);
+  // ##########################################
+
+  // #######################
+  // #### Main Functions
+  // #######################
+  const add = async (
+    item: CartItemType & { variation_option_id?: number | null }
+  ) => {
+    if (isAuth) {
+      debouncedAdd(
+        item.product.id,
+        item.shop_id,
+        item.quantity,
+        item.variation_option_id
+      );
+      // await addToBackend({
+      //   product_id: item.product.id,
+      //   shop_id: item.shop_id,
+      //   quantity: item.quantity,
+      //   variation_option_id: item.variation_option_id || null, // ✅ Add variation_option_id
+      // });
+    } else {
+      console.log("Adding to local cart:", item);
+      dispatch(
+        addItem({
+          ...item,
+          variation_option_id: item.variation_option_id || null, // ✅ Add to local cart
+        })
+      );
+    }
+  };
+
+  const initiateRefetch = () => {
+    dispatch(
+      cartApi.endpoints.getCart.initiate(undefined, {
+        forceRefetch: true,
+      })
+    );
+  };
 
   const update = async (id: number, qty: number) => {
     if (isAuth) {
@@ -133,7 +203,18 @@ export const useCartService = () => {
 
   const remove = async (id: number) => {
     if (isAuth) {
-      await removeBackend(id);
+      // console.log("Removing cart:", id);
+      // await removeBackend(id);
+      // Instant Redux Query update manually
+      dispatch(
+        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+          if (!Array.isArray(draft)) return;
+
+          const idx = draft.findIndex((i: CartItemType) => i.product.id === id);
+          if (idx >= 0) draft.splice(idx, 1);
+        })
+      );
+      debouncedDelete(id);
     } else {
       dispatch(removeItem(id));
     }

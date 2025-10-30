@@ -28,11 +28,13 @@ export const cartApi = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Cart"], // ✅ ensures refetch consistency
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
           const { data: res } = await queryFulfilled;
           const newItem = res?.data;
-          // Patch local cache of getCart
+          if (!newItem) return;
+          // ✅ Optimistic cache patch
           dispatch(
             cartApi.util.updateQueryData("getCart", undefined, (draft) => {
               if (!Array.isArray(draft)) return;
@@ -43,7 +45,9 @@ export const cartApi = createApi({
               else draft.push(newItem);
             })
           );
-        } catch {}
+        } catch (err) {
+          console.warn("Add cart patch failed:", err);
+        }
       },
     }),
     // not required for card
@@ -80,60 +84,64 @@ export const cartApi = createApi({
     //   },
     // }),
 
-    // ---------- REMOVE CART ----------
-
+    // ---------- REMOVE ONE ----------
     removeCart: builder.mutation({
       query: (product_id) => ({
         url: `/delete/${product_id}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Cart"], // ✅ refetch safety
       async onQueryStarted(product_id, { dispatch, queryFulfilled }) {
-        // Optimistic remove
         const patch = dispatch(
           cartApi.util.updateQueryData("getCart", undefined, (draft) => {
             if (!Array.isArray(draft)) return;
-            return draft.filter(
-              (i: CartItemType) => i.product.id !== product_id
+            const idx = draft.findIndex(
+              (i: CartItemType) => i.product.id === product_id
             );
+            if (idx >= 0) draft.splice(idx, 1);
           })
         );
         try {
           await queryFulfilled;
         } catch {
-          patch.undo(); // rollback on failure
+          patch.undo();
         }
       },
     }),
+
+    // ---------- REMOVE SELECTED ----------
     removeSelectedCart: builder.mutation({
-      query: (product_ids) => ({
+      query: (product_ids: number[]) => ({
         url: `/delete-many`,
         method: "DELETE",
         body: { product_ids },
       }),
+      invalidatesTags: ["Cart"],
       async onQueryStarted(product_ids, { dispatch, queryFulfilled }) {
         const patch = dispatch(
           cartApi.util.updateQueryData("getCart", undefined, (draft) => {
             if (!Array.isArray(draft)) return;
-            // ✅ safer reassign approach (Immer supports direct assignment)
             const remaining = draft.filter(
               (i) => !product_ids.includes(i.product.id)
             );
             draft.splice(0, draft.length, ...remaining);
           })
         );
-
         try {
           await queryFulfilled;
         } catch {
-          patch.undo(); // rollback on failure
+          patch.undo();
         }
       },
     }),
+
+    // ---------- CLEAR ----------
     clearCart: builder.mutation({
       query: () => ({
         url: `/delete-all`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Cart"],
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         const patch = dispatch(
           cartApi.util.updateQueryData("getCart", undefined, (draft) => {

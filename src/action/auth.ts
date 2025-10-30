@@ -52,10 +52,11 @@ export const getAuth = () => {
   return { user, token };
 };
 export const clearSession = () => {
-  console.log("clear session");
+  console.log("logout clear session");
   Cookies.remove("access_token");
   Cookies.remove("refresh_token");
   Cookies.remove("user_session");
   Cookies.remove("user_session_exp");
+  sessionStorage.removeItem("cartFetched");
   //   dispatch(logout());
 };
