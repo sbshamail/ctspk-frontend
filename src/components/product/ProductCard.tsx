@@ -16,7 +16,7 @@ interface Props {
   rating?: number;
   price: number;
   quantity: number;
-  salePrice?: number;
+  sale_price?: number;
   showPercentage?: boolean;
   Tags?: () => React.ReactNode;
   CartButton?: () => React.ReactNode;
@@ -30,7 +30,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
     name,
     price,
     slug = "#",
-    salePrice,
+      sale_price,
     quantity,
     image,
     rating,
@@ -39,7 +39,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
   } = props || {};
   
   // FIX: Proper sale price validation
-  const hasValidSalePrice = salePrice && salePrice > 0 && salePrice < price;
+  const hasValidSalePrice =   sale_price &&   sale_price > 0 &&   sale_price < price;
   
   // ✅ Check if product is variable and has variations
   const isVariableProduct = product_type === "variable";
@@ -89,7 +89,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
                   <div className="w-full flex justify-between">
                     <PriceAndSalePrice
                       price={price}
-                      salePrice={hasValidSalePrice ? salePrice : undefined}
+                      salePrice={hasValidSalePrice ?   sale_price : undefined}
                       showPercentage={showPercentage}
                     />
                     {/* ✅ Show price range for variable products */}
