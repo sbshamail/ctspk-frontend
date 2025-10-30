@@ -1,26 +1,31 @@
 "use client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 
-import { fetchApi } from "@/action/fetchApi";
 import { saveSession } from "@/action/auth";
-import { useAppDispatch } from "@/lib/hooks";
+import { fetchApi } from "@/action/fetchApi";
 import { authLoading, setAuth } from "@/store/features/authSlice";
 
-import { loginSchema, LoginSchemaType } from "@/schemas";
 import { InputField } from "@/components/formFields/InputField";
 import { PasswordField } from "@/components/formFields/PasswordField";
+import { useSelection } from "@/lib/useSelection";
+import { loginSchema, LoginSchemaType } from "@/schemas";
+// cart
+import { clearCart } from "@/store/features/localCartSlice";
+import { cartApi } from "@/store/services/cartApi";
 
 interface LoginFormProps {
   close: () => void;
 }
 
 export function LoginForm({ close }: LoginFormProps) {
-  const dispatch = useAppDispatch();
+  // const dispatch = useAppDispatch();
+  const { items: cartItems, dispatch } = useSelection("localCart", true);
+
   const {
     register,
     handleSubmit,
@@ -35,44 +40,40 @@ export function LoginForm({ close }: LoginFormProps) {
   const syncCartToBackend = async (accessToken: string) => {
     try {
       // Get cart from localStorage
-      const localCart = localStorage.getItem('myapp_cart');
-      console.log('cart',localCart);
-      if (localCart) {
-        const cartItems = JSON.parse(localCart);
-        console.log('cartItems',cartItems);
+      // const localCart = localStorage.getItem('myapp_cart');
+
+      if (cartItems) {
         if (Array.isArray(cartItems) && cartItems.length > 0) {
           // Transform cart items to match backend format
-          const items = cartItems.map(item => ({
+          const items = cartItems.map((item) => ({
             product_id: item.product?.id || 0,
             shop_id: item.shop_id || 0,
             quantity: item.quantity || 1,
-            variation_option_id: item.variation_option_id || null
+            variation_option_id: item.variation_option_id || null,
           }));
-
           // Call bulk create API
           const response = await fetchApi({
             url: "cart/bulk-create",
             method: "POST",
             data: { items },
-            options: {
-              headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json"
-              }
-            }
           });
 
-          if (response?.success) {
+          if (response) {
             // Clear local cart after successful sync
-            localStorage.removeItem('myapp_cart');
-            console.log('Cart synced successfully');
+            dispatch(clearCart());
+            dispatch(
+              cartApi.endpoints.getCart.initiate(undefined, {
+                forceRefetch: true,
+              })
+            );
+            console.log("Cart synced successfully");
           } else {
-            console.warn('Failed to sync cart:', response?.detail);
+            console.warn("Failed to sync cart:", response?.detail);
           }
         }
       }
     } catch (error) {
-      console.error('Error syncing cart:', error);
+      console.error("Error syncing cart:", error);
     }
   };
 
@@ -92,14 +93,14 @@ export function LoginForm({ close }: LoginFormProps) {
 
       if (login?.data) {
         const { access_token, refresh_token, user, exp } = login.data;
-        
+
         // Set auth in Redux store and save session
         dispatch(setAuth(login.data));
         saveSession(user, access_token, refresh_token, exp);
-        
+
         // Sync cart to backend after successful login
         await syncCartToBackend(access_token);
-        
+
         close();
       } else {
         setError("Invalid email or password.");
