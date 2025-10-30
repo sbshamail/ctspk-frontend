@@ -1,7 +1,6 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
-import { MainLogo } from "@/components/logo/MainLogo";
 import { Clock, Mail, Phone } from "lucide-react";
 import Image from "next/image";
 import { DesktopBottomBar } from "./DesktopBottomBar";
@@ -139,11 +138,9 @@ const Footer = () => {
               {/* Brand Section */}
               <div className="lg:col-span-2">
                 {/* Logo */}
-                <MainLogo className="mb-4 max-w-full" />
+                
                 <p className="text-foreground mb-6 max-w-md">
-                  Your premier destination for electronics from trusted vendors
-                  worldwide. Quality products, competitive prices, and
-                  exceptional service.
+                  If you are a thinker, builder, or doer who sees complexity as a challenge worth simplifying, you will find your calling here. Together, we build a workplace powered by Ease, Reliability, and Ownership, where every saver leaves a mark on the way Pakistan shops, connects, and lives.
                 </p>
 
                 <div className="space-y-2 mb-6">

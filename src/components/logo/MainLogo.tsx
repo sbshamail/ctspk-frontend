@@ -17,6 +17,7 @@ export const MainLogo = ({ className }: MainLogoProps) => {
           width={100}
         />
       </Link>
+      <span className="text-xs text-gray-400 uppercase tracking-wide">we make it easy, always!</span>
     </div>
   );
 };
