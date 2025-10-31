@@ -10,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
-import SiginModal from "@/components/modals/auth/SiginModal";
 interface Props {
   close: () => void;
   setSiginModal: React.Dispatch<React.SetStateAction<boolean>>;

@@ -17,6 +17,7 @@ import { loginSchema, LoginSchemaType } from "@/schemas";
 // cart
 import { clearCart } from "@/store/features/localCartSlice";
 import { cartApi } from "@/store/services/cartApi";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 interface LoginFormProps {
   close: () => void;
@@ -25,7 +26,7 @@ interface LoginFormProps {
 export function LoginForm({ close }: LoginFormProps) {
   // const dispatch = useAppDispatch();
   const { items: cartItems, dispatch } = useSelection("localCart", true);
-
+  const [openForgot, setOpenForgot] = React.useState(false);
   const {
     register,
     handleSubmit,
@@ -113,48 +114,51 @@ export function LoginForm({ close }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-      <InputField
-        id="email"
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        register={register}
-        error={errors.email}
-        autoComplete="email"
-      />
+    <>
+      <ForgotPasswordModal open={openForgot} setOpen={setOpenForgot} />
+      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+        <InputField
+          id="email"
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          register={register}
+          error={errors.email}
+          autoComplete="email"
+        />
 
-      <PasswordField
-        id="password"
-        label="Password"
-        placeholder="••••••••"
-        register={register}
-        error={errors.password}
-        autoComplete="current-password"
-      />
+        <PasswordField
+          id="password"
+          label="Password"
+          placeholder="••••••••"
+          register={register}
+          error={errors.password}
+          autoComplete="current-password"
+        />
 
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
 
-      <div className="flex items-center justify-between">
-        <Link
-          href="#"
-          className="text-sm text-primary underline underline-offset-4"
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setOpenForgot(true)}
+            className="text-sm text-primary underline underline-offset-4"
+          >
+            Forgot password?
+          </button>
+        </div>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-primary text-primary-foreground hover:opacity-90"
         >
-          Forgot password?
-        </Link>
-      </div>
-
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full bg-primary text-primary-foreground hover:opacity-90"
-      >
-        {isSubmitting ? "Signing in..." : "Sign in"}
-      </Button>
-    </form>
+          {isSubmitting ? "Signing in..." : "Sign in"}
+        </Button>
+      </form>
+    </>
   );
 }

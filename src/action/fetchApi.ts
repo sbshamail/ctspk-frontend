@@ -1,11 +1,13 @@
 import { API_URL } from "../../config";
 import { getSession } from "./auth";
+import { toast } from "sonner";
 interface IFetchApi {
   url: string;
   token?: string;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   data?: Record<string, any> | FormData; // JSON body or FormData
   options?: RequestInit; // Extra fetch options (headers, etc.)
+  showToast?: boolean;
 }
 
 export const fetchApi = async ({
@@ -14,6 +16,7 @@ export const fetchApi = async ({
   data,
   token,
   options,
+  showToast,
 }: IFetchApi) => {
   const sessionToken = await getSession("access_token");
   try {
@@ -61,7 +64,11 @@ export const fetchApi = async ({
     // Try to parse JSON safely
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      return response.json();
+      const json = await response.json();
+      if (showToast && json.detail) {
+        toast.success(json.detail);
+      }
+      return json;
     }
     return response.text();
   } catch (error) {
