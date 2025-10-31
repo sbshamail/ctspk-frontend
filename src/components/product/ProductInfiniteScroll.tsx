@@ -63,7 +63,7 @@ const ProductInfiniteScroll = ({
   if (isLoading) return <>{productSkeleton()}</>;
 
   // Show error if API fails
-  if (error) return <p>Error occurred while fetching products</p>;
+  if (error) return <h1>No Product Found</h1>;
 
   return (
     <>
