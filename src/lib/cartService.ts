@@ -82,16 +82,6 @@ export const useCartService = () => {
         console.warn("Cart update failed:", res?.detail || res?.message);
         initiateRefetch();
       }
-      dispatch(
-        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
-          if (!Array.isArray(draft)) return;
-          const idx = draft.findIndex(
-            (i: CartItemType) => i.product.id === newItem.product.id
-          );
-          if (idx >= 0) draft[idx] = newItem;
-          else draft.push(newItem);
-        })
-      );
     } catch (err) {
       console.error("Cart update error:", err);
       initiateRefetch();
@@ -152,6 +142,16 @@ export const useCartService = () => {
         item.shop_id,
         item.quantity,
         item.variation_option_id
+      );
+      dispatch(
+        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+          if (!Array.isArray(draft)) return;
+          const idx = draft.findIndex(
+            (i: CartItemType) => i.product.id === item.product.id
+          );
+          if (idx >= 0) draft[idx] = item;
+          else draft.push(item);
+        })
       );
       // await addToBackend({
       //   product_id: item.product.id,

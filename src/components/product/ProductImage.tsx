@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { ClassNameType } from "@/utils/reactTypes";
 import { cn } from "@/lib/utils";
+import { ClassNameType } from "@/utils/reactTypes";
 
 export default function ProductImage({
   image,
@@ -15,12 +15,19 @@ export default function ProductImage({
   defaultImage?: string;
   className?: ClassNameType;
 }) {
-  const [imgSrc, setImgSrc] = useState(
-    typeof image === "string" ? image : image?.original || defaultImage
-  );
+  const imgUrl =
+    typeof image === "string" ? image : image?.original || defaultImage;
+
+  const [imgSrc, setImgSrc] = useState(imgUrl);
+
+  // 🔥 Update src when the image prop changes
+  useEffect(() => {
+    setImgSrc(imgUrl);
+  }, [imgUrl]);
 
   return (
     <Image
+      key={imgUrl} // 👈 forces remount when URL changes
       className={cn(
         "mx-auto rounded-lg m-0 aspect-square object-cover",
         className
@@ -29,6 +36,7 @@ export default function ProductImage({
       alt={alt}
       width={500}
       height={500}
+      unoptimized // optional, disables Next's built-in caching
       onError={() => setImgSrc(defaultImage)}
     />
   );

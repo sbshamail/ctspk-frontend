@@ -24,31 +24,33 @@ const breadcrumbData = [
 // Helper function to get the effective price
 const getEffectivePrice = (product: any): number => {
   // If sale_price exists and is greater than 0, use sale_price, otherwise use regular price
-  return product.sale_price && product.sale_price > 0 ? product.sale_price : product.price;
+  return product.sale_price && product.sale_price > 0
+    ? product.sale_price
+    : product.price;
 };
 
 // Helper to get variation options text
 const getVariationOptionsText = (item: CartItemType): string => {
   if (!item.variation_option_id || !item.product.variation_options) return "";
-  
+
   const variation = item.product.variation_options.find(
     (v: any) => v.id === item.variation_option_id
   );
-  
+
   if (!variation) return "";
-  
+
   // Format variation options for display
   if (variation.title) {
     return variation.title;
   }
-  
+
   // Fallback: show options as key-value pairs
   if (variation.options) {
     return Object.entries(variation.options)
       .map(([key, value]) => `${key}: ${value}`)
-      .join(', ');
+      .join(", ");
   }
-  
+
   return "";
 };
 
@@ -68,13 +70,15 @@ const CartPage = () => {
   const totalAmount = useMemo(
     () =>
       cart.reduce(
-        (acc, item) =>
-          acc + getEffectivePrice(item.product) * item.quantity,
+        (acc, item) => acc + getEffectivePrice(item.product) * item.quantity,
         0
       ),
     [cart]
   );
 
+  // ####################
+  // -> Table Columns Start
+  // ####################
   const columns: ColumnType<CartItemType>[] = [
     {
       title: "Product",
@@ -82,7 +86,7 @@ const CartPage = () => {
       render: ({ row }) => {
         const { image, name } = row.product;
         const variationText = getVariationOptionsText(row);
-        
+
         // Use variation image if available, otherwise product image
         let displayImage = image?.original;
         if (row.variation_option_id && row.product.variation_options) {
@@ -135,7 +139,7 @@ const CartPage = () => {
       render: ({ row }) => {
         // For variable products, use the variation price if available
         let price = getEffectivePrice(row.product);
-        
+
         if (row.variation_option_id && row.product.variation_options) {
           const variation = row.product.variation_options.find(
             (v: any) => v.id === row.variation_option_id
@@ -144,7 +148,7 @@ const CartPage = () => {
             price = parseFloat(variation.price);
           }
         }
-        
+
         return (
           <div className="text-center font-medium">
             Rs {price?.toLocaleString()}
@@ -179,7 +183,7 @@ const CartPage = () => {
       render: ({ row }) => {
         // For variable products, use the variation price if available
         let unitPrice = getEffectivePrice(row.product);
-        
+
         if (row.variation_option_id && row.product.variation_options) {
           const variation = row.product.variation_options.find(
             (v: any) => v.id === row.variation_option_id
@@ -188,7 +192,7 @@ const CartPage = () => {
             unitPrice = parseFloat(variation.price);
           }
         }
-        
+
         const subtotal = unitPrice * row.quantity;
         return (
           <div className="text-center font-medium">
@@ -212,7 +216,7 @@ const CartPage = () => {
       ),
     },
   ];
-
+  //<-Table Columns End
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -238,14 +242,16 @@ const CartPage = () => {
               />
             ) : (
               <div className="border border-border rounded-lg p-8 text-center">
-                <p className="text-lg text-muted-foreground">Your cart is empty</p>
+                <p className="text-lg text-muted-foreground">
+                  Your cart is empty
+                </p>
                 <Link href="/">
                   <Button className="mt-4">Continue Shopping</Button>
                 </Link>
               </div>
             )}
           </div>
-          
+
           {/* Summary for ALL products */}
           {cart.length > 0 && (
             <div className="border rounded-lg p-6 space-y-3 h-fit">
@@ -255,7 +261,9 @@ const CartPage = () => {
               </div>
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-medium">Rs {totalAmount.toLocaleString()}</span>
+                <span className="font-medium">
+                  Rs {totalAmount.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>

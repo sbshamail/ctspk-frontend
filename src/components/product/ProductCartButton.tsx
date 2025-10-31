@@ -16,8 +16,8 @@ export const ProductCartButton: FC<Props> = ({
   children,
   product,
 }) => {
-  const { add } = useCartService();
-  
+  const { add, cart } = useCartService();
+
   return (
     <div onClick={(e) => e.preventDefault()}>
       <div className="relative">
@@ -28,7 +28,7 @@ export const ProductCartButton: FC<Props> = ({
               product: product,
               quantity: 1,
               shop_id: product.shop.id,
-              variation_option_id: product.variation_option_id || null // ✅ Add variation_option_id support
+              variation_option_id: product.variation_option_id || null, // ✅ Add variation_option_id support
             });
           }}
           className="relative inline-flex cursor-pointer items-center justify-center text-primary hover:text-primary/80"
@@ -38,7 +38,13 @@ export const ProductCartButton: FC<Props> = ({
           ) : (
             <>
               <ShoppingCart className="w-8 h-8" />
-              <Plus className="w-3 h-3 absolute top-1 right-0 bg-white rounded-full" />
+              {cart.some((i) => i.product.id === product.id) ? (
+                <span className="absolute top-0 right-0 -mt-2 text-xs min-w-[1.25rem] h-5 flex items-center justify-center p-0">
+                  {cart.find((i) => i.product.id === product.id)?.quantity}
+                </span>
+              ) : (
+                <Plus className="w-3 h-3 absolute top-1 right-0 bg-white rounded-full" />
+              )}
             </>
           )}
         </button>
