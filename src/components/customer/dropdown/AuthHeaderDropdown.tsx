@@ -50,12 +50,23 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
             My Orders
           </Link>
         </DropdownMenuItem>
-        {/* <DropdownMenuItem asChild>
+         <DropdownMenuItem asChild>
           <Link href="/wishlist">Wishlist</Link>
-        </DropdownMenuItem> */}
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/profiles" className="cursor-pointer">
+            Profiles
+          </Link>
+        </DropdownMenuItem>
+        
         {/* <DropdownMenuItem asChild>
           <Link href="/my-coupons" className="cursor-pointer">
             My Coupons
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/become-seller" className="cursor-pointer">
+            Become a Seller
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -63,21 +74,13 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
             Payments
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer">
-            Settings
-          </Link>
-        </DropdownMenuItem>
+        
         <DropdownMenuItem asChild>
           <Link href="/return-refund" className="cursor-pointer">
             Return & Refund Policy
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/become-seller" className="cursor-pointer">
-            Become a Seller
-          </Link>
-        </DropdownMenuItem> */}
+        </DropdownMenuItem>*/        
+         }
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => handleLogout()}
