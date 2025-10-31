@@ -1,7 +1,8 @@
 "use client";
 
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
-import SiginModal from "@/components/modals/SiginModal";
+import SiginModal from "@/components/modals/auth/SiginModal";
+import RegisterModal from "@/components/modals/auth/RegisterModal";
 import { cn } from "@/lib/utils";
 
 import { useSelection } from "@/lib/useSelection";
@@ -11,6 +12,7 @@ import { useState } from "react";
 import AuthHeaderDropdown from "../dropdown/AuthHeaderDropdown";
 export default function Topbar() {
   const [openSiginModal, setOpenSiginModal] = useState(false);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
   const { data: auth, isLoading } = useSelection("auth");
 
   return (
@@ -69,12 +71,10 @@ export default function Topbar() {
                           open={openSiginModal}
                           setOpen={setOpenSiginModal}
                         />
-
-                        <Link href={"/register"} scroll={false}>
-                          <button className="hover:text-primary transition-colors cursor-pointer">
-                            Register
-                          </button>
-                        </Link>
+                        <RegisterModal
+                          open={openRegisterModal}
+                          setOpen={setOpenRegisterModal}
+                        />
                       </>
                     ) : (
                       <AuthHeaderDropdown auth={auth} />

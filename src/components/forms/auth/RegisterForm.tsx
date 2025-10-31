@@ -10,8 +10,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
-
-export function RegisterForm() {
+import SiginModal from "@/components/modals/auth/SiginModal";
+interface Props {
+  close: () => void;
+  setSiginModal: React.Dispatch<React.SetStateAction<boolean>>;
+}
+export function RegisterForm({ close, setSiginModal }: Props) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const {
@@ -34,7 +38,8 @@ export function RegisterForm() {
 
       if (res?.success) {
         reset();
-        router.push("/login");
+        close();
+        setSiginModal(true);
       } else {
         setServerError(
           res?.detail || "Something went wrong. Please try again."

@@ -15,7 +15,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import SiginModal from "@/components/modals/SiginModal";
+import SiginModal from "@/components/modals/auth/SiginModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -44,23 +44,23 @@ const checkoutSchema = z.object({
 // Helper function to get variation display text
 const getVariationDisplayText = (item: any): string => {
   if (!item.variation_option_id || !item.product.variation_options) return "";
-  
+
   const variation = item.product.variation_options.find(
     (v: any) => v.id === item.variation_option_id
   );
-  
+
   if (!variation) return "";
-  
+
   if (variation.title) {
     return variation.title;
   }
-  
+
   if (variation.options) {
     return Object.entries(variation.options)
       .map(([key, value]) => `${key}: ${value}`)
-      .join(', ');
+      .join(", ");
   }
-  
+
   return "";
 };
 
@@ -75,9 +75,11 @@ const getEffectivePrice = (item: any): number => {
       return parseFloat(variation.price);
     }
   }
-  
+
   // For simple products, use sale price if available, otherwise regular price
-  return item.product.sale_price > 0 ? item.product.sale_price : item.product.price;
+  return item.product.sale_price > 0
+    ? item.product.sale_price
+    : item.product.price;
 };
 
 export default function CheckoutPage() {
@@ -118,7 +120,7 @@ export default function CheckoutPage() {
   const fetchAddresses = async () => {
     try {
       const res = await fetchApi({
-        url: `address/list?user=${user?.id || ''}&page=1&skip=0&limit=10`,
+        url: `address/list?user=${user?.id || ""}&page=1&skip=0&limit=10`,
         method: "GET",
       });
 
@@ -152,16 +154,20 @@ export default function CheckoutPage() {
         city: "",
         state: "Federal",
         postal_code: "",
-        country: "Pakistan"
-      }
+        country: "Pakistan",
+      },
     },
   });
 
   // Set default addresses when addresses are loaded
   useEffect(() => {
     if (addresses.length > 0) {
-      const defaultShipping = addresses.find(addr => addr.type === "shipping" && addr.is_default);
-      const defaultBilling = addresses.find(addr => addr.type === "billing" && addr.is_default);
+      const defaultShipping = addresses.find(
+        (addr) => addr.type === "shipping" && addr.is_default
+      );
+      const defaultBilling = addresses.find(
+        (addr) => addr.type === "billing" && addr.is_default
+      );
 
       if (defaultShipping) {
         setValue("name", user?.name || "");
@@ -176,9 +182,18 @@ export default function CheckoutPage() {
       if (defaultBilling) {
         setValue("billing_address.street", defaultBilling.address.street);
         setValue("billing_address.city", defaultBilling.address.city);
-        setValue("billing_address.state", defaultBilling.address.state || "Federal");
-        setValue("billing_address.postal_code", defaultBilling.address.postal_code || "");
-        setValue("billing_address.country", defaultBilling.address.country || "Pakistan");
+        setValue(
+          "billing_address.state",
+          defaultBilling.address.state || "Federal"
+        );
+        setValue(
+          "billing_address.postal_code",
+          defaultBilling.address.postal_code || ""
+        );
+        setValue(
+          "billing_address.country",
+          defaultBilling.address.country || "Pakistan"
+        );
       }
     }
   }, [addresses, user, setValue]);
@@ -212,39 +227,43 @@ export default function CheckoutPage() {
 
   const onSubmit = async (values: z.infer<typeof checkoutSchema>) => {
     const billingAddress = values.billing_address;
-    
+
     // Validate required billing fields
     if (!billingAddress.street || !billingAddress.city) {
-      setServerError("Please fill in all required billing address fields (Street and City).");
+      setServerError(
+        "Please fill in all required billing address fields (Street and City)."
+      );
       return;
     }
 
     const orderData = {
-      shipping_address: shipToDifferentAddress ? {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        street: values.address,
-        city: values.city,
-        state: "Federal",
-        postal_code: values.zip,
-        country: values.country
-      } : {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        street: billingAddress.street,
-        city: billingAddress.city,
-        state: billingAddress.state,
-        postal_code: billingAddress.postal_code,
-        country: billingAddress.country
-      },
+      shipping_address: shipToDifferentAddress
+        ? {
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            street: values.address,
+            city: values.city,
+            state: "Federal",
+            postal_code: values.zip,
+            country: values.country,
+          }
+        : {
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            street: billingAddress.street,
+            city: billingAddress.city,
+            state: billingAddress.state,
+            postal_code: billingAddress.postal_code,
+            country: billingAddress.country,
+          },
       billing_address: {
         street: billingAddress.street,
         city: billingAddress.city,
         state: billingAddress.state,
         postal_code: billingAddress.postal_code,
-        country: billingAddress.country
+        country: billingAddress.country,
       },
       payment_method: selectedPayment,
       cart: cart?.map((item) => ({
@@ -298,20 +317,22 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle className="text-2xl font-bold">Checkout</CardTitle>
               <p className="text-muted-foreground">Complete your purchase</p>
-              
+
               {/* Server Error Display */}
               {serverError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                   {serverError}
                 </div>
               )}
-              
+
               {!isAuth && (
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="guest-checkout"
                     checked={checkoutAsGuest}
-                    onCheckedChange={(checked) => setCheckoutAsGuest(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setCheckoutAsGuest(checked as boolean)
+                    }
                   />
                   <Label htmlFor="guest-checkout">Checkout as guest</Label>
                 </div>
@@ -328,10 +349,14 @@ export default function CheckoutPage() {
             <CardContent className="space-y-8">
               {/* Personal Information */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Personal Information</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  Personal Information
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Name *</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Name *
+                    </label>
                     <input
                       type="text"
                       {...register("name")}
@@ -340,11 +365,15 @@ export default function CheckoutPage() {
                       required
                     />
                     {errors.name && (
-                      <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.name.message}
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Email *</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Email *
+                    </label>
                     <input
                       type="email"
                       {...register("email")}
@@ -353,11 +382,15 @@ export default function CheckoutPage() {
                       required
                     />
                     {errors.email && (
-                      <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.email.message}
+                      </p>
                     )}
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Phone *</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Phone *
+                    </label>
                     <input
                       type="text"
                       {...register("phone")}
@@ -366,7 +399,9 @@ export default function CheckoutPage() {
                       required
                     />
                     {errors.phone && (
-                      <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.phone.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -374,10 +409,14 @@ export default function CheckoutPage() {
 
               {/* Billing Information */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Billing Information *</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  Billing Information *
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Street Address *</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Street Address *
+                    </label>
                     <input
                       type="text"
                       {...register("billing_address.street")}
@@ -386,11 +425,15 @@ export default function CheckoutPage() {
                       required
                     />
                     {errors.billing_address?.street && (
-                      <p className="text-red-500 text-sm mt-1">{errors.billing_address.street.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.billing_address.street.message}
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">City *</label>
+                    <label className="block text-sm font-medium mb-2">
+                      City *
+                    </label>
                     <input
                       type="text"
                       {...register("billing_address.city")}
@@ -399,11 +442,15 @@ export default function CheckoutPage() {
                       required
                     />
                     {errors.billing_address?.city && (
-                      <p className="text-red-500 text-sm mt-1">{errors.billing_address.city.message}</p>
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.billing_address.city.message}
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Postal Code</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Postal Code
+                    </label>
                     <input
                       type="text"
                       {...register("billing_address.postal_code")}
@@ -412,7 +459,9 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Country</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Country
+                    </label>
                     <input
                       type="text"
                       {...register("billing_address.country")}
@@ -429,18 +478,26 @@ export default function CheckoutPage() {
                 <Checkbox
                   id="different-address"
                   checked={shipToDifferentAddress}
-                  onCheckedChange={(checked) => setShipToDifferentAddress(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setShipToDifferentAddress(checked as boolean)
+                  }
                 />
-                <Label htmlFor="different-address" className="text-sm">Ship to a different address?</Label>
+                <Label htmlFor="different-address" className="text-sm">
+                  Ship to a different address?
+                </Label>
               </div>
 
               {/* Shipping Information (conditional) */}
               {shipToDifferentAddress && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Shipping Information</h3>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Shipping Information
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">Shipping Street Address *</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Shipping Street Address *
+                      </label>
                       <input
                         type="text"
                         {...register("address")}
@@ -449,11 +506,15 @@ export default function CheckoutPage() {
                         required
                       />
                       {errors.address && (
-                        <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.address.message}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Shipping City *</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Shipping City *
+                      </label>
                       <input
                         type="text"
                         {...register("city")}
@@ -462,11 +523,15 @@ export default function CheckoutPage() {
                         required
                       />
                       {errors.city && (
-                        <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.city.message}
+                        </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Shipping Postal Code</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Shipping Postal Code
+                      </label>
                       <input
                         type="text"
                         {...register("zip")}
@@ -475,7 +540,9 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">Country</label>
+                      <label className="block text-sm font-medium mb-2">
+                        Country
+                      </label>
                       <input
                         type="text"
                         {...register("country")}
@@ -495,7 +562,7 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {totalItems} item{totalItems !== 1 ? 's' : ''} in cart
+                {totalItems} item{totalItems !== 1 ? "s" : ""} in cart
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -504,12 +571,12 @@ export default function CheckoutPage() {
                   product: { name, image, id },
                   quantity,
                 } = item || {};
-                
+
                 // ✅ Use the helper function to get correct price
                 const unitPrice = getEffectivePrice(item);
                 const subtotal = unitPrice * quantity;
                 const variationText = getVariationDisplayText(item);
-                
+
                 return (
                   <div
                     key={`${id}-${index}`}
@@ -550,7 +617,7 @@ export default function CheckoutPage() {
                 </span>
               </div>
               <Separator />
-              
+
               {/* Payment Options */}
               <div className="payment">
                 <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
@@ -565,8 +632,15 @@ export default function CheckoutPage() {
                       checked={selectedPayment === "credit_card"}
                       onChange={() => setSelectedPayment("credit_card")}
                     />
-                    <label className="form-check-label flex items-center" htmlFor="creditCard">
-                      <img src="/assets/imgs/card-icon.png" className="mr-2 w-6 h-6" alt="" />
+                    <label
+                      className="form-check-label flex items-center"
+                      htmlFor="creditCard"
+                    >
+                      <img
+                        src="/assets/imgs/card-icon.png"
+                        className="mr-2 w-6 h-6"
+                        alt=""
+                      />
                       Credit/Debit card
                     </label>
                   </div>
@@ -580,8 +654,15 @@ export default function CheckoutPage() {
                       checked={selectedPayment === "easypaisa"}
                       onChange={() => setSelectedPayment("easypaisa")}
                     />
-                    <label className="form-check-label flex items-center" htmlFor="easypaisa">
-                      <img src="/assets/imgs/easypaisa.png" className="mr-2 w-6 h-6" alt="" />
+                    <label
+                      className="form-check-label flex items-center"
+                      htmlFor="easypaisa"
+                    >
+                      <img
+                        src="/assets/imgs/easypaisa.png"
+                        className="mr-2 w-6 h-6"
+                        alt=""
+                      />
                       Easy Paisa
                     </label>
                   </div>
@@ -595,8 +676,15 @@ export default function CheckoutPage() {
                       checked={selectedPayment === "jazzcash"}
                       onChange={() => setSelectedPayment("jazzcash")}
                     />
-                    <label className="form-check-label flex items-center" htmlFor="jazzcash">
-                      <img src="/assets/imgs/jazzcash.png" className="mr-2 w-6 h-6" alt="" />
+                    <label
+                      className="form-check-label flex items-center"
+                      htmlFor="jazzcash"
+                    >
+                      <img
+                        src="/assets/imgs/jazzcash.png"
+                        className="mr-2 w-6 h-6"
+                        alt=""
+                      />
                       Jazz Cash
                     </label>
                   </div>
@@ -610,8 +698,15 @@ export default function CheckoutPage() {
                       checked={selectedPayment === "cash_on_delivery"}
                       onChange={() => setSelectedPayment("cash_on_delivery")}
                     />
-                    <label className="form-check-label flex items-center" htmlFor="cashOnDelivery">
-                      <img src="/assets/imgs/cash-icon.png" className="mr-2 w-6 h-6" alt="" />
+                    <label
+                      className="form-check-label flex items-center"
+                      htmlFor="cashOnDelivery"
+                    >
+                      <img
+                        src="/assets/imgs/cash-icon.png"
+                        className="mr-2 w-6 h-6"
+                        alt=""
+                      />
                       Cash On Delivery
                     </label>
                   </div>
@@ -619,7 +714,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Place Order Button */}
-              <Button 
+              <Button
                 onClick={handleSubmit(onSubmit)}
                 className="w-full mt-2"
                 disabled={isSubmitting || total === 0}

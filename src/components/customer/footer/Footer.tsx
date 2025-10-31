@@ -7,7 +7,7 @@ import { DesktopBottomBar } from "./DesktopBottomBar";
 import { MobileBottomBar } from "./MobileBottomBar";
 import { useSelection } from "@/lib/useSelection";
 import { useState } from "react";
-import SiginModal from "@/components/modals/SiginModal";
+import SiginModal from "@/components/modals/auth/SiginModal";
 // Define types for the link items
 interface FooterLink {
   name: string;
@@ -38,7 +38,7 @@ const Footer = () => {
         </button>
       );
     }
-    
+
     return (
       <a
         href={item.link}
@@ -56,7 +56,7 @@ const Footer = () => {
         { name: "About Us", link: "/about" },
         { name: "Contact Us", link: "/contact" },
         { name: "About team", link: "/team" },
-        { name: "Customer Support", link: "/support" }
+        { name: "Customer Support", link: "/support" },
       ],
     },
     {
@@ -138,9 +138,13 @@ const Footer = () => {
               {/* Brand Section */}
               <div className="lg:col-span-2">
                 {/* Logo */}
-                
+
                 <p className="text-foreground mb-6 max-w-md">
-                  If you are a thinker, builder, or doer who sees complexity as a challenge worth simplifying, you will find your calling here. Together, we build a workplace powered by Ease, Reliability, and Ownership, where every saver leaves a mark on the way Pakistan shops, connects, and lives.
+                  If you are a thinker, builder, or doer who sees complexity as
+                  a challenge worth simplifying, you will find your calling
+                  here. Together, we build a workplace powered by Ease,
+                  Reliability, and Ownership, where every saver leaves a mark on
+                  the way Pakistan shops, connects, and lives.
                 </p>
 
                 <div className="space-y-2 mb-6">
@@ -172,14 +176,13 @@ const Footer = () => {
                   <ul className="space-y-3">
                     {section.links.map((item, linkIndex) => {
                       // Skip rendering Sign In link if user is authenticated or loading
-                      if (item.link === "special://signin" && (auth || isLoading)) {
+                      if (
+                        item.link === "special://signin" &&
+                        (auth || isLoading)
+                      ) {
                         return null;
                       }
-                      return (
-                        <li key={linkIndex}>
-                          {renderLink(item)}
-                        </li>
-                      );
+                      return <li key={linkIndex}>{renderLink(item)}</li>;
                     })}
                   </ul>
                 </div>
@@ -201,10 +204,7 @@ const Footer = () => {
       </div>
 
       {/* Add the SiginModal component here */}
-      <SiginModal
-        open={openSiginModal}
-        setOpen={setOpenSiginModal}
-      />
+      <SiginModal open={openSiginModal} setOpen={setOpenSiginModal} />
     </footer>
   );
 };

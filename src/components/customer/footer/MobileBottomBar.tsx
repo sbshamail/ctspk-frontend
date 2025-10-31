@@ -2,7 +2,7 @@
 import { Screen } from "@/@core/layout";
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
 import { MainLogo } from "@/components/logo/MainLogo";
-import SiginModal from "@/components/modals/SiginModal";
+import SiginModal from "@/components/modals/auth/SiginModal";
 import { useSelection } from "@/lib/useSelection";
 import { useState } from "react";
 import AuthHeaderDropdown from "../dropdown/AuthHeaderDropdown";

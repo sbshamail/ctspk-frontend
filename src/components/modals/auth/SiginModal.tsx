@@ -1,6 +1,8 @@
-import React from "react";
-import { ShadDialog } from "../dialog/ShadDialog";
-import { LoginForm } from "../forms/auth/LoginForm";
+"use client";
+import React, { useEffect } from "react";
+import { ShadDialog } from "../../dialog/ShadDialog";
+import { LoginForm } from "../../forms/auth/LoginForm";
+import RegisterModal from "./RegisterModal";
 
 interface Props {
   open: boolean;
@@ -8,9 +10,16 @@ interface Props {
   trigger?: React.ReactNode;
 }
 const SiginModal = ({ open, setOpen, trigger }: Props) => {
+  const [registerModal, setRegisterModal] = React.useState(false);
   const close = () => {
     setOpen(false);
   };
+  if (registerModal) {
+    return <RegisterModal open={registerModal} setOpen={setRegisterModal} />;
+  }
+  useEffect(() => {
+    setRegisterModal(false);
+  }, []);
   return (
     <div>
       <div className="">
@@ -29,7 +38,13 @@ const SiginModal = ({ open, setOpen, trigger }: Props) => {
           <LoginForm close={close} />
           <p className="text-center text-sm text-muted-foreground mt-4">
             New here?{" "}
-            <button className="text-primary hover:underline cursor-pointer">
+            <button
+              className="text-primary hover:underline cursor-pointer"
+              onClick={() => {
+                setRegisterModal(true); // 👈 open Register modal
+                setOpen(false); // 👈 close SignIn modal
+              }}
+            >
               Register
             </button>
           </p>
