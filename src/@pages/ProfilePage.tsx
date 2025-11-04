@@ -283,7 +283,7 @@ const ProfilePage = () => {
         return;
       }
 
-      const response: ApiResponse = await apiClient.put(
+      const response: ApiResponse = await apiClient.post(
         "https://api.ctspk.com/user/change-password",
         passwordForm
       );
