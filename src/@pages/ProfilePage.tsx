@@ -19,7 +19,7 @@ interface User {
   id?: number; // Make id optional
   name: string;
   email: string;
-  phone: string;
+  phone_no: string;
   avatar?: string;
 }
 
@@ -165,7 +165,7 @@ const ProfilePage = () => {
   // Form states
   const [profileForm, setProfileForm] = useState({
     name: "",
-    phone: "",
+    phone_no: "",
   });
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
@@ -201,7 +201,7 @@ const ProfilePage = () => {
       setUser(userData);
       setProfileForm({
         name: userData.name,
-        phone: userData.phone || "",
+        phone_no: userData.phone_no || "",
       });
     }
     setLoading(false);
@@ -478,12 +478,12 @@ const ProfilePage = () => {
                         <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
                       </div>
                       <div>
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phone_no">Phone Number</Label>
                         <Input
-                          id="phone"
+                          id="phone_no"
                           type="tel"
-                          value={profileForm.phone}
-                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                          value={profileForm.phone_no}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone_no: e.target.value })}
                         />
                       </div>
                     </div>
