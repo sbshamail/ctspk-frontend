@@ -62,11 +62,23 @@ const getAccessToken = (): string | null => {
   return null;
 };
 
-// Get user from localStorage
-const getUserFromStorage = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  const userStr = localStorage.getItem('user');
-  return userStr ? JSON.parse(userStr) : null;
+// Get user from cookies (user_session)
+const getUserFromCookies = (): User | null => {
+  if (typeof document === 'undefined') return null;
+  
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'user_session') {
+      try {
+        return JSON.parse(decodeURIComponent(value));
+      } catch (error) {
+        console.error('Error parsing user_session cookie:', error);
+        return null;
+      }
+    }
+  }
+  return null;
 };
 
 // API client with authorization
@@ -173,22 +185,22 @@ const ProfilePage = () => {
     confirm_password: "",
   });
   const [addressForm, setAddressForm] = useState({
-    id: null as number | null,
-    title: "",
-    type: "shipping" as "billing" | "shipping",
-    is_default: false,
-    address: {
-      street: "",
-      city: "",
-      state: "",
-      postal_code: "",
-      country: "",
-    },
-    location: {
-      lat: 0,
-      lng: 0,
-    },
-  });
+  id: null as number | null,
+  title: "",
+  type: "shipping" as "billing" | "shipping",
+  is_default: false,
+  address: {
+    street: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    country: "",
+  },
+  location: {
+    lat: 0.0,  // Default value
+    lng: 0.0,  // Default value
+  },
+});
 
   useEffect(() => {
     loadUserData();
@@ -196,7 +208,7 @@ const ProfilePage = () => {
   }, []);
 
   const loadUserData = () => {
-    const userData = getUserFromStorage();
+    const userData = getUserFromCookies();
     if (userData) {
       setUser(userData);
       setProfileForm({
@@ -209,8 +221,8 @@ const ProfilePage = () => {
 
   const loadAddresses = async () => {
     try {
-      const userData = getUserFromStorage();
-      if (!userData) return;
+      const userData = getUserFromCookies();
+      if (!userData || !userData.id) return;
 
       const data: ApiResponse = await apiClient.get(
         `https://api.ctspk.com/address/list?user=${userData.id}&page=1&skip=0&limit=10`
@@ -225,34 +237,40 @@ const ProfilePage = () => {
   };
 
   const updateProfile = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    setError(null);
-    setSuccess(null);
+    e.preventDefault();
+    try {
+      setError(null);
+      setSuccess(null);
 
-    const response: ApiResponse = await apiClient.put(
-      "https://api.ctspk.com/user/profile",
-      profileForm
-    );
+      const response: ApiResponse = await apiClient.put(
+        "https://api.ctspk.com/user/profile",
+        profileForm
+      );
 
-    if (response.success === 1) {
-      // Update localStorage
-      const updatedUser = { 
-        ...user, 
-        ...profileForm,
-        id: user?.id || 0, // Ensure id is always defined
-        email: user?.email || "" // Ensure email is always defined
-      };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser as User); // Explicitly cast to User type
-      setSuccess("Profile updated successfully!");
-    } else {
-      throw new Error(response.detail || 'Failed to update profile');
+      if (response.success === 1) {
+        // Update user in state and cookies
+        const updatedUser = { 
+          ...user, 
+          ...profileForm,
+          id: user?.id || 0,
+          email: user?.email || ""
+        };
+        setUser(updatedUser as User);
+        
+        // Update the user_session cookie with new data
+        if (typeof document !== 'undefined') {
+          const updatedUserCookie = JSON.stringify(updatedUser);
+          document.cookie = `user_session=${encodeURIComponent(updatedUserCookie)}; path=/; max-age=86400`; // 24 hours
+        }
+        
+        setSuccess("Profile updated successfully!");
+      } else {
+        throw new Error(response.detail || 'Failed to update profile');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
     }
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'Failed to update profile');
-  }
-};
+  };
 
   const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,25 +368,26 @@ const ProfilePage = () => {
     });
   };
 
-  const resetAddressForm = () => {
-    setAddressForm({
-      id: null,
-      title: "",
-      type: "shipping",
-      is_default: false,
-      address: {
-        street: "",
-        city: "",
-        state: "",
-        postal_code: "",
-        country: "",
-      },
-      location: {
-        lat: 0,
-        lng: 0,
-      },
-    });
-  };
+  // And reset function:
+const resetAddressForm = () => {
+  setAddressForm({
+    id: null,
+    title: "",
+    type: "shipping",
+    is_default: false,
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      country: "",
+    },
+    location: {
+      lat: 0.0,  // Default value
+      lng: 0.0,  // Default value
+    },
+  });
+};
 
   const setDefaultAddress = async (addressId: number, type: "billing" | "shipping") => {
     try {
@@ -753,5 +772,4 @@ const ProfilePage = () => {
     </Screen>
   );
 };
-
 export default ProfilePage;
