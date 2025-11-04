@@ -265,10 +265,7 @@ const CartPage = () => {
                   Rs {totalAmount.toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span className="text-green-600">Free</span>
-              </div>
+              
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
                 <span>Rs {totalAmount.toLocaleString()}</span>
