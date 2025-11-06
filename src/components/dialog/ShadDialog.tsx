@@ -48,7 +48,7 @@ export const ShadDialog: React.FC<ReusableModalProps> = ({
 
       <DialogContent
         className={cn(
-          "sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl shadow-lg p-0",
+          " max-h-[90vh] overflow-y-auto rounded-2xl shadow-lg p-0",
           className
         )}
       >

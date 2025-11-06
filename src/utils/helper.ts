@@ -15,10 +15,13 @@ export const capitalizeCamelSpace = (name: string) => {
 };
 
 export const currencyFormatter = (
-  value: number,
+  value: number | string | undefined,
   currency: "PKR" | "SAR" | "EUR" | "JPY" | "USD" | "INR" | null = "PKR",
   format: "en-PK" | "en-US" | "de-DE" | "ja-JP" | "en-IN" = "en-PK"
 ): string => {
+  // @ts-ignore
+  if(!value) { return ; }
+  if (typeof value == 'string'){value=Number(value);}
   const options: Intl.NumberFormatOptions = {
     minimumFractionDigits: 0,
   };

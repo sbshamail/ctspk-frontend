@@ -78,7 +78,11 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
               <div className="absolute right-0 top-0 m-2 z-10 ">
                 <div className="flex space-x-1 ">
                   {/* ✅ Always show ProductFavorite - it should work for both product types */}
-                  <ProductFavorite />
+                  <ProductFavorite product={{
+                        ...props,
+                        product_type, // ✅ Pass product_type to cart button
+                        id, // ✅ Ensure ID is passed
+                      }}/>
                 </div>
               </div>
             </div>

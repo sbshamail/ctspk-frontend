@@ -15,7 +15,7 @@ export default function OrderModalPage() {
         if (!open) router.back(); // close modal -> go back
       }}
       title={`Order Details`}
-      className="max-w-4xl w-full"
+      className="w-[1000px]"
     >
       {/* You can reuse your order detail component directly */}
       <OrderDetailPage id={id as string} />

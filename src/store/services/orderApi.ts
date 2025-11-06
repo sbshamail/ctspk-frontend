@@ -12,7 +12,7 @@ export const orderApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Orders"],
+  tagTypes: ["Orders", "Returns", "Reviews"],
   endpoints: (builder) => ({
     // ✅ Get paginated + searchable order list
     getOrders: builder.query<{ data: any[]; total: number }, QueryParams>({
@@ -62,7 +62,59 @@ export const orderApi = createApi({
       query: (id) => `/read/${id}`,
       providesTags: ["Orders"],
     }),
+
+    // ✅ Cancel order
+    cancelOrder: builder.mutation<any, number>({
+      query: (orderId) => ({
+        url: `/${orderId}/cancel`,
+        method: 'POST',
+      }),
+      invalidatesTags: ["Orders"],
+    }),
+
+    // ✅ Create return request
+    createReturn: builder.mutation<any, any>({
+      query: (returnData) => ({
+        url: '/returns/request',
+        method: 'POST',
+        body: returnData,
+      }),
+      invalidatesTags: ["Orders", "Returns"],
+    }),
+
+    // ✅ Create review
+    createReview: builder.mutation<any, any>({
+      query: (reviewData) => ({
+        url: '/review/create',
+        method: 'POST',
+        body: reviewData,
+      }),
+      invalidatesTags: ["Orders", "Reviews"],
+    }),
+
+    // ✅ Check cancellation eligibility
+    checkCancellationEligibility: builder.query<any, number>({
+      query: (orderId) => `/${orderId}/cancellation-eligibility`,
+      providesTags: ["Orders"],
+    }),
+
+    // ✅ Get return requests
+    getReturnRequests: builder.query<any, QueryParams>({
+      query: (params) => {
+        const query = toQueryString(params);
+        return { url: `/returns/my-returns?${query}`, method: "GET" };
+      },
+      providesTags: ["Returns"],
+    }),
   }),
 });
 
-export const { useGetOrdersQuery, useGetOrderQuery } = orderApi;
+export const { 
+  useGetOrdersQuery, 
+  useGetOrderQuery,
+  useCancelOrderMutation,
+  useCreateReturnMutation,
+  useCreateReviewMutation,
+  useCheckCancellationEligibilityQuery,
+  useGetReturnRequestsQuery
+} = orderApi;

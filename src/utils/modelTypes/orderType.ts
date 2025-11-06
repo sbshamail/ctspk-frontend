@@ -1,122 +1,156 @@
-import { ImageType } from ".";
+// Order Status Enums
+export enum OrderStatusEnum {
+  PENDING = "order-pending",
+  PROCESSING = "order-processing",
+  COMPLETED = "order-completed",
+  REFUNDED = "order-refunded",
+  FAILED = "order-failed",
+  CANCELLED = "order-cancelled",
+  AT_LOCAL_FACILITY = "order-at-local-facility",
+  OUT_FOR_DELIVERY = "order-out-for-delivery",
+  AT_DISTRIBUTION_CENTER = "order-at-distribution-center",
+  PACKED = "order-packed",
+}
 
-// -------------------------------------
-// Enums (same as backend choices)
-// -------------------------------------
-export type OrderStatusEnum =
-  | "order-pending"
-  | "order-processing"
-  | "order-completed"
-  | "order-refunded"
-  | "order-failed"
-  | "order-cancelled"
-  | "order-at-local-facility"
-  | "order-out-for-delivery"
-  | "order-packed"
-  | "order-at-distribution-center"
-  | "order-packed";
+export enum PaymentStatusEnum {
+  PENDING = "payment-pending",
+  PROCESSING = "payment-processing",
+  SUCCESS = "payment-success",
+  FAILED = "payment-failed",
+  REVERSAL = "payment-reversal",
+  CASH_ON_DELIVERY = "payment-cash-on-delivery",
+  CASH = "payment-cash",
+  WALLET = "payment-wallet",
+  AWAITING_APPROVAL = "payment-awaiting-for-approval",
+}
 
-export type PaymentStatusEnum = "pending" | "paid" | "unpaid" | "failed";
+export enum OrderItemType {
+  SIMPLE = "simple",
+  VARIABLE = "variable",
+}
 
-export type OrderItemType = "product" | "gift-card" | "subscription" | string;
+// Base Types
+export interface TimeStampReadModel {
+  created_at: string;
+  updated_at: string;
+}
 
-// -------------------------------------
-// Product types
-// -------------------------------------
 export interface ProductOrderRead {
-  id: number;
+  image?: any;
   name: string;
-  slug?: string;
-  price: number;
+}
+
+// Order Product Types
+export interface OrderProductRead extends TimeStampReadModel {
+  id: number;
+  order_id: number;
+  product_id: number;
+  product: ProductOrderRead;
+  variation_option_id?: number;
+  order_quantity: string;
+  unit_price: number;
   sale_price?: number;
-  sku?: string;
-  image?: ImageType;
+  subtotal: number;
+  item_discount?: number;
+  item_tax?: number;
+  admin_commission: number;
+  item_type: OrderItemType;
+  variation_data?: any;
+  product_snapshot?: any;
+  variation_snapshot?: any;
   shop_id?: number;
   shop_name?: string;
   shop_slug?: string;
 }
 
-// -------------------------------------
-// OrderProductRead
-// -------------------------------------
-export interface OrderProductRead {
-  id: number;
-  order_id: number;
-  product_id: number;
-  product: ProductOrderRead;
-  variation_option_id?: number | null;
-  order_quantity: string;
-  unit_price: number;
-  subtotal: number;
-  admin_commission: number;
-  item_type: OrderItemType;
-  variation_data?: Record<string, any> | null;
-  product_snapshot?: Record<string, any> | null;
-  variation_snapshot?: Record<string, any> | null;
-  shop_id?: number | null;
-  shop_name?: string | null;
-  shop_slug?: string | null;
-}
-
-// -------------------------------------
-// OrderStatusRead
-// -------------------------------------
-export interface OrderStatusRead {
+// Order Status History Types
+export interface OrderStatusRead extends TimeStampReadModel {
   id: number;
   order_id: number;
   language: string;
-  order_pending_date?: string | null;
-  order_processing_date?: string | null;
-  order_completed_date?: string | null;
-  order_refunded_date?: string | null;
-  order_failed_date?: string | null;
-  order_cancelled_date?: string | null;
-  order_at_local_facility_date?: string | null;
-  order_out_for_delivery_date?: string | null;
-  order_packed_date?: string | null;
-  order_at_distribution_center_date?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  order_pending_date?: string;
+  order_processing_date?: string;
+  order_completed_date?: string;
+  order_refunded_date?: string;
+  order_failed_date?: string;
+  order_cancelled_date?: string;
+  order_at_local_facility_date?: string;
+  order_out_for_delivery_date?: string;
+  order_packed_date?: string;
+  order_at_distribution_center_date?: string;
 }
 
-// -------------------------------------
-// OrderRead (Base)
-// -------------------------------------
-export interface OrderReadType {
+// Main Order Types
+export interface OrderRead extends TimeStampReadModel {
   id: number;
   tracking_number: string;
-  customer_id?: number | null;
+  customer_id?: number;
   customer_contact: string;
-  customer_name?: string | null;
+  customer_name?: string;
   amount: number;
-  sales_tax?: number | null;
-  paid_total?: number | null;
-  total?: number | null;
+  sales_tax?: number;
+  paid_total?: number;
+  total?: number;
   cancelled_amount: number;
   admin_commission_amount: number;
   language: string;
-  coupon_id?: number | null;
-  discount?: number | null;
-  payment_gateway?: string | null;
-  shipping_address?: Record<string, any> | null;
-  billing_address?: Record<string, any> | null;
-  logistics_provider?: number | null;
-  delivery_fee?: number | null;
-  delivery_time?: string | null;
+  coupon_id?: number;
+  discount?: number;
+  coupon_discount?: number;
+  payment_gateway?: string;
+  shipping_address?: any;
+  billing_address?: any;
+  logistics_provider?: number;
+  delivery_fee?: number;
+  delivery_time?: string;
+  tax_id?: number;
+  shipping_id?: number;
   order_status: OrderStatusEnum;
   payment_status: PaymentStatusEnum;
-  fullfillment_id?: number | null;
-  assign_date?: string | null;
-  shops?: Record<string, any>[] | null;
-  shop_count?: number | null;
-  created_at?: string;
-  updated_at?: string;
+  fullfillment_id?: number;
+  assign_date?: string;
+  shops?: any[];
+  shop_count?: number;
+  shipping_type?:string;
 }
 
-// -------------------------------------
-// OrderReadNested (extends OrderRead)
-// -------------------------------------
-export interface OrderReadNestedType extends OrderReadType {
+export interface OrderReadNested extends OrderRead {
   order_products: OrderProductRead[];
-  order_status_history?: OrderStatusRead | null;
+  order_status_history?: OrderStatusRead;
+}
+
+// API Response Types
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  total?: number;
+}
+
+// Mutation Types
+export interface CancelOrderRequest {
+  order_id: number;
+  reason?: string;
+}
+
+export interface ReturnItemCreate {
+  order_item_id: number;
+  quantity: number;
+  reason?: string;
+}
+
+export interface ReturnRequestCreate {
+  order_id: number;
+  return_type: "full_order" | "single_product";
+  reason: string;
+  items: ReturnItemCreate[];
+}
+
+export interface ReviewCreate {
+  order_id: number;
+  product_id: number;
+  shop_id: number;
+  rating: number;
+  comment?: string;
+  variation_option_id?: number;
 }

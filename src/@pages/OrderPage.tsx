@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { useGetOrdersQuery } from "@/store/services/orderApi";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
-import { OrderReadNestedType } from "@/utils/modelTypes/orderType";
+import { OrderReadNested, OrderStatusEnum, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
+import { toast } from "sonner";
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function OrdersPage() {
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data, isLoading, isFetching } = useGetOrdersQuery({
+  const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({
     page,
     limit,
     searchTerm,
@@ -29,7 +29,74 @@ export default function OrdersPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
 
-  const columns: ColumnType<OrderReadNestedType>[] = [
+  // Check if order can be cancelled (until fullfillment_id is null)
+  const canCancelOrder = (order: OrderReadNested) => {
+    return order.fullfillment_id === null && 
+           order.order_status !== OrderStatusEnum.CANCELLED &&
+           order.order_status !== OrderStatusEnum.COMPLETED &&
+           order.order_status !== OrderStatusEnum.REFUNDED;
+  };
+
+  // Check if order can be returned (completed/delivered orders)
+  const canReturnOrder = (order: OrderReadNested) => {
+    const completedStatuses = [OrderStatusEnum.COMPLETED, "delivered"];
+    return completedStatuses.includes(order.order_status) &&
+           order.payment_status !== PaymentStatusEnum.REVERSAL;
+  };
+
+  // Handle order cancellation
+  const handleCancelOrder = async (orderId: number) => {
+    try {
+      // For now, we'll use a direct fetch until the mutation is properly set up
+      const response = await fetch(`/api/order/${orderId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        toast.success("Order cancelled successfully");
+        refetch(); // Refresh the orders list
+      } else {
+        throw new Error('Failed to cancel order');
+      }
+    } catch (error) {
+      toast.error("Failed to cancel order");
+      console.error("Cancellation error:", error);
+    }
+  };
+
+  // Handle order return
+  const handleReturnOrder = async (orderId: number) => {
+    try {
+      // For now, we'll use a direct fetch until the mutation is properly set up
+      const response = await fetch('/api/returns/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          order_id: orderId,
+          return_type: "full_order",
+          reason: "Customer requested return",
+          items: []
+        }),
+      });
+      
+      if (response.ok) {
+        toast.success("Return request created successfully");
+        refetch(); // Refresh the orders list
+      } else {
+        throw new Error('Failed to create return request');
+      }
+    } catch (error) {
+      toast.error("Failed to create return request");
+      console.error("Return error:", error);
+    }
+  };
+
+  const columns: ColumnType<OrderReadNested>[] = [
     {
       title: "No.",
       render: ({ index }) => {
@@ -65,7 +132,7 @@ export default function OrdersPage() {
       accessor: "payment_status",
       render: ({ cell }) => (
         <Badge
-          variant={cell === "payment-pending" ? "secondary" : "default"}
+          variant={cell === PaymentStatusEnum.PENDING ? "secondary" : "default"}
           className="capitalize text-xs font-medium px-2 py-0.5"
         >
           {cell.replace("-", " ")}
@@ -85,13 +152,47 @@ export default function OrdersPage() {
     {
       title: "Actions",
       render: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push(`/order/${row.id}`)}
-        >
-          View
-        </Button>
+        <div className="flex gap-2">
+          {/* Cancel Order Button */}
+          {canCancelOrder(row) && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm("Are you sure you want to cancel this order?")) {
+                  handleCancelOrder(row.id);
+                }
+              }}
+            >
+              Cancel
+            </Button>
+          )}
+          
+          {/* Return Order Button */}
+          {canReturnOrder(row) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm("Are you sure you want to return this order?")) {
+                  handleReturnOrder(row.id);
+                }
+              }}
+            >
+              Return
+            </Button>
+          )}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/order/${row.id}`)}
+          >
+            View
+          </Button>
+        </div>
       ),
     },
   ];
@@ -114,7 +215,7 @@ export default function OrdersPage() {
       {isLoading ? (
         <OrderTableSkeleton />
       ) : (
-        <Table<OrderReadNestedType>
+        <Table<OrderReadNested>
           data={orders}
           columns={columns}
           isLoading={isFetching}
@@ -127,31 +228,6 @@ export default function OrdersPage() {
           showPagination={true}
         />
       )}
-
-      {/* Pagination */}
-      {/* <div className="flex justify-between items-center pt-4">
-        <p className="text-sm text-muted-foreground">
-          Showing page {page} of {totalPages} ({total} total)
-        </p>
-        <div className="space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
-      </div> */}
     </Screen>
   );
 }
