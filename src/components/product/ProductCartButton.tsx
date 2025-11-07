@@ -1,9 +1,8 @@
 "use client";
 
-import { useCartService } from "@/lib/cartService";
+import { useCart } from "@/context/cartContext";
 import { Plus, ShoppingCart } from "lucide-react";
 import React, { FC } from "react";
-
 interface Props {
   handlePostCart?: () => void;
   cartQuantity?: number;
@@ -16,7 +15,7 @@ export const ProductCartButton: FC<Props> = ({
   children,
   product,
 }) => {
-  const { add, cart } = useCartService();
+  const { add, cart } = useCart();
 
   return (
     <div onClick={(e) => e.preventDefault()}>

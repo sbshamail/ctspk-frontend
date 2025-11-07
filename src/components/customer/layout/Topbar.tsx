@@ -1,8 +1,8 @@
 "use client";
 
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
-import SiginModal from "@/components/modals/auth/SiginModal";
 import RegisterModal from "@/components/modals/auth/RegisterModal";
+import SiginModal from "@/components/modals/auth/SiginModal";
 import { cn } from "@/lib/utils";
 
 import { useSelection } from "@/lib/useSelection";

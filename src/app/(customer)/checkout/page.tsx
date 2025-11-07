@@ -1,29 +1,34 @@
 "use client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
 
-import { toast, Toaster } from "sonner";
-import { fetchApi } from "@/action/fetchApi";
 import { Screen } from "@/@core/layout";
-import { cn } from "@/lib/utils";
+import { fetchApi } from "@/action/fetchApi";
+import { toast } from "sonner";
 
 import { useSelection } from "@/lib/useSelection";
 import { currencyFormatter } from "@/utils/helper";
 
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import SiginModal from "@/components/modals/auth/SiginModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useCartService } from "@/lib/cartService";
+
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCart } from "@/context/cartContext";
 
 // Create a complete checkout schema from scratch
 const checkoutSchema = z.object({
@@ -75,15 +80,14 @@ const getEffectivePrice = (item: any): number => {
       (v: any) => v.id === item.variation_option_id
     );
     if (variation?.price) {
-     return parseFloat(variation.price) || 0; // 🔴 FIX: Added null check
+      return parseFloat(variation.price) || 0; // 🔴 FIX: Added null check
     }
   }
   // For simple products, use sale price if available, otherwise regular price
   const salePrice = item.product.sale_price || 0; // 🔴 FIX: Added null check
   const regularPrice = item.product.price || 0; // 🔴 FIX: Added null check
-  
-  return salePrice > 0 ? salePrice : regularPrice;
 
+  return salePrice > 0 ? salePrice : regularPrice;
 };
 
 export default function CheckoutPage() {
@@ -91,7 +95,7 @@ export default function CheckoutPage() {
   const [openSiginModal, setOpenSiginModal] = useState(false);
   const { data: auth, isLoading } = useSelection("auth");
   const isAuth = !!auth?.user?.id;
-  const { refetchCart, cart, removeSelected, clear } = useCartService();
+  const { refetchCart, cart, removeSelected, clear } = useCart();
   const [serverError, setServerError] = useState<string | null>(null);
   const { user } = auth || {};
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
@@ -99,7 +103,7 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedPayment, setSelectedPayment] = useState("cash_on_delivery");
   const [shouldRedirect, setShouldRedirect] = useState(false);
-  
+
   // New state for tax, shipping, coupon, and delivery time
   const [taxClass, setTaxClass] = useState<any>(null);
   const [shippingClass, setShippingClass] = useState<any>(null);
@@ -126,7 +130,7 @@ export default function CheckoutPage() {
   const fetchTaxAndShippingClasses = async () => {
     try {
       setIsLoadingTaxShipping(true);
-      
+
       // Step 1: Get tax class ID from settings
       const taxIdRes = await fetchApi({
         url: "settings/value/taxClass?language=en",
@@ -170,13 +174,15 @@ export default function CheckoutPage() {
             shippingClassData = shippingRes.data;
           }
         } catch (shippingError) {
-          console.error("Failed to fetch shipping class details:", shippingError);
+          console.error(
+            "Failed to fetch shipping class details:",
+            shippingError
+          );
         }
       }
 
       setTaxClass(taxClassData);
       setShippingClass(shippingClassData);
-      
     } catch (error) {
       console.error("Failed to fetch tax/shipping classes:", error);
     } finally {
@@ -197,9 +203,9 @@ export default function CheckoutPage() {
         // If data is an array, use it directly
         if (Array.isArray(res.data)) {
           setDeliveryTimes(res.data);
-        } 
+        }
         // If data is a string, try to parse it as JSON
-        else if (typeof res.data === 'string') {
+        else if (typeof res.data === "string") {
           try {
             const parsedData = JSON.parse(res.data);
             setDeliveryTimes(Array.isArray(parsedData) ? parsedData : []);
@@ -208,10 +214,12 @@ export default function CheckoutPage() {
           }
         }
         // If data is an object with deliveryTime array
-        else if (res.data.deliveryTime && Array.isArray(res.data.deliveryTime)) {
+        else if (
+          res.data.deliveryTime &&
+          Array.isArray(res.data.deliveryTime)
+        ) {
           setDeliveryTimes(res.data.deliveryTime);
-        }
-        else {
+        } else {
           setDeliveryTimes([]);
         }
       } else {
@@ -348,75 +356,79 @@ export default function CheckoutPage() {
 
   // Calculate product discount (when price > sale_price and sale_price > 0)
   const productDiscount = useMemo(() => {
-    return cart?.reduce((acc, item) => {
-      const regularPrice = item.product.price;
-      const salePrice = item.product.sale_price || 0; // 🔴 FIX: Added null check
-      
-      if (salePrice > 0 && regularPrice > salePrice) {
-        return acc + (regularPrice - salePrice) * item.quantity;
-      }
-      return acc;
-    }, 0) || 0;
+    return (
+      cart?.reduce((acc, item) => {
+        const regularPrice = item.product.price;
+        const salePrice = item.product.sale_price || 0; // 🔴 FIX: Added null check
+
+        if (salePrice > 0 && regularPrice > salePrice) {
+          return acc + (regularPrice - salePrice) * item.quantity;
+        }
+        return acc;
+      }, 0) || 0
+    );
   }, [cart]);
 
- // Calculate shipping cost
-const shippingCost = useMemo(() => {
-  if (!shippingClass) return 0;
-  
-  const shippingAmount = parseFloat(shippingClass.amount) || 0; // 🔴 FIX: Added null check
-  
-  if (shippingClass.type === "fixed") {
-    return shippingAmount;
-  } else if (shippingClass.type === "percentage") {
-    return (subtotal * shippingAmount) / 100;
-  } else if (shippingClass.type === "free_shipping") {
+  // Calculate shipping cost
+  const shippingCost = useMemo(() => {
+    if (!shippingClass) return 0;
+
+    const shippingAmount = parseFloat(shippingClass.amount) || 0; // 🔴 FIX: Added null check
+
+    if (shippingClass.type === "fixed") {
+      return shippingAmount;
+    } else if (shippingClass.type === "percentage") {
+      return (subtotal * shippingAmount) / 100;
+    } else if (shippingClass.type === "free_shipping") {
+      return 0;
+    }
     return 0;
-  }
-  return 0;
-}, [shippingClass, subtotal]);;
+  }, [shippingClass, subtotal]);
 
   // Calculate tax amount
-const taxAmount = useMemo(() => {
-  if (!taxClass) return 0;
-  
-  const taxRate = parseFloat(taxClass.rate) || 0; // 🔴 FIX: Added null check
-  const taxableAmount = subtotal - productDiscount;
-  return (taxableAmount * taxRate) / 100;
-}, [taxClass, subtotal, productDiscount]);
+  const taxAmount = useMemo(() => {
+    if (!taxClass) return 0;
 
- // Calculate coupon discount with minimum cart amount validation
-const couponDiscount = useMemo(() => {
-  if (!appliedCoupon) return 0;
+    const taxRate = parseFloat(taxClass.rate) || 0; // 🔴 FIX: Added null check
+    const taxableAmount = subtotal - productDiscount;
+    return (taxableAmount * taxRate) / 100;
+  }, [taxClass, subtotal, productDiscount]);
 
-  // Check minimum cart amount requirement
-  const minCartAmount = parseFloat(appliedCoupon.minimum_cart_amount) || 0; // 🔴 FIX: Added null check
-  const discountableAmount = subtotal - productDiscount;
+  // Calculate coupon discount with minimum cart amount validation
+  const couponDiscount = useMemo(() => {
+    if (!appliedCoupon) return 0;
 
-  if (minCartAmount > 0 && subtotal < minCartAmount) {
-    return 0; // Coupon not applicable if cart doesn't meet minimum amount
-  }
+    // Check minimum cart amount requirement
+    const minCartAmount = parseFloat(appliedCoupon.minimum_cart_amount) || 0; // 🔴 FIX: Added null check
+    const discountableAmount = subtotal - productDiscount;
 
-  const couponAmount = parseFloat(appliedCoupon.amount) || 0; // 🔴 FIX: Added null check
-  
-  if (appliedCoupon.type === "fixed") {
-    return Math.min(couponAmount, discountableAmount);
-  } else if (appliedCoupon.type === "percentage") {
-    return (discountableAmount * couponAmount) / 100;
-  }
-  return 0;
-}, [appliedCoupon, subtotal, productDiscount]);
+    if (minCartAmount > 0 && subtotal < minCartAmount) {
+      return 0; // Coupon not applicable if cart doesn't meet minimum amount
+    }
+
+    const couponAmount = parseFloat(appliedCoupon.amount) || 0; // 🔴 FIX: Added null check
+
+    if (appliedCoupon.type === "fixed") {
+      return Math.min(couponAmount, discountableAmount);
+    } else if (appliedCoupon.type === "percentage") {
+      return (discountableAmount * couponAmount) / 100;
+    }
+    return 0;
+  }, [appliedCoupon, subtotal, productDiscount]);
 
   // Check if coupon meets minimum cart amount requirement
   const isCouponApplicable = useMemo(() => {
     if (!appliedCoupon) return true;
-    
+
     const minCartAmount = parseFloat(appliedCoupon.minimum_cart_amount) || 0;
     return minCartAmount === 0 || subtotal >= minCartAmount;
   }, [appliedCoupon, subtotal]);
 
   // Calculate final total
   const finalTotal = useMemo(() => {
-    return subtotal - productDiscount - couponDiscount + shippingCost + taxAmount;
+    return (
+      subtotal - productDiscount - couponDiscount + shippingCost + taxAmount
+    );
   }, [subtotal, productDiscount, couponDiscount, shippingCost, taxAmount]);
 
   const totalItems = useMemo(() => cart?.length || 0, [cart]);
@@ -430,19 +442,19 @@ const couponDiscount = useMemo(() => {
     if (shippingClass.type === "free_shipping") {
       return { text: "Free Shipping", amount: 0, isFree: true };
     } else if (shippingClass.type === "fixed") {
-      return { 
-        text: `Shipping: ${shippingClass.name}`, 
-        amount: parseFloat(shippingClass.amount) || 0, 
-        isFree: false 
+      return {
+        text: `Shipping: ${shippingClass.name}`,
+        amount: parseFloat(shippingClass.amount) || 0,
+        isFree: false,
       };
     } else if (shippingClass.type === "percentage") {
-      return { 
-        text: `Shipping: ${shippingClass.name} (${shippingClass.amount}%)`, 
-        amount: (subtotal * parseFloat(shippingClass.amount)) / 100, 
-        isFree: false 
+      return {
+        text: `Shipping: ${shippingClass.name} (${shippingClass.amount}%)`,
+        amount: (subtotal * parseFloat(shippingClass.amount)) / 100,
+        isFree: false,
       };
     }
-    
+
     return { text: "Standard Shipping", amount: 0, isFree: false };
   };
 
@@ -465,10 +477,14 @@ const couponDiscount = useMemo(() => {
       if (res?.success === 1 && res.data) {
         const coupon = res.data;
         const minCartAmount = parseFloat(coupon.minimum_cart_amount) || 0;
-        
+
         // Check minimum cart amount requirement
         if (minCartAmount > 0 && subtotal < minCartAmount) {
-          toast.error(`Minimum cart amount of ${currencyFormatter(minCartAmount)} required for this coupon`);
+          toast.error(
+            `Minimum cart amount of ${currencyFormatter(
+              minCartAmount
+            )} required for this coupon`
+          );
           setAppliedCoupon(null);
         } else {
           setAppliedCoupon(coupon);
@@ -635,19 +651,32 @@ const couponDiscount = useMemo(() => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="bg-blue-100 p-2 rounded-full">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     </div>
                     <div>
                       <h3 className="font-semibold text-blue-900">
-                        {shippingInfo.isFree ? "🎉 Free Shipping!" : "Shipping Information"}
+                        {shippingInfo.isFree
+                          ? "🎉 Free Shipping!"
+                          : "Shipping Information"}
                       </h3>
                       <p className="text-blue-700 text-sm">
-                        {shippingInfo.isFree 
-                          ? "Your order qualifies for free shipping!" 
-                          : `${shippingInfo.text} - ${currencyFormatter(shippingInfo.amount)}`
-                        }
+                        {shippingInfo.isFree
+                          ? "Your order qualifies for free shipping!"
+                          : `${shippingInfo.text} - ${currencyFormatter(
+                              shippingInfo.amount
+                            )}`}
                       </p>
                     </div>
                   </div>
@@ -869,9 +898,7 @@ const couponDiscount = useMemo(() => {
 
               {/* 🔴 NEW: Delivery Time Selection */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  Delivery Time *
-                </h3>
+                <h3 className="text-lg font-semibold mb-4">Delivery Time *</h3>
                 <div className="space-y-2">
                   {isLoadingDeliveryTimes ? (
                     <div className="text-center py-4">
@@ -879,16 +906,23 @@ const couponDiscount = useMemo(() => {
                     </div>
                   ) : deliveryTimes.length > 0 ? (
                     <Select
-                      onValueChange={(value) => setValue("delivery_time", value)}
+                      onValueChange={(value) =>
+                        setValue("delivery_time", value)
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a delivery time" />
                       </SelectTrigger>
                       <SelectContent>
                         {deliveryTimes.map((timeSlot, index) => (
-                          <SelectItem key={index} value={timeSlot.title || `slot-${index}`}>
+                          <SelectItem
+                            key={index}
+                            value={timeSlot.title || `slot-${index}`}
+                          >
                             <div className="flex flex-col">
-                              <span className="font-medium">{timeSlot.title}</span>
+                              <span className="font-medium">
+                                {timeSlot.title}
+                              </span>
                               {timeSlot.description && (
                                 <span className="text-sm text-muted-foreground">
                                   {timeSlot.description}
@@ -939,7 +973,7 @@ const couponDiscount = useMemo(() => {
                 const unitPrice = getEffectivePrice(item);
                 const subtotal = unitPrice * quantity;
                 const variationText = getVariationDisplayText(item);
-                
+
                 // 🔴 FIX: Added null checks for price and sale_price
                 const regularPrice = price || 0;
                 const salePrice = sale_price || 0;
@@ -971,7 +1005,8 @@ const couponDiscount = useMemo(() => {
                         </div>
                         {hasDiscount && (
                           <div className="text-xs text-green-600">
-                            Save {currencyFormatter(regularPriceTotal - subtotal)}
+                            Save{" "}
+                            {currencyFormatter(regularPriceTotal - subtotal)}
                           </div>
                         )}
                       </div>
@@ -989,14 +1024,30 @@ const couponDiscount = useMemo(() => {
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-4 h-4 text-gray-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                     <span className="text-sm font-medium">Shipping</span>
                   </div>
                   <div className="text-right">
-                    <div className={`text-sm font-semibold ${shippingInfo.isFree ? 'text-green-600' : ''}`}>
-                      {shippingInfo.isFree ? 'FREE' : currencyFormatter(shippingInfo.amount)}
+                    <div
+                      className={`text-sm font-semibold ${
+                        shippingInfo.isFree ? "text-green-600" : ""
+                      }`}
+                    >
+                      {shippingInfo.isFree
+                        ? "FREE"
+                        : currencyFormatter(shippingInfo.amount)}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                       {shippingInfo.text}
@@ -1036,26 +1087,44 @@ const couponDiscount = useMemo(() => {
                   )}
                 </div>
                 {appliedCoupon && (
-                  <div className={`border rounded p-3 text-sm ${
-                    isCouponApplicable 
-                      ? 'bg-green-50 border-green-200 text-green-700' 
-                      : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                  }`}>
+                  <div
+                    className={`border rounded p-3 text-sm ${
+                      isCouponApplicable
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : "bg-yellow-50 border-yellow-200 text-yellow-700"
+                    }`}
+                  >
                     <div className="font-medium">
-                      Coupon "{appliedCoupon.code}" {isCouponApplicable ? 'applied successfully!' : 'requirements not met'}
+                      Coupon "{appliedCoupon.code}"{" "}
+                      {isCouponApplicable
+                        ? "applied successfully!"
+                        : "requirements not met"}
                     </div>
                     {appliedCoupon.type === "fixed" && (
-                      <div>Discount: {currencyFormatter(appliedCoupon.amount)}</div>
+                      <div>
+                        Discount: {currencyFormatter(appliedCoupon.amount)}
+                      </div>
                     )}
                     {appliedCoupon.type === "percentage" && (
                       <div>Discount: {appliedCoupon.amount}%</div>
                     )}
                     {appliedCoupon.minimum_cart_amount > 0 && (
-                      <div className={`text-xs mt-1 ${isCouponApplicable ? 'text-green-600' : 'text-yellow-600'}`}>
-                        Minimum cart amount: {currencyFormatter(appliedCoupon.minimum_cart_amount)}
+                      <div
+                        className={`text-xs mt-1 ${
+                          isCouponApplicable
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                        }`}
+                      >
+                        Minimum cart amount:{" "}
+                        {currencyFormatter(appliedCoupon.minimum_cart_amount)}
                         {!isCouponApplicable && (
                           <span className="block font-medium">
-                            Add {currencyFormatter(appliedCoupon.minimum_cart_amount - subtotal)} more to use this coupon
+                            Add{" "}
+                            {currencyFormatter(
+                              appliedCoupon.minimum_cart_amount - subtotal
+                            )}{" "}
+                            more to use this coupon
                           </span>
                         )}
                       </div>
@@ -1072,40 +1141,46 @@ const couponDiscount = useMemo(() => {
                   <span>Subtotal</span>
                   <span>{currencyFormatter(subtotal)}</span>
                 </div>
-                
+
                 {productDiscount > 0 && (
                   <div className="flex items-center justify-between text-green-600">
                     <span>Product Discount</span>
                     <span>-{currencyFormatter(productDiscount)}</span>
                   </div>
                 )}
-                
+
                 {appliedCoupon && couponDiscount > 0 && (
                   <div className="flex items-center justify-between text-green-600">
                     <span>Coupon Discount ({appliedCoupon.code})</span>
                     <span>-{currencyFormatter(couponDiscount)}</span>
                   </div>
                 )}
-                
+
                 {appliedCoupon && !isCouponApplicable && (
                   <div className="flex items-center justify-between text-yellow-600 text-sm">
                     <span>Coupon not applicable</span>
                     <span className="text-xs">
-                      Min. {currencyFormatter(appliedCoupon.minimum_cart_amount)} required
+                      Min.{" "}
+                      {currencyFormatter(appliedCoupon.minimum_cart_amount)}{" "}
+                      required
                     </span>
                   </div>
                 )}
-                
+
                 {taxAmount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span>Tax {taxClass?.name && `(${taxClass.name} - ${taxClass.rate}%)`}</span>
+                    <span>
+                      Tax{" "}
+                      {taxClass?.name &&
+                        `(${taxClass.name} - ${taxClass.rate}%)`}
+                    </span>
                     <span>{currencyFormatter(taxAmount)}</span>
                   </div>
                 )}
               </div>
 
               <Separator />
-              
+
               <div className="flex items-center justify-between font-bold text-lg">
                 <span>Total</span>
                 <span>{currencyFormatter(finalTotal)}</span>
@@ -1210,11 +1285,18 @@ const couponDiscount = useMemo(() => {
               <Button
                 onClick={handleSubmit(onSubmit)}
                 className="w-full mt-2"
-                disabled={isSubmitting || finalTotal <= 0 || isLoadingTaxShipping || isLoadingDeliveryTimes}
+                disabled={
+                  isSubmitting ||
+                  finalTotal <= 0 ||
+                  isLoadingTaxShipping ||
+                  isLoadingDeliveryTimes
+                }
                 size="lg"
                 type="button"
               >
-                {isSubmitting ? "Processing..." : `Place Order - ${currencyFormatter(finalTotal)}`}
+                {isSubmitting
+                  ? "Processing..."
+                  : `Place Order - ${currencyFormatter(finalTotal)}`}
               </Button>
             </CardContent>
           </Card>

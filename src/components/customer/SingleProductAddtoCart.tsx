@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useCartService } from "@/lib/cartService";
+import { useCart } from "@/context/cartContext";
 import { ImageType } from "@/utils/modelTypes";
 
 interface Props {
@@ -26,7 +26,7 @@ interface Props {
 }
 
 const SingleProductAddToCart = ({ product }: Props) => {
-  const { cart, add, update } = useCartService();
+  const { cart, add, update } = useCart();
 
   // find if product already in cart
   const existingItem = cart.find((item) => item.product.id == product.id);

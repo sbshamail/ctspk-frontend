@@ -14,42 +14,46 @@ const SiginModal = ({ open, setOpen, trigger }: Props) => {
   const close = () => {
     setOpen(false);
   };
-  if (registerModal) {
-    return <RegisterModal open={registerModal} setOpen={setRegisterModal} />;
-  }
+
   useEffect(() => {
-    setRegisterModal(false);
-  }, []);
+    if (open === true) {
+      setRegisterModal(false);
+    }
+  }, [open]);
   return (
     <div>
-      <div className="">
-        <ShadDialog
-          open={open}
-          onOpenChange={setOpen}
-          title="Sign In to Your Account"
-          trigger={
-            trigger || (
-              <button className="hover:text-primary transition-colors cursor-pointer">
-                Sign In
+      {registerModal ? (
+        <RegisterModal open={registerModal} setOpen={setRegisterModal} />
+      ) : (
+        <div className="">
+          <ShadDialog
+            open={open}
+            onOpenChange={setOpen}
+            title="Sign In to Your Account"
+            trigger={
+              trigger || (
+                <button className="hover:text-primary transition-colors cursor-pointer">
+                  Sign In
+                </button>
+              )
+            }
+          >
+            <LoginForm close={close} />
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              New here?{" "}
+              <button
+                className="text-primary hover:underline cursor-pointer"
+                onClick={() => {
+                  setRegisterModal(true); // 👈 open Register modal
+                  setOpen(false); // 👈 close SignIn modal
+                }}
+              >
+                Register
               </button>
-            )
-          }
-        >
-          <LoginForm close={close} />
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            New here?{" "}
-            <button
-              className="text-primary hover:underline cursor-pointer"
-              onClick={() => {
-                setRegisterModal(true); // 👈 open Register modal
-                setOpen(false); // 👈 close SignIn modal
-              }}
-            >
-              Register
-            </button>
-          </p>
-        </ShadDialog>
-      </div>
+            </p>
+          </ShadDialog>
+        </div>
+      )}
     </div>
   );
 };

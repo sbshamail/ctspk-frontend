@@ -4,17 +4,17 @@ import { Screen } from "@/@core/layout";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { Button } from "@/components/ui/button";
-import { useCartService } from "@/lib/cartService";
+
+import { useCart } from "@/context/cartContext";
 import { useSelection } from "@/lib/useSelection";
 import Image from "next/image";
 import Link from "next/link";
 
-import { useMountAfterEffect, useMountFirstEffect } from "@/@core/hooks";
 import { setReducer } from "@/store/common/action-reducer";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 // Types
-import { CartItemType } from "@/utils/modelTypes";
 import MainTable, { ColumnType } from "@/components/table/MainTable";
+import { CartItemType } from "@/utils/modelTypes";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -56,7 +56,7 @@ const getVariationOptionsText = (item: CartItemType): string => {
 
 const CartPage = () => {
   const { cart, update, remove, clear, loading, removeSelected, isAuth } =
-    useCartService();
+    useCart();
 
   const setSelectedCart = setReducer("selectedCart");
   const { data: selectedCart = [], dispatch } = useSelection(
@@ -265,7 +265,7 @@ const CartPage = () => {
                   Rs {totalAmount.toLocaleString()}
                 </span>
               </div>
-              
+
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
                 <span>Rs {totalAmount.toLocaleString()}</span>

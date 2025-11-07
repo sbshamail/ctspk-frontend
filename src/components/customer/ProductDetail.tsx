@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { useCartService } from "@/lib/cartService";
-
+import { useCart } from "@/context/cartContext";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 interface ProductDetailProps {
   product: {
     id: number;
@@ -55,11 +54,13 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ product }: ProductDetailProps) {
-  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+  const [selectedAttributes, setSelectedAttributes] = useState<
+    Record<string, string>
+  >({});
   const [selectedImage, setSelectedImage] = useState(product.image.original);
   const [quantity, setQuantity] = useState(1);
-  
-  const { add } = useCartService();
+
+  const { add } = useCart();
 
   // Get all gallery images including main image
   const allImages = useMemo(() => {
@@ -74,7 +75,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const selectedVariation = useMemo(() => {
     if (product.product_type !== "variable") return null;
 
-    return product.variation_options.find(variation => {
+    return product.variation_options.find((variation) => {
       return Object.entries(selectedAttributes).every(([attribute, value]) => {
         return variation.options[attribute] === value;
       });
@@ -86,7 +87,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
     if (product.product_type === "variable" && selectedVariation) {
       return parseFloat(selectedVariation.price);
     }
-    return product.sale_price && product.sale_price > 0 ? product.sale_price : product.price;
+    return product.sale_price && product.sale_price > 0
+      ? product.sale_price
+      : product.price;
   }, [product, selectedVariation]);
 
   const displayQuantity = useMemo(() => {
@@ -98,17 +101,17 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
   // Handle attribute selection
   const handleAttributeSelect = (attributeName: string, value: string) => {
-    setSelectedAttributes(prev => ({
+    setSelectedAttributes((prev) => ({
       ...prev,
-      [attributeName]: value
+      [attributeName]: value,
     }));
   };
 
   // Check if an attribute combination is available
   const isAttributeAvailable = (attributeName: string, value: string) => {
     const testAttributes = { ...selectedAttributes, [attributeName]: value };
-    
-    return product.variation_options.some(variation => {
+
+    return product.variation_options.some((variation) => {
       return Object.entries(testAttributes).every(([attr, val]) => {
         return variation.options[attr] === val;
       });
@@ -130,9 +133,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
       sale_price: product.sale_price,
       image: {
         original: product.image.original,
-        thumbnail: product.image.thumbnail
+        thumbnail: product.image.thumbnail,
       },
-      variation_options: product.variation_options.map(vo => ({
+      variation_options: product.variation_options.map((vo) => ({
         id: vo.id,
         title: vo.title,
         price: vo.price,
@@ -142,19 +145,19 @@ export function ProductDetail({ product }: ProductDetailProps) {
         options: vo.options,
         image: {
           original: vo.image.original,
-          thumbnail: vo.image.thumbnail
+          thumbnail: vo.image.thumbnail,
         },
         sku: vo.sku,
         bar_code: undefined,
-        is_active: vo.is_active
-      }))
+        is_active: vo.is_active,
+      })),
     };
 
     const productToAdd = {
       product: cartProduct,
       shop_id: product.shop.id,
       quantity: quantity,
-      variation_option_id: selectedVariation?.id || null
+      variation_option_id: selectedVariation?.id || null,
     };
 
     console.log("Adding to cart:", productToAdd);
@@ -192,8 +195,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
                   key={index}
                   onClick={() => setSelectedImage(image.original)}
                   className={`flex-shrink-0 border-2 rounded-lg overflow-hidden ${
-                    selectedImage === image.original 
-                      ? "border-primary" 
+                    selectedImage === image.original
+                      ? "border-primary"
                       : "border-transparent"
                   }`}
                 >
@@ -230,41 +233,50 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Variable Product Attributes */}
-          {product.product_type === "variable" && product.attributes.map(attribute => (
-            <div key={attribute.id} className="space-y-3">
-              <h3 className="font-semibold text-gray-900">{attribute.name}</h3>
-              <div className="flex flex-wrap gap-2">
-                {attribute.values.map(value => {
-                  const isSelected = selectedAttributes[attribute.name] === value.value;
-                  const isAvailable = isAttributeAvailable(attribute.name, value.value);
-                  
-                  return (
-                    <button
-                      key={value.id}
-                      onClick={() => handleAttributeSelect(attribute.name, value.value)}
-                      disabled={!isAvailable}
-                      className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
-                        isSelected
-                          ? "bg-primary text-white border-primary"
-                          : isAvailable
-                          ? "border-gray-300 text-gray-700 hover:border-primary hover:text-primary"
-                          : "border-gray-200 text-gray-400 cursor-not-allowed"
-                      }`}
-                    >
-                      {value.value}
-                    </button>
-                  );
-                })}
+          {product.product_type === "variable" &&
+            product.attributes.map((attribute) => (
+              <div key={attribute.id} className="space-y-3">
+                <h3 className="font-semibold text-gray-900">
+                  {attribute.name}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {attribute.values.map((value) => {
+                    const isSelected =
+                      selectedAttributes[attribute.name] === value.value;
+                    const isAvailable = isAttributeAvailable(
+                      attribute.name,
+                      value.value
+                    );
+
+                    return (
+                      <button
+                        key={value.id}
+                        onClick={() =>
+                          handleAttributeSelect(attribute.name, value.value)
+                        }
+                        disabled={!isAvailable}
+                        className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                          isSelected
+                            ? "bg-primary text-white border-primary"
+                            : isAvailable
+                            ? "border-gray-300 text-gray-700 hover:border-primary hover:text-primary"
+                            : "border-gray-200 text-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        {value.value}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
           {/* Quantity Selector */}
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-900">Quantity</h3>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                 disabled={quantity <= 1}
                 className="w-10 h-10 border rounded-lg flex items-center justify-center disabled:opacity-50"
               >
@@ -274,7 +286,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 {quantity}
               </span>
               <button
-                onClick={() => setQuantity(prev => prev + 1)}
+                onClick={() => setQuantity((prev) => prev + 1)}
                 disabled={quantity >= displayQuantity}
                 className="w-10 h-10 border rounded-lg flex items-center justify-center disabled:opacity-50"
               >
@@ -287,9 +299,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Stock Status */}
-          <div className={`text-sm font-medium ${
-            displayQuantity > 0 ? "text-green-600" : "text-red-600"
-          }`}>
+          <div
+            className={`text-sm font-medium ${
+              displayQuantity > 0 ? "text-green-600" : "text-red-600"
+            }`}
+          >
             {displayQuantity > 0 ? "In Stock" : "Out of Stock"}
           </div>
 
@@ -297,7 +311,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <Button
             onClick={handleAddToCart}
             disabled={
-              displayQuantity === 0 || 
+              displayQuantity === 0 ||
               (product.product_type === "variable" && !selectedVariation)
             }
             className="w-full bg-primary text-white py-3 px-6 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -313,9 +327,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
           {/* Selected Variation Info */}
           {selectedVariation && (
             <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-900">Selected Variation</h4>
+              <h4 className="font-semibold text-gray-900">
+                Selected Variation
+              </h4>
               <p className="text-sm text-gray-600">{selectedVariation.title}</p>
-              <p className="text-sm text-gray-600">SKU: {selectedVariation.sku}</p>
+              <p className="text-sm text-gray-600">
+                SKU: {selectedVariation.sku}
+              </p>
             </div>
           )}
         </div>
