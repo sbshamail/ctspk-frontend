@@ -1,18 +1,18 @@
 "use client";
 
-import * as React from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import * as React from "react";
 
 interface ReusableModalProps {
   /** Modal title */
@@ -48,7 +48,7 @@ export const ShadDialog: React.FC<ReusableModalProps> = ({
 
       <DialogContent
         className={cn(
-          " max-h-[90vh] overflow-y-auto rounded-2xl shadow-lg p-0",
+          " max-h-[90vh] max-w-3xl overflow-y-auto rounded-2xl shadow-lg p-0",
           className
         )}
       >

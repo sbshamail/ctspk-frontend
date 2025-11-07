@@ -1,66 +1,36 @@
-// "use client";
-// import {
-//   addToCart,
-//   CART_KEY,
-//   CartItem,
-//   clearCart,
-//   loadCartStorage,
-//   removeCartItem,
-//   updateCartItem,
-// } from "@/action/cart";
-// import { createContext, useContext, useEffect, useState } from "react";
+"use client";
+import { useCartService } from "@/lib/cartService";
+import { CartItemType } from "@/utils/modelTypes";
+import { createContext, useContext, useEffect } from "react";
 
-// interface CartContextType {
-//   cart: CartItem[];
-//   add: (item: CartItem) => void;
-//   update: (id: string | number, qty: number) => void;
-//   remove: (id: string | number) => void;
-//   clear: () => void;
-//   clearCartStorage: () => void;
-// }
+export interface CartServiceType {
+  cart: CartItemType[];
+  add: (
+    item: CartItemType & { variation_option_id?: number | null }
+  ) => Promise<void>;
+  update: (id: number, qty: number) => Promise<void>;
+  remove: (id: number) => Promise<void>;
+  removeSelected: (ids: number[]) => Promise<void>;
+  clear: () => Promise<void>;
+  isAuth: boolean;
+  loading: boolean;
+  refetchCart: () => void;
+}
 
-// const CartContext = createContext<CartContextType | null>(null);
+const CartContext = createContext<CartServiceType>(null!);
 
-// export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-//   const [cart, setCart] = useState<CartItem[]>([]);
+export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const cartService = useCartService();
 
-//   useEffect(() => {
-//     setCart(loadCartStorage());
-//   }, []);
+  // ✅ ensure backend cart fetched only once
+  useEffect(() => {
+    if (cartService.isAuth) cartService.refetchCart();
+  }, [cartService.isAuth]);
 
-//   const add = async (item: CartItem) => {
-//     const updatedCart = await addToCart(item); // ✅ wait for backend/local update
-//     setCart([...updatedCart]);
-//   };
+  return (
+    <CartContext.Provider value={cartService}>{children}</CartContext.Provider>
+  );
+};
 
-//   const update = async (id: string | number, qty: number) => {
-//     let updatedCart = await updateCartItem(id, qty);
-//     setCart([...updatedCart]);
-//   };
-//   const remove = async (id: string | number) => {
-//     let updatedCart = await removeCartItem(id);
-//     return setCart([...updatedCart]);
-//   };
-//   const clearCartStorage = () => {
-//     localStorage.removeItem(CART_KEY);
-//     setCart([]);
-//   };
-//   const clear = () => {
-//     clearCart();
-//     setCart([]);
-//   };
-
-//   return (
-//     <CartContext.Provider
-//       value={{ cart, add, update, remove, clear, clearCartStorage }}
-//     >
-//       {children}
-//     </CartContext.Provider>
-//   );
-// };
-
-// export const useCart = () => {
-//   const ctx = useContext(CartContext);
-//   if (!ctx) throw new Error("useCart must be used inside CartProvider");
-//   return ctx;
-// };
+// Hook to access globally anywhere
+export const useCart = () => useContext(CartContext);

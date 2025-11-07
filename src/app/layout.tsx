@@ -1,11 +1,12 @@
 import { ThemeProvider } from "@/@core/theme/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { CartProvider } from "@/context/cartContext";
 import { getServerSession } from "@/lib/serverUserSide";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ReactNode } from "react";
-import StoreProvider from "./StoreProvider";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
+import StoreProvider from "./StoreProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,7 @@ export default async function RootLayout({
   modal: ReactNode;
 }>) {
   const serverAuth = await getServerSession();
-  
+
   return (
     <html lang="en" className="light" suppressHydrationWarning>
       <body
@@ -44,8 +45,10 @@ export default async function RootLayout({
           forcedTheme="light" // Force light theme to prevent hydration mismatch
         >
           <StoreProvider serverAuth={serverAuth}>
-            {children}
-            {modal}
+            <CartProvider>
+              {children}
+              {modal}
+            </CartProvider>
           </StoreProvider>
           <Toaster />
         </ThemeProvider>

@@ -2,7 +2,7 @@
 
 import OrderDetailPage from "@/@pages/OrderDetailPage";
 import { ShadDialog } from "@/components/dialog/ShadDialog";
-import { useRouter, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function OrderModalPage() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function OrderModalPage() {
         if (!open) router.back(); // close modal -> go back
       }}
       title={`Order Details`}
-      className="w-[1000px]"
+      className="max-w-6xl"
     >
       {/* You can reuse your order detail component directly */}
       <OrderDetailPage id={id as string} />

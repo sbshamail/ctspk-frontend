@@ -1,6 +1,6 @@
 // lib/wishlistService.ts
-import { useState, useEffect } from 'react';
-import { getCookie } from 'cookies-next';
+import { getSession } from "@/action/auth";
+import { useEffect, useState } from "react";
 
 export interface WishlistItem {
   id: number;
@@ -14,7 +14,7 @@ let globalWishlist: WishlistItem[] = [];
 let globalListeners: Array<(wishlist: WishlistItem[]) => void> = [];
 
 const notifyListeners = () => {
-  globalListeners.forEach(listener => listener([...globalWishlist]));
+  globalListeners.forEach((listener) => listener([...globalWishlist]));
 };
 
 export const useWishlist = () => {
@@ -23,110 +23,123 @@ export const useWishlist = () => {
   useEffect(() => {
     // Add listener when component mounts
     globalListeners.push(setWishlist);
-    
+
     // Remove listener when component unmounts
     return () => {
-      globalListeners = globalListeners.filter(listener => listener !== setWishlist);
+      globalListeners = globalListeners.filter(
+        (listener) => listener !== setWishlist
+      );
     };
   }, []);
 
-  const addToWishlist = async (wishlistData: { product_id: number; variation_option_id: number | null }) => {
+  const addToWishlist = async (wishlistData: {
+    product_id: number;
+    variation_option_id: number | null;
+  }) => {
     try {
-      const accessToken = getCookie('access_token');
-      
+      const accessToken = getSession("access_token");
+
       if (!accessToken) {
-        throw new Error('No access token found');
+        throw new Error("No access token found");
       }
 
-      const response = await fetch('https://api.ctspk.com/wishlist/add', {
-        method: 'POST',
+      const response = await fetch("https://api.ctspk.com/wishlist/add", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify(wishlistData),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add to wishlist');
+        throw new Error(errorData.message || "Failed to add to wishlist");
       }
 
       const newItem = await response.json();
-      
+
       // Update global state
       globalWishlist = [...globalWishlist, newItem.data];
       notifyListeners();
     } catch (error) {
-      console.error('Error adding to wishlist:', error);
+      console.error("Error adding to wishlist:", error);
       throw error;
     }
   };
 
-  const removeFromWishlist = async (productId: number, variationOptionId: number | null) => {
+  const removeFromWishlist = async (
+    productId: number,
+    variationOptionId: number | null
+  ) => {
     try {
-      const accessToken = getCookie('access_token');
-      
+      const accessToken = getSession("access_token");
+
       if (!accessToken) {
-        throw new Error('No access token found');
+        throw new Error("No access token found");
       }
 
-      const response = await fetch('https://api.ctspk.com/wishlist/remove', {
-        method: 'POST',
+      const response = await fetch("https://api.ctspk.com/wishlist/remove", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           product_id: productId,
           variation_option_id: variationOptionId,
         }),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to remove from wishlist');
+        throw new Error("Failed to remove from wishlist");
       }
 
       // Update global state
       globalWishlist = globalWishlist.filter(
         (item) =>
-          !(item.product_id === productId && 
-            item.variation_option_id === variationOptionId)
+          !(
+            item.product_id === productId &&
+            item.variation_option_id === variationOptionId
+          )
       );
       notifyListeners();
     } catch (error) {
-      console.error('Error removing from wishlist:', error);
+      console.error("Error removing from wishlist:", error);
       throw error;
     }
   };
 
   const fetchWishlist = async () => {
     try {
-      const accessToken = getCookie('access_token');
-      
+      const accessToken = getSession("access_token");
+
       if (!accessToken) {
-        console.log('No access token found for fetching wishlist');
+        console.log("No access token found for fetching wishlist");
         return;
       }
 
-      const response = await fetch('https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=100', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        credentials: 'include',
-      });
+      const response = await fetch(
+        "https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=100",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: "include",
+        }
+      );
 
       if (response.ok) {
         const wishlistData = await response.json();
         globalWishlist = wishlistData.data || [];
         notifyListeners();
       } else {
-        console.error('Failed to fetch wishlist:', response.status);
+        console.error("Failed to fetch wishlist:", response.status);
       }
     } catch (error) {
-      console.error('Error fetching wishlist:', error);
+      console.error("Error fetching wishlist:", error);
     }
   };
 

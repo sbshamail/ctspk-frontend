@@ -1,12 +1,12 @@
 "use client";
 
-import { useCartService } from "@/lib/cartService";
+import { useCart } from "@/context/cartContext";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 
 const ShoppingCartIcon = () => {
-  const { cart } = useCartService();
+  const { cart } = useCart();
   const count = cart.length;
   const totalQuantity = cart.reduce((acc, i) => acc + i.quantity, 0);
 

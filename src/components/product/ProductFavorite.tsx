@@ -1,11 +1,11 @@
 "use client";
 
+import { getSession } from "@/action/auth";
+import { useWishlist } from "@/lib/wishlistService";
 import { ClassNameType } from "@/utils/reactTypes";
 import { Heart } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { useWishlist } from "@/lib/wishlistService";
-import { getCookie } from "cookies-next";
 
 interface ProductFavoriteProps {
   className?: ClassNameType;
@@ -23,14 +23,15 @@ export const ProductFavorite = ({
   const [active, setActive] = useState(defaultActive);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [user, setUser] = useState<any>(null);
-  const { wishlist, addToWishlist, removeFromWishlist, fetchWishlist } = useWishlist();
+  const { wishlist, addToWishlist, removeFromWishlist, fetchWishlist } =
+    useWishlist();
 
   // Get user from cookies
   useEffect(() => {
     const checkUser = () => {
       try {
-        const userSession = getCookie('user_session');
-        setUser(userSession ? JSON.parse(decodeURIComponent(userSession as string)) : null);
+        const userSession = getSession("user_session");
+        setUser(userSession);
       } catch (error) {
         console.error("Error parsing user session:", error);
         setUser(null);
@@ -52,14 +53,15 @@ export const ProductFavorite = ({
   // Check if product is in wishlist - only if product exists
   useEffect(() => {
     if (user && product && product.id) {
-      const isInWishlist = wishlist.some((item: any) => 
-        item.product_id === product.id && 
-        item.variation_option_id === (product.variation_option_id || null)
+      const isInWishlist = wishlist.some(
+        (item: any) =>
+          item.product_id === product.id &&
+          item.variation_option_id === (product.variation_option_id || null)
       );
       setActive(isInWishlist);
-      
-      const count = wishlist.filter((item: any) => 
-        item.product_id === product.id
+
+      const count = wishlist.filter(
+        (item: any) => item.product_id === product.id
       ).length;
       setWishlistCount(count);
     } else {
@@ -70,7 +72,7 @@ export const ProductFavorite = ({
 
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       console.log("Please login to add to wishlist");
       return;
@@ -83,17 +85,20 @@ export const ProductFavorite = ({
     }
 
     const newState = !active;
-    
+
     try {
       if (newState) {
         await addToWishlist({
           product_id: product.id,
-          variation_option_id: product.variation_option_id || null
+          variation_option_id: product.variation_option_id || null,
         });
       } else {
-        await removeFromWishlist(product.id, product.variation_option_id || null);
+        await removeFromWishlist(
+          product.id,
+          product.variation_option_id || null
+        );
       }
-      
+
       setActive(newState);
       onToggle?.(newState);
     } catch (error) {
@@ -117,7 +122,7 @@ export const ProductFavorite = ({
           className
         )}
       />
-      
+
       {wishlistCount > 0 && (
         <div className="absolute -top-2 -right-2">
           <span className="px-1.5 py-0.5 bg-red-600 text-white rounded-full text-[0.7em] select-none min-w-[1.25rem] h-5 flex items-center justify-center">
