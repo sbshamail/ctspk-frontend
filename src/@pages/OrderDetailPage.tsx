@@ -21,6 +21,29 @@ import { useState } from "react";
 import { OrderReadNested, OrderStatusEnum, OrderProductRead, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
 
+// Helper function to get access token from cookies
+const getAccessToken = () => {
+  if (typeof document === 'undefined') return '';
+  
+  const cookies = document.cookie.split(';');
+  const accessTokenCookie = cookies.find(cookie => cookie.trim().startsWith('access_token='));
+  
+  if (accessTokenCookie) {
+    return accessTokenCookie.split('=')[1]?.trim() || '';
+  }
+  
+  return '';
+};
+
+// Helper function to get API URL
+const getApiUrl = (endpoint: string) => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+  const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+  const formattedEndpoint = endpoint.replace(/^\//, '');
+  return `${formattedBaseUrl}/${formattedEndpoint}`;
+};
+
 export default function OrderDetailPage({ id }: { id: string }) {
   const { data, isLoading, error, refetch } = useGetOrderQuery(id);
   
@@ -73,15 +96,22 @@ export default function OrderDetailPage({ id }: { id: string }) {
   // Handle order cancellation
   const handleCancelOrder = async () => {
     try {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
       const cancelData = {
         reason: cancelReason || "my order is not deliver yet. so i don't want to get this product any more",
         notify_customer: notifyCustomer
       };
 
-      const response = await fetch(`/api/order/${order.id}/cancel`, {
+      const response = await fetch(getApiUrl(`/order/${order.id}/cancel`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(cancelData),
       });
@@ -92,17 +122,24 @@ export default function OrderDetailPage({ id }: { id: string }) {
         setCancelReason("");
         refetch();
       } else {
-        throw new Error('Failed to cancel order');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to cancel order');
       }
     } catch (error) {
-      toast.error("Failed to cancel order");
       console.error("Cancellation error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order");
     }
   };
 
   // Handle order return
   const handleReturnOrder = async () => {
     try {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
       const returnData: any = {
         order_id: order.id,
         return_type: returnType,
@@ -121,10 +158,11 @@ export default function OrderDetailPage({ id }: { id: string }) {
         }
       }
 
-      const response = await fetch('/api/returns/request', {
+      const response = await fetch(getApiUrl('/returns/request'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(returnData),
       });
@@ -135,21 +173,29 @@ export default function OrderDetailPage({ id }: { id: string }) {
         setReturnReason("");
         refetch();
       } else {
-        throw new Error('Failed to create return request');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to create return request');
       }
     } catch (error) {
-      toast.error("Failed to create return request");
       console.error("Return error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create return request");
     }
   };
 
   // Handle review submission
   const handleReviewSubmit = async (reviewData: any) => {
     try {
-      const response = await fetch('/api/review/create', {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await fetch(getApiUrl('/review/create'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(reviewData),
       });
@@ -160,11 +206,12 @@ export default function OrderDetailPage({ id }: { id: string }) {
         setSelectedProduct(null);
         refetch();
       } else {
-        throw new Error('Failed to submit review');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to submit review');
       }
     } catch (error) {
-      toast.error("Failed to submit review");
       console.error("Review error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to submit review");
     }
   };
 
