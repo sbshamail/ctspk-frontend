@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import OtpVerifyModal from "./OtpVerifyModal";
 import { fetchApi } from "@/action/fetchApi";
-import { set } from "zod";
+
 interface Props {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -23,10 +23,12 @@ const ForgotPasswordModal = ({ open, setOpen }: Props) => {
       data: { email },
       showToast: true,
     });
-    setEmail("");
-    // Close and open next modal
-    setOpen(false);
-    setTimeout(() => setOtpModal(true), 200);
+    
+    // Close and open next modal only if API call is successful
+    if (forgetPassword) {
+      setOpen(false);
+      setTimeout(() => setOtpModal(true), 200);
+    }
   };
 
   return (
@@ -34,7 +36,7 @@ const ForgotPasswordModal = ({ open, setOpen }: Props) => {
       <ShadDialog open={open} onOpenChange={setOpen} title="Forgot Password">
         <form onSubmit={handleSendOtp} className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Enter your email to receive a 5-digit OTP code.
+            Enter your email to receive a 6-digit OTP code.
           </p>
 
           <Input
@@ -52,7 +54,11 @@ const ForgotPasswordModal = ({ open, setOpen }: Props) => {
       </ShadDialog>
 
       {/* OTP Modal */}
-      <OtpVerifyModal open={otpModal} setOpen={setOtpModal} email={email} />
+      <OtpVerifyModal 
+        open={otpModal} 
+        setOpen={setOtpModal} 
+        email={email} 
+      />
     </>
   );
 };

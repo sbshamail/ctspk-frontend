@@ -7,6 +7,7 @@ import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -31,6 +32,7 @@ interface Product {
   image: ProductImage;
   in_stock: boolean;
   slug: string;
+  shop_id: number;
 }
 
 interface WishlistItem {
@@ -124,6 +126,28 @@ const apiClient = {
     }
     return response.json();
   },
+
+  async post(url: string, data: any) {
+    const token = getAccessToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  },
 };
 
 const WishlistPage = () => {
@@ -162,12 +186,13 @@ const WishlistPage = () => {
       
       if (response.success === 1) {
         setWishlist(prev => prev.filter(item => item.id !== itemId));
+        toast.success("Item removed from wishlist");
       } else {
         throw new Error(response.detail || 'Failed to remove item from wishlist');
       }
     } catch (err) {
       console.error('Error removing item from wishlist:', err);
-      alert('Failed to remove item from wishlist. Please try again.');
+      toast.error('Failed to remove item from wishlist. Please try again.');
     } finally {
       setOperationLoading(null);
     }
@@ -186,33 +211,106 @@ const WishlistPage = () => {
       }
     } catch (err) {
       console.error('Error updating wishlist item:', err);
-      alert('Failed to update wishlist item. Please try again.');
+      toast.error('Failed to update wishlist item. Please try again.');
     } finally {
       setOperationLoading(null);
     }
   };
 
+  // Add single item to cart
+  const addToCart = async (item: WishlistItem) => {
+    try {
+      setOperationLoading(item.id);
+      
+      // Get shop_id from the product data
+      const shopId = item.product.shop_id;
+      
+      if (!shopId) {
+        throw new Error('Shop ID not found for this product');
+      }
+
+      const cartData = {
+        product_id: item.product_id,
+        shop_id: shopId, // Send shop_id
+        quantity: 1,
+        variation_option_id: item.variation_option_id
+      };
+
+      console.log('Adding to cart:', cartData); // Debug log
+
+      const response = await apiClient.post('https://api.ctspk.com/cart/create', cartData);
+      
+      if (response.success === 1) {
+        toast.success("Item added to cart successfully");
+        // Optionally remove from wishlist after adding to cart
+        // await removeFromWishlist(item.id);
+      } else {
+        throw new Error(response.detail || 'Failed to add item to cart');
+      }
+    } catch (err) {
+      console.error('Error adding item to cart:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to add item to cart. Please try again.');
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
+  // Add all in-stock items to cart
   const moveAllToCart = async () => {
     try {
       setOperationLoading(-1); // Use -1 to indicate bulk operation
       
-      // Implementation for moving all in-stock items to cart
       const inStockItems = wishlist.filter(item => item.product.in_stock);
       
-      // Here you would typically call your cart API for each item
-      for (const item of inStockItems) {
-        console.log("Adding to cart:", item.product.id);
-        // Example: await addToCartAPI(item.product.id, item.variation_option_id);
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate API call
+      if (inStockItems.length === 0) {
+        toast.warning("No in-stock items to add to cart");
+        return;
       }
+
+      // Prepare items with shop_id for bulk create
+      const cartItems = inStockItems.map(item => {
+        const shopId = item.product.shop_id;
+        
+        if (!shopId) {
+          console.warn(`Shop ID not found for product ${item.product_id}`);
+        }
+
+        return {
+          product_id: item.product_id,
+          shop_id: shopId, // Send shop_id for each item
+          quantity: 1,
+          variation_option_id: item.variation_option_id
+        };
+      });
+
+      // Filter out items without shop_id
+      const validCartItems = cartItems.filter(item => item.shop_id);
+
+      if (validCartItems.length === 0) {
+        throw new Error('No valid items with shop ID found');
+      }
+
+      const bulkCartData = {
+        items: validCartItems
+      };
+
+      console.log('Bulk adding to cart:', bulkCartData); // Debug log
+
+      const response = await apiClient.post('https://api.ctspk.com/cart/bulk-create', bulkCartData);
       
-      // Optionally remove moved items from wishlist
-      // Or keep them in wishlist as some users prefer
-      console.log(`Moved ${inStockItems.length} items to cart`);
-      
+      if (response.success === 1) {
+        toast.success(`Successfully added ${validCartItems.length} items to cart`);
+        
+        // Optionally remove all added items from wishlist
+        // for (const item of inStockItems) {
+        //   await removeFromWishlist(item.id);
+        // }
+      } else {
+        throw new Error(response.detail || 'Failed to add items to cart');
+      }
     } catch (err) {
       console.error('Error moving items to cart:', err);
-      alert('Failed to move items to cart. Please try again.');
+      toast.error(err instanceof Error ? err.message : 'Failed to add items to cart. Please try again.');
     } finally {
       setOperationLoading(null);
     }
@@ -227,7 +325,7 @@ const WishlistPage = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Wishlist link copied to clipboard!');
+      toast.success('Wishlist link copied to clipboard!');
     }
   };
 
@@ -242,9 +340,10 @@ const WishlistPage = () => {
         }
         
         setWishlist([]);
+        toast.success("Wishlist cleared successfully");
       } catch (err) {
         console.error('Error clearing wishlist:', err);
-        alert('Failed to clear wishlist. Please try again.');
+        toast.error('Failed to clear wishlist. Please try again.');
       } finally {
         setOperationLoading(null);
       }
@@ -376,6 +475,7 @@ const WishlistPage = () => {
                           item={item}
                           onRemove={removeFromWishlist}
                           onUpdate={updateWishlistItem}
+                          onAddToCart={addToCart}
                           isLoading={operationLoading === item.id}
                         />
                       ))}
@@ -396,6 +496,7 @@ const WishlistPage = () => {
                           item={item}
                           onRemove={removeFromWishlist}
                           onUpdate={updateWishlistItem}
+                          onAddToCart={addToCart}
                           isLoading={operationLoading === item.id}
                         />
                       ))}
@@ -474,22 +575,26 @@ const WishlistItemCard = ({
   item, 
   onRemove,
   onUpdate,
+  onAddToCart,
   isLoading = false
 }: { 
   item: WishlistItem; 
   onRemove: (id: number) => void;
   onUpdate: (id: number, data: any) => void;
+  onAddToCart: (item: WishlistItem) => void;
   isLoading?: boolean;
 }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  const addToCart = async () => {
+  const handleAddToCart = async () => {
+    if (!item.product.in_stock) return;
+    
     setIsAddingToCart(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsAddingToCart(false);
-    // Implementation for adding to cart
-    console.log("Adding to cart:", item.product.id);
+    try {
+      await onAddToCart(item);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const price = item.product.sale_price || item.product.price;
@@ -550,7 +655,7 @@ const WishlistItemCard = ({
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              onClick={addToCart}
+              onClick={handleAddToCart}
               disabled={!item.product.in_stock || isAddingToCart || isLoading}
               className="bg-primary text-white hover:bg-primary-dark text-xs"
             >

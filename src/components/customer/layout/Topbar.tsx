@@ -23,7 +23,7 @@ export default function Topbar() {
             {/* Left: Info links */}
             <div className="">
               <ul className="flex gap-4 text-muted-foreground">
-                <li>
+                {/* <li>
                   <Link
                     href="/about"
                     className="hover:text-primary transition-colors flex items-center gap-1"
@@ -31,7 +31,7 @@ export default function Topbar() {
                     <User className="w-4 h-4" />
                     About Us
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link
                     href="/track-order"
@@ -71,10 +71,10 @@ export default function Topbar() {
                           open={openSiginModal}
                           setOpen={setOpenSiginModal}
                         />
-                        <RegisterModal
+                        {/* <RegisterModal
                           open={openRegisterModal}
                           setOpen={setOpenRegisterModal}
-                        />
+                        /> */}
                       </>
                     ) : (
                       <AuthHeaderDropdown auth={auth} />

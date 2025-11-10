@@ -10,7 +10,7 @@ export const categoryApi = createApi({
   endpoints: (builder) => ({
     getCategories: builder.query<{ data: any[] }, void>({
       query: () => ({
-        url: "/category/list",
+        url: "/category/list?is_active=true",
         method: "GET",
       }),
       providesTags: ["Categories"],

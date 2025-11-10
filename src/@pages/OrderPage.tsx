@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGetOrdersQuery } from "@/store/services/orderApi";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OrderReadNested, OrderStatusEnum, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -52,6 +52,11 @@ export default function OrdersPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [notifyCustomer, setNotifyCustomer] = useState(true);
 
+  // Use useEffect to reset page when search term changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
   const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({
     page,
     limit,
@@ -62,7 +67,7 @@ export default function OrdersPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
 
-  // Check if order can be cancelled (until fullfillment_id is null)
+  // Check if order can be cancelled (until fulfillment_id is null)
   const canCancelOrder = (order: OrderReadNested) => {
     return order.fullfillment_id === null && 
            order.order_status !== OrderStatusEnum.CANCELLED &&
@@ -186,7 +191,7 @@ export default function OrdersPage() {
           variant="outline"
           className="capitalize text-xs font-medium px-2 py-0.5"
         >
-          {cell.replace("-", " ")}
+          {cell?.replace(/-/g, " ") || "Unknown"}
         </Badge>
       ),
     },
@@ -198,7 +203,7 @@ export default function OrdersPage() {
           variant={cell === PaymentStatusEnum.PENDING ? "secondary" : "default"}
           className="capitalize text-xs font-medium px-2 py-0.5"
         >
-          {cell.replace("-", " ")}
+          {cell?.replace(/-/g, " ") || "Unknown"}
         </Badge>
       ),
     },
@@ -210,13 +215,15 @@ export default function OrdersPage() {
           day: "2-digit",
           month: "short",
           year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
         }),
     },
     {
       title: "Actions",
       render: ({ row }) => (
         <div className="flex gap-2">
-          {/* Cancel Order Button */}
+          {/* Cancel Order Button - Only show when fulfillment_id is null */}
           {canCancelOrder(row) && (
             <Button
               variant="destructive"
@@ -258,6 +265,11 @@ export default function OrdersPage() {
     },
   ];
 
+  // Sort orders by date in descending order (newest first)
+  const sortedOrders = [...orders].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
   return (
     <Screen className="py-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -277,7 +289,7 @@ export default function OrdersPage() {
         <OrderTableSkeleton />
       ) : (
         <Table<OrderReadNested>
-          data={orders}
+          data={sortedOrders}
           columns={columns}
           isLoading={isFetching}
           striped={true}
@@ -287,6 +299,7 @@ export default function OrdersPage() {
           currentPage={page}
           setCurrentPage={setPage}
           showPagination={true}
+          //totalPages={totalPages}
         />
       )}
 
@@ -346,6 +359,8 @@ function CancelOrderDialog({
               <p><strong>Tracking #:</strong> {order.tracking_number}</p>
               <p><strong>Customer:</strong> {order.customer_name}</p>
               <p><strong>Total:</strong> {order.total} PKR</p>
+              <p><strong>Status:</strong> {order.order_status}</p>
+              <p><strong>Fulfillment ID:</strong> {order.fullfillment_id || "Not assigned"}</p>
             </div>
           )}
           
