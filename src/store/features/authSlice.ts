@@ -34,6 +34,7 @@ const authSlice = createSlice({
       state.data = null;
       state.isError = null;
       clearSession();
+      window.location.reload(); // refresh
     },
 
     // ✅ Error handler
