@@ -50,7 +50,7 @@ export const cartApi = createApi({
         }
       },
     }),
-    // not required for card
+    // not required for cart
     // updateCart: builder.mutation({
     //   // 👇 Dummy query to satisfy RTK Query
     //   query: ({ product_id, quantity }) => ({

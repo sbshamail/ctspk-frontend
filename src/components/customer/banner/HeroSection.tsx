@@ -8,12 +8,12 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 
-import { Button } from "@/components/ui/button";
-import Autoplay from "embla-carousel-autoplay";
-import { ChevronRight, Play } from "lucide-react";
 import { Screen } from "@/@core/layout";
-import { ClassNameType } from "@/utils/reactTypes";
+import { Button } from "@/components/ui/button";
 import { ImageType } from "@/utils/modelTypes";
+import { ClassNameType } from "@/utils/reactTypes";
+import Autoplay from "embla-carousel-autoplay";
+import { ChevronRight } from "lucide-react";
 
 interface SlideData {
   id: number;
@@ -31,49 +31,6 @@ interface SlideData {
 }
 
 export default function HeroSection({ data }: { data: SlideData[] }) {
-  // const slides: SlideData[] = [
-  //   {
-  //     id: 1,
-  //     image: "/assets/banner/unnamed3.png",
-  //     title: "Welcome to Our Platform",
-  //     subtitle: "Experience Innovation",
-  //     // description:
-  //     //   "Discover amazing features that will transform your workflow and boost productivity.",
-  //     // buttonText: "Get Started",
-  //     onClick: () => {
-  //       console.log("Navigate to getting started");
-  //       // Add your navigation logic here
-  //     },
-  //     // theme: "dark",
-  //   },
-  //   {
-  //     id: 2,
-  //     image: "/assets/banner/unnamed3.png",
-  //     title: "Powerful Solutions",
-  //     subtitle: "Built for Success",
-
-  //     // buttonText: "Learn More",
-  //     onClick: () => {
-  //       console.log("Navigate to features");
-  //       // Add your navigation logic here
-  //     },
-  //   },
-  //   {
-  //     id: 3,
-  //     image: "/assets/banner/unnamed3.png",
-  //     title: "Join Our Community",
-  //     subtitle: "Connect & Grow",
-  //     // description:
-  //     //   "Be part of a thriving community of innovators and creators shaping the future.",
-  //     // buttonText: "Join Now",
-  //     onClick: () => {
-  //       console.log("Navigate to signup");
-  //       // Add your navigation logic here
-  //     },
-  //     // theme: "dark",
-  //   },
-  // ];
-
   return (
     <main>
       <section className="w-full relative mb-8 lg:mb-12">

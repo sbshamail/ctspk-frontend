@@ -1,158 +1,160 @@
-// lib/wishlistService.ts
-import { getSession } from "@/action/auth";
-import { useEffect, useState } from "react";
+// Redux Query Added by Hamail, no need this wishlistService.ts, path is "store->services->wishlistAPi"
 
-export interface WishlistItem {
-  id: number;
-  product_id: number;
-  variation_option_id: number | null;
-  product?: any;
-}
+// // lib/wishlistService.ts
+// import { getSession } from "@/action/auth";
+// import { useEffect, useState } from "react";
 
-// Global state
-let globalWishlist: WishlistItem[] = [];
-let globalListeners: Array<(wishlist: WishlistItem[]) => void> = [];
+// export interface WishlistItem {
+//   id: number;
+//   product_id: number;
+//   variation_option_id: number | null;
+//   product?: any;
+// }
 
-const notifyListeners = () => {
-  globalListeners.forEach((listener) => listener([...globalWishlist]));
-};
+// // Global state
+// let globalWishlist: WishlistItem[] = [];
+// let globalListeners: Array<(wishlist: WishlistItem[]) => void> = [];
 
-export const useWishlist = () => {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>(globalWishlist);
+// const notifyListeners = () => {
+//   globalListeners.forEach((listener) => listener([...globalWishlist]));
+// };
 
-  useEffect(() => {
-    // Add listener when component mounts
-    globalListeners.push(setWishlist);
+// export const useWishlist = () => {
+//   const [wishlist, setWishlist] = useState<WishlistItem[]>(globalWishlist);
 
-    // Remove listener when component unmounts
-    return () => {
-      globalListeners = globalListeners.filter(
-        (listener) => listener !== setWishlist
-      );
-    };
-  }, []);
+//   useEffect(() => {
+//     // Add listener when component mounts
+//     globalListeners.push(setWishlist);
 
-  const addToWishlist = async (wishlistData: {
-    product_id: number;
-    variation_option_id: number | null;
-  }) => {
-    try {
-      const accessToken = getSession("access_token");
+//     // Remove listener when component unmounts
+//     return () => {
+//       globalListeners = globalListeners.filter(
+//         (listener) => listener !== setWishlist
+//       );
+//     };
+//   }, []);
 
-      if (!accessToken) {
-        throw new Error("No access token found");
-      }
+//   const addToWishlist = async (wishlistData: {
+//     product_id: number;
+//     variation_option_id: number | null;
+//   }) => {
+//     try {
+//       const accessToken = getSession("access_token");
 
-      const response = await fetch("https://api.ctspk.com/wishlist/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(wishlistData),
-        credentials: "include",
-      });
+//       if (!accessToken) {
+//         throw new Error("No access token found");
+//       }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add to wishlist");
-      }
+//       const response = await fetch("https://api.ctspk.com/wishlist/add", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${accessToken}`,
+//         },
+//         body: JSON.stringify(wishlistData),
+//         credentials: "include",
+//       });
 
-      const newItem = await response.json();
+//       if (!response.ok) {
+//         const errorData = await response.json();
+//         throw new Error(errorData.message || "Failed to add to wishlist");
+//       }
 
-      // Update global state
-      globalWishlist = [...globalWishlist, newItem.data];
-      notifyListeners();
-    } catch (error) {
-      console.error("Error adding to wishlist:", error);
-      throw error;
-    }
-  };
+//       const newItem = await response.json();
 
-  const removeFromWishlist = async (
-    productId: number,
-    variationOptionId: number | null
-  ) => {
-    try {
-      const accessToken = getSession("access_token");
+//       // Update global state
+//       globalWishlist = [...globalWishlist, newItem.data];
+//       notifyListeners();
+//     } catch (error) {
+//       console.error("Error adding to wishlist:", error);
+//       throw error;
+//     }
+//   };
 
-      if (!accessToken) {
-        throw new Error("No access token found");
-      }
+//   const removeFromWishlist = async (
+//     productId: number,
+//     variationOptionId: number | null
+//   ) => {
+//     try {
+//       const accessToken = getSession("access_token");
 
-      const response = await fetch("https://api.ctspk.com/wishlist/remove", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          product_id: productId,
-          variation_option_id: variationOptionId,
-        }),
-        credentials: "include",
-      });
+//       if (!accessToken) {
+//         throw new Error("No access token found");
+//       }
 
-      if (!response.ok) {
-        throw new Error("Failed to remove from wishlist");
-      }
+//       const response = await fetch("https://api.ctspk.com/wishlist/remove", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${accessToken}`,
+//         },
+//         body: JSON.stringify({
+//           product_id: productId,
+//           variation_option_id: variationOptionId,
+//         }),
+//         credentials: "include",
+//       });
 
-      // Update global state
-      globalWishlist = globalWishlist.filter(
-        (item) =>
-          !(
-            item.product_id === productId &&
-            item.variation_option_id === variationOptionId
-          )
-      );
-      notifyListeners();
-    } catch (error) {
-      console.error("Error removing from wishlist:", error);
-      throw error;
-    }
-  };
+//       if (!response.ok) {
+//         throw new Error("Failed to remove from wishlist");
+//       }
 
-  const fetchWishlist = async () => {
-    try {
-      const accessToken = getSession("access_token");
+//       // Update global state
+//       globalWishlist = globalWishlist.filter(
+//         (item) =>
+//           !(
+//             item.product_id === productId &&
+//             item.variation_option_id === variationOptionId
+//           )
+//       );
+//       notifyListeners();
+//     } catch (error) {
+//       console.error("Error removing from wishlist:", error);
+//       throw error;
+//     }
+//   };
 
-      if (!accessToken) {
-        console.log("No access token found for fetching wishlist");
-        return;
-      }
+//   const fetchWishlist = async () => {
+//     try {
+//       const accessToken = getSession("access_token");
 
-      const response = await fetch(
-        "https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=100",
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          credentials: "include",
-        }
-      );
+//       if (!accessToken) {
+//         console.log("No access token found for fetching wishlist");
+//         return;
+//       }
 
-      if (response.ok) {
-        const wishlistData = await response.json();
-        globalWishlist = wishlistData.data || [];
-        notifyListeners();
-      } else {
-        console.error("Failed to fetch wishlist:", response.status);
-      }
-    } catch (error) {
-      console.error("Error fetching wishlist:", error);
-    }
-  };
+//       const response = await fetch(
+//         "https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=100",
+//         {
+//           headers: {
+//             Authorization: `Bearer ${accessToken}`,
+//           },
+//           credentials: "include",
+//         }
+//       );
 
-  const clearWishlist = () => {
-    globalWishlist = [];
-    notifyListeners();
-  };
+//       if (response.ok) {
+//         const wishlistData = await response.json();
+//         globalWishlist = wishlistData.data || [];
+//         notifyListeners();
+//       } else {
+//         console.error("Failed to fetch wishlist:", response.status);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching wishlist:", error);
+//     }
+//   };
 
-  return {
-    wishlist,
-    addToWishlist,
-    removeFromWishlist,
-    fetchWishlist,
-    clearWishlist,
-  };
-};
+//   const clearWishlist = () => {
+//     globalWishlist = [];
+//     notifyListeners();
+//   };
+
+//   return {
+//     wishlist,
+//     addToWishlist,
+//     removeFromWishlist,
+//     fetchWishlist,
+//     clearWishlist,
+//   };
+// };

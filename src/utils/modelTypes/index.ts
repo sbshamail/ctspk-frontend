@@ -7,6 +7,7 @@ export interface ImageType {
 export * from "./AuthType";
 export * from "./cartType";
 export * from "./productType";
+export * from "./wishlistType";
 
 export interface CategoryDataType {
   [key: string]: any;

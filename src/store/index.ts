@@ -6,8 +6,9 @@ import loadingReducer from "./features/loadingSlice";
 import cartReducer from "./features/localCartSlice";
 import { cartApi } from "./services/cartApi";
 import { categoryApi } from "./services/categoryApi";
-import { productApi } from "./services/productApi";
 import { orderApi } from "./services/orderApi";
+import { productApi } from "./services/productApi";
+import { wishlistApi } from "./services/wishlistAPi";
 export const makeStore = () =>
   configureStore({
     reducer: {
@@ -16,6 +17,7 @@ export const makeStore = () =>
       [categoryApi.reducerPath]: categoryApi.reducer,
       [cartApi.reducerPath]: cartApi.reducer,
       [orderApi.reducerPath]: orderApi.reducer,
+      [wishlistApi.reducerPath]: wishlistApi.reducer,
       localCart: cartReducer,
       auth: authReducer,
       loading: loadingReducer,
@@ -26,7 +28,8 @@ export const makeStore = () =>
         productApi.middleware,
         categoryApi.middleware,
         cartApi.middleware,
-        orderApi.middleware
+        orderApi.middleware,
+        wishlistApi.middleware
       ), // Add API middleware(),
   });
 

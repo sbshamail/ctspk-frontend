@@ -1,5 +1,4 @@
 // cartType.ts
-import { ImageType } from ".";
 
 // Define a simpler image type for cart items
 type CartImageType = {

@@ -25,6 +25,7 @@ export interface ProductDataType {
   category: CategoryReadProductType;
   shop: ShopReadForProductType;
   manufacturer_id?: number | null;
+  in_stock: boolean;
   unit?: string | null;
   dimension_unit?: string | null;
   sku?: string | null;

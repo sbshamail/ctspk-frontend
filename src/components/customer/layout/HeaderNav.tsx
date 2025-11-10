@@ -1,9 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-
 import { Screen } from "@/@core/layout";
 import HeartIcon from "@/components/icons/HeartIcon";
 import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
@@ -15,9 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/store/services/categoryApi";
 import { CategoryDataType } from "@/utils/modelTypes";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 interface HeaderNavProps {
   y: number;
@@ -35,6 +34,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
   const [visibleCategories, setVisibleCategories] = useState<number>(
     categories.length
   );
+
   const navRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
 
@@ -153,6 +153,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
   if (isError) {
     return null;
   }
+
   if (isLoading) {
     return <LayoutSkeleton header={true} />;
   }
