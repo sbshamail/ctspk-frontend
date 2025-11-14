@@ -27,27 +27,45 @@ export function RegisterForm({ close, setSiginModal }: Props) {
   });
 
   const onSubmit = async (values: RegisterSchemaType) => {
-    setServerError(null);
-    try {
-      const res = await fetchApi({
-        url: "register",
-        method: "POST",
-        data: values,
-      });
+  setServerError(null);
+  try {
+    const response = await fetch('https://api.ctspk.com/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(values),
+    });
 
-      if (res?.success) {
-        reset();
-        close();
-        setSiginModal(true);
-      } else {
-        setServerError(
-          res?.detail || "Something went wrong. Please try again."
-        );
-      }
-    } catch (err) {
-      setServerError("Network error. Please try again.");
+    let res;
+    try {
+      res = await response.json();
+    } catch (parseError) {
+      // If JSON parsing fails
+      setServerError("Invalid response from server.");
+      return;
     }
-  };
+
+    console.log("Status:", response.status);
+    console.log("Response:", res);
+
+    // Check both status code and success flag
+    if (response.ok && res?.success === 1) {
+      reset();
+      close();
+      setSiginModal(true);
+    } else {
+      // Handle both HTTP errors and API business logic errors
+      const errorMessage = res?.detail || 
+                          `Request failed with status ${response.status}` ||
+                          "Something went wrong. Please try again.";
+      setServerError(errorMessage);
+    }
+  } catch (err) {
+    console.log("Network error:", err);
+    setServerError("Network error. Please try again.");
+  }
+};
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">

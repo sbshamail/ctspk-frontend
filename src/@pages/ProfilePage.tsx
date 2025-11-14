@@ -28,6 +28,7 @@ interface Address {
   title: string;
   type: "billing" | "shipping";
   is_default: boolean;
+  customer_id?: number; // Add this line
   address: {
     street: string;
     city: string;
@@ -61,7 +62,13 @@ const getAccessToken = (): string | null => {
   }
   return null;
 };
-
+const getApiUrl = (endpoint: string) => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+  const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+  const formattedEndpoint = endpoint.replace(/^\//, '');
+  return `${formattedBaseUrl}/${formattedEndpoint}`;
+};
 // Get user from cookies (user_session)
 const getUserFromCookies = (): User | null => {
   if (typeof document === 'undefined') return null;
@@ -82,6 +89,7 @@ const getUserFromCookies = (): User | null => {
 };
 
 // API client with authorization
+// API client with authorization
 const apiClient = {
   async get(url: string) {
     const token = getAccessToken();
@@ -94,9 +102,13 @@ const apiClient = {
     }
 
     const response = await fetch(url, { headers });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    
+    // Check if status is 300 or above
+    if (response.status >= 300) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
     }
+    
     return response.json();
   },
 
@@ -116,9 +128,12 @@ const apiClient = {
       body: JSON.stringify(data),
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Check if status is 300 or above
+    if (response.status >= 300) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
     }
+    
     return response.json();
   },
 
@@ -138,9 +153,12 @@ const apiClient = {
       body: JSON.stringify(data),
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Check if status is 300 or above
+    if (response.status >= 300) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
     }
+    
     return response.json();
   },
 
@@ -159,9 +177,12 @@ const apiClient = {
       headers,
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Check if status is 300 or above
+    if (response.status >= 300) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `HTTP error! status: ${response.status}`);
     }
+    
     return response.json();
   },
 };
@@ -184,11 +205,12 @@ const ProfilePage = () => {
     new_password: "",
     confirm_password: "",
   });
-  const [addressForm, setAddressForm] = useState({
+ const [addressForm, setAddressForm] = useState({
   id: null as number | null,
   title: "",
   type: "shipping" as "billing" | "shipping",
   is_default: false,
+  customer_id: null as number | null, // Add this line
   address: {
     street: "",
     city: "",
@@ -197,8 +219,8 @@ const ProfilePage = () => {
     country: "",
   },
   location: {
-    lat: 0.0,  // Default value
-    lng: 0.0,  // Default value
+    lat: 0.0,
+    lng: 0.0,
   },
 });
 
@@ -224,8 +246,7 @@ const ProfilePage = () => {
       const userData = getUserFromCookies();
       if (!userData || !userData.id) return;
 
-      const data: ApiResponse = await apiClient.get(
-        `https://api.ctspk.com/address/list?user=${userData.id}&page=1&skip=0&limit=10`
+      const data: ApiResponse = await apiClient.get(getApiUrl(`/address/list?user=${userData.id}&page=1&skip=0&limit=20`)
       );
       
       if (data.success === 1) {
@@ -242,8 +263,7 @@ const ProfilePage = () => {
       setError(null);
       setSuccess(null);
 
-      const response: ApiResponse = await apiClient.put(
-        "https://api.ctspk.com/user/profile",
+      const response: ApiResponse = await apiClient.put(getApiUrl("/user/profile"),
         profileForm
       );
 
@@ -283,8 +303,7 @@ const ProfilePage = () => {
         return;
       }
 
-      const response: ApiResponse = await apiClient.post(
-        "https://api.ctspk.com/user/change-password",
+      const response: ApiResponse = await apiClient.post(getApiUrl("/user/change-password") ,
         passwordForm
       );
 
@@ -295,6 +314,8 @@ const ProfilePage = () => {
           new_password: "",
           confirm_password: "",
         });
+      } else if (response.success === 0) {
+        setSuccess(response.detail || 'Failed to change password');        
       } else {
         throw new Error(response.detail || 'Failed to change password');
       }
@@ -304,38 +325,52 @@ const ProfilePage = () => {
   };
 
   const saveAddress = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setError(null);
-      setSuccess(null);
+  e.preventDefault();
+  try {
+    setError(null);
+    setSuccess(null);
 
-      let response: ApiResponse;
-      
-      if (addressForm.id) {
-        // Update existing address
-        response = await apiClient.put(
-          `https://api.ctspk.com/address/update/${addressForm.id}`,
-          addressForm
-        );
-      } else {
-        // Create new address
-        response = await apiClient.post(
-          "https://api.ctspk.com/address/create",
-          addressForm
-        );
-      }
-
-      if (response.success === 1) {
-        setSuccess(`Address ${addressForm.id ? 'updated' : 'added'} successfully!`);
-        resetAddressForm();
-        await loadAddresses();
-      } else {
-        throw new Error(response.detail || `Failed to ${addressForm.id ? 'update' : 'add'} address`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to ${addressForm.id ? 'update' : 'add'} address`);
+    const userData = getUserFromCookies();
+    if (!userData || !userData.id) {
+      setError("User not found. Please log in again.");
+      return;
     }
-  };
+
+    // Prepare address data with customer_id
+    const addressData = {
+      ...addressForm,
+      customer_id: userData.id,
+    };
+
+    let response: ApiResponse;
+    
+    if (addressForm.id) {
+      // Update existing address
+      response = await apiClient.put(
+        getApiUrl(`/address/update/${addressForm.id}`),
+        addressData
+      );
+    } else {
+      // Create new address
+      response = await apiClient.post(
+        getApiUrl("/address/create"),
+        addressData
+      );
+    }
+
+    if (response.success === 1) {
+      setSuccess(`Address ${addressForm.id ? 'updated' : 'added'} successfully!`);
+      resetAddressForm();
+      await loadAddresses();
+    } else {
+      // Handle API-specific errors (success = 0 but status code < 300)
+      throw new Error(response.detail || `Failed to ${addressForm.id ? 'update' : 'add'} address`);
+    }
+  } catch (err) {
+    // This will now catch both HTTP errors (status >= 300) and API errors
+    setError(err instanceof Error ? err.message : `Failed to ${addressForm.id ? 'update' : 'add'} address`);
+  }
+};
 
   const deleteAddress = async (addressId: number) => {
     if (!confirm('Are you sure you want to delete this address?')) return;
@@ -343,7 +378,7 @@ const ProfilePage = () => {
     try {
       setError(null);
       const response: ApiResponse = await apiClient.delete(
-        `https://api.ctspk.com/address/delete/${addressId}`
+        getApiUrl(`/address/delete/${addressId}`)
       );
 
       if (response.success === 1) {
@@ -358,15 +393,16 @@ const ProfilePage = () => {
   };
 
   const editAddress = (address: Address) => {
-    setAddressForm({
-      id: address.id,
-      title: address.title,
-      type: address.type,
-      is_default: address.is_default,
-      address: { ...address.address },
-      location: { ...address.location },
-    });
-  };
+  setAddressForm({
+    id: address.id,
+    title: address.title,
+    type: address.type,
+    is_default: address.is_default,
+    customer_id: address.customer_id || null, // Add this line
+    address: { ...address.address },
+    location: { ...address.location },
+  });
+};
 
   // And reset function:
 const resetAddressForm = () => {
@@ -375,6 +411,7 @@ const resetAddressForm = () => {
     title: "",
     type: "shipping",
     is_default: false,
+    customer_id: null, // Add this line
     address: {
       street: "",
       city: "",
@@ -383,34 +420,41 @@ const resetAddressForm = () => {
       country: "",
     },
     location: {
-      lat: 0.0,  // Default value
-      lng: 0.0,  // Default value
+      lat: 0.0,
+      lng: 0.0,
     },
   });
 };
 
   const setDefaultAddress = async (addressId: number, type: "billing" | "shipping") => {
-    try {
-      const address = addresses.find(addr => addr.id === addressId);
-      if (!address) return;
+  try {
+    const address = addresses.find(addr => addr.id === addressId);
+    if (!address) return;
 
-      const response: ApiResponse = await apiClient.put(
-        `https://api.ctspk.com/address/update/${addressId}`,
-        {
-          ...address,
-          is_default: true,
-          type: type,
-        }
-      );
-
-      if (response.success === 1) {
-        setSuccess("Default address updated successfully!");
-        await loadAddresses();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update default address');
+    const userData = getUserFromCookies();
+    if (!userData || !userData.id) {
+      setError("User not found. Please log in again.");
+      return;
     }
-  };
+
+    const response: ApiResponse = await apiClient.put(
+      getApiUrl(`/address/update/${addressId}`),
+      {
+        ...address,
+        customer_id: userData.id, // Add customer_id
+        is_default: true,
+        type: type,
+      }
+    );
+
+    if (response.success === 1) {
+      setSuccess("Default address updated successfully!");
+      await loadAddresses();
+    }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to update default address');
+  }
+};
 
   if (loading) {
     return (
