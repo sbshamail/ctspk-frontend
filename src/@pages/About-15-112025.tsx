@@ -5,7 +5,6 @@ import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useState } from "react";
-import Link from "next/link";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -328,7 +327,51 @@ const AboutUs = () => {
         </div>
       </section>
 
-      
+      {/* Timeline Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Journey</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              From humble beginnings to industry leadership
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-1/2 transform -translate-x-1/2 w-1 bg-primary h-full"></div>
+              
+              {timeline.map((item, index) => (
+                <div
+                  key={index}
+                  className={`relative flex items-center mb-12 ${
+                    index % 2 === 0 ? "flex-row" : "flex-row-reverse"
+                  }`}
+                >
+                  {/* Content */}
+                  <div className={`w-1/2 ${index % 2 === 0 ? "pr-8 text-right" : "pl-8"}`}>
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                      <div className="text-primary font-bold text-lg mb-2">
+                        {item.year}
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Dot */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-primary rounded-full border-4 border-white"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-16 bg-primary text-white">
@@ -342,17 +385,68 @@ const AboutUs = () => {
               size="lg"
               variant="secondary"
               className="bg-white text-primary hover:bg-gray-100"
-              asChild
             >
-              <Link href="/contact">  
               Get In Touch
-              </Link>
-            </Button>            
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white text-white hover:bg-white hover:text-primary"
+            >
+              View Our Work
+            </Button>
           </div>
         </div>
       </section>
 
-      
+      {/* Team Preview Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Leadership Team</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Meet the visionaries driving our company forward
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              {
+                name: "Sarah Johnson",
+                role: "CEO & Founder",
+                bio: "15+ years of industry experience"
+              },
+              {
+                name: "Michael Chen",
+                role: "Chief Technology Officer",
+                bio: "Technology innovation leader"
+              },
+              {
+                name: "Emily Rodriguez",
+                role: "Chief Design Officer",
+                bio: "User experience expert"
+              }
+            ].map((leader, index) => (
+              <div key={index} className="text-center">
+                <div className="w-32 h-32 mx-auto bg-gray-200 rounded-full mb-4 flex items-center justify-center">
+                  <span className="text-gray-400">Photo</span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                  {leader.name}
+                </h3>
+                <p className="text-primary font-medium mb-2">{leader.role}</p>
+                <p className="text-gray-600 text-sm">{leader.bio}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
+              Meet Full Team
+            </Button>
+          </div>
+        </div>
+      </section>
     </Screen>
   );
 };

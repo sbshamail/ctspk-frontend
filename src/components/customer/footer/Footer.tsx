@@ -55,7 +55,7 @@ const Footer = () => {
       links: [
         { name: "About Us", link: "/about" },
         { name: "Contact Us", link: "/contact" },
-        { name: "About team", link: "/team" },
+        
         { name: "Customer Support", link: "/support" },
       ],
     },

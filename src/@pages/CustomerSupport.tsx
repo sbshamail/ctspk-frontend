@@ -114,7 +114,7 @@ const CustomerSupport = () => {
       icon: "??",
       title: "Phone Support",
       description: "Speak directly with our support agents",
-      details: "+1 (555) 123-HELP",
+      details: "+971 52 993 2054",
       action: "Call Now"
     },
     {

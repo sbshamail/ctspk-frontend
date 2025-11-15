@@ -1,19 +1,18 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-
 import { Screen } from "@/@core/layout";
 import { Button } from "@/components/ui/button";
 import { ImageType } from "@/utils/modelTypes";
 import { ClassNameType } from "@/utils/reactTypes";
 import Autoplay from "embla-carousel-autoplay";
 import { ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface SlideData {
   id: number;
@@ -21,16 +20,47 @@ interface SlideData {
   name?: string;
   description?: string;
   slug?: string;
-
   titleClass?: ClassNameType;
   subtitle?: string;
   descriptionClass?: ClassNameType;
   buttonText?: string;
   onClick: () => void;
   theme?: "light" | "dark";
+  category_id?: number | null;
+  category?: {
+    id: number;
+    root_id: number;
+    name: string;
+    slug: string;
+    // ... other category properties
+  } | null;
 }
 
 export default function HeroSection({ data }: { data: SlideData[] }) {
+  const router = useRouter();
+
+  const handleSlideClick = (slide: SlideData) => {
+    // If category exists, navigate to products with category filter
+    if (slide.category?.root_id) {
+      const columnFilters = JSON.stringify([["category.root_id", slide.category.root_id]]);
+      const encodedFilters = encodeURIComponent(columnFilters);
+      router.push(`/product?columnFilters=${encodedFilters}`);
+    } else if (slide.category_id) {
+      // Fallback to category_id if root_id is not available
+      const columnFilters = JSON.stringify([["category_id", slide.category_id]]);
+      const encodedFilters = encodeURIComponent(columnFilters);
+      router.push(`/product?columnFilters=${encodedFilters}`);
+    } else {
+      // Default behavior if no category
+      slide.onClick();
+    }
+  };
+
+  const handleButtonClick = (slide: SlideData, e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleSlideClick(slide);
+  };
+
   return (
     <main>
       <section className="w-full relative mb-8 lg:mb-12">
@@ -40,7 +70,7 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
               className="w-full"
               opts={{
                 align: "start",
-                loop: true, // This enables seamless infinite scrolling
+                loop: true,
                 skipSnaps: false,
                 dragFree: false,
               }}
@@ -57,7 +87,7 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
                   <CarouselItem
                     key={slide.id}
                     className="relative pl-0 cursor-pointer group"
-                    onClick={() => {}}
+                    onClick={() => handleSlideClick(slide)}
                   >
                     <div className="relative mx-auto max-w-full aspect-[3/1] bg-cover bg-center rounded-xl overflow-hidden shadow-2xl">
                       {/* Background Image with Overlay */}
@@ -80,20 +110,10 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
                       {/* Content Overlay */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center max-w-4xl px-6 sm:px-8 lg:px-12">
-                          {/* Subtitle */}
-                          {/* <div
-                            className={cn(
-                              "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 backdrop-blur-sm transition-all duration-300 group-hover:scale-105 bg-card/80"
-                            )}
-                          >
-                            <Play className="w-3 h-3" />
-                            {slide.subtitle}
-                          </div> */}
-
                           {/* Main Title */}
                           <h1
                             className={cn(
-                              "text-4xl sm:text-5xl  font-bold mb-6 leading-tight text-balance transition-all duration-500 group-hover:scale-105 bg-card/50 rounded-lg text-secondary-foreground p-2 px-4",
+                              "text-4xl sm:text-5xl font-bold mb-6 leading-tight text-balance transition-all duration-500 group-hover:scale-105 bg-card/50 rounded-lg text-secondary-foreground p-2 px-4",
                               slide.theme === "dark" && "text-white",
                               slide.titleClass
                             )}
@@ -104,7 +124,7 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
                           {/* Description */}
                           <p
                             className={cn(
-                              "text-lg sm:text-xl lg:text-2xl  mb-8 mx-auto leading-relaxed text-pretty transition-all duration-500 bg-card/50 rounded-lg text-secondary-foreground",
+                              "text-lg sm:text-xl lg:text-2xl mb-8 mx-auto leading-relaxed text-pretty transition-all duration-500 bg-card/50 rounded-lg text-secondary-foreground",
                               slide.theme === "dark" && "text-white/90",
                               slide.descriptionClass
                             )}
@@ -116,14 +136,11 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
                             <Button
                               size="lg"
                               className={cn(
-                                "text-lg px-8 py-6  rounded-full font-semibold transition-all duration-300 group-hover:scale-110 shadow-xl",
+                                "text-lg px-8 py-6 rounded-full font-semibold transition-all duration-300 group-hover:scale-110 shadow-xl",
                                 slide.theme === "dark" &&
                                   "bg-white text-black hover:bg-white/90 hover:shadow-white/20"
                               )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                slide.onClick();
-                              }}
+                              onClick={(e) => handleButtonClick(slide, e)}
                             >
                               {slide.buttonText}
                               <ChevronRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />

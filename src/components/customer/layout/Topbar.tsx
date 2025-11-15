@@ -46,7 +46,7 @@ export default function Topbar() {
 
             <div className="hidden md:block">
               <span className="text-primary">
-                Free Shipping on Order 2000/-Rs
+                Free Shipping on Order 3000/-Rs.
               </span>
             </div>
 

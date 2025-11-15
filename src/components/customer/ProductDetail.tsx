@@ -177,13 +177,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
         {/* Product Images */}
         <div className="space-y-4">
           {/* Main Image */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px] aspect-square mx-auto border rounded-lg overflow-hidden">
             <Image
               src={selectedImage}
               alt={product.name}
               width={600}
               height={600}
-              className="w-full h-auto object-cover"
+              className="w-full h-full object-cover rounded-2xl shadow-lg"
             />
           </div>
 

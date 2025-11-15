@@ -260,7 +260,7 @@ const ContactUs = () => {
                         
                         <div>
                           <h4 className="font-medium text-gray-900">Phone</h4>
-                          <p className="text-gray-600">+92 300 1234567</p>
+                          <p className="text-gray-600">+971529932054</p>
                         </div>
                         
                         <div>

@@ -316,15 +316,15 @@ export function HeaderNav({ y }: HeaderNavProps) {
                   </h3>
                   <div className="space-y-1">
                     {[
-                      "New Arrivals",
-                      "Best Sellers",
-                      "Trending Now",
-                      "Limited Edition",
-                      "Seasonal Picks",
-                    ].map((collection) => (
+                      ["New Arrivals", "/new-arrivals"],
+                      ["Best Sellers", "/best-sellers"],
+                      ["Trending Now", "/trending-now"],
+                      ["Limited Edition", "/limited-edition"],
+                      ["Sales", "/sales"],
+                    ].map(([collection, href]) => (
                       <Link
                         key={collection}
-                        href="#"
+                        href={href}
                         className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors"
                       >
                         {collection}
@@ -340,7 +340,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                       <span className="text-2xl">🎉</span>
                     </div>
                     <h4 className="text-lg font-semibold text-popover-foreground mb-2">
-                      Up to 50% Off
+                      Deals & Discount
                     </h4>
                     <p className="text-sm text-muted-foreground mb-4">
                       {activeCategory === "Fashion & Apparel"
@@ -349,9 +349,11 @@ export function HeaderNav({ y }: HeaderNavProps) {
                         ? "Tech Deals"
                         : "Special Offers"}
                     </p>
-                    <button className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
+                    <Link href="/product">
+                     <button className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
                       Shop Now
-                    </button>
+                     </button>
+                    </Link>
                   </div>
                 </div>
               </div>
