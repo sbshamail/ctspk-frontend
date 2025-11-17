@@ -26,7 +26,7 @@ export const productApi = createApi({
     >({
       query: (params) => {
         const query = toQueryString(params);
-        return { url: `/product/limited-edition?low_stock_threshold=20&${query}`, method: "GET" };
+        return { url: `/product/new-arrivals?is_active=true&days=30&sort_by=created_at&sort_order=desc&${query}`, method: "GET" };
       },
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {

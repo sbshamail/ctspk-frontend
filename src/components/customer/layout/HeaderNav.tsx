@@ -349,7 +349,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                         ? "Tech Deals"
                         : "Special Offers"}
                     </p>
-                    <Link href="/product">
+                    <Link href="/sales">
                      <button className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors">
                       Shop Now
                      </button>
