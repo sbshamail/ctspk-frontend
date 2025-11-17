@@ -1,12 +1,11 @@
 "use client";
 
 import { ThemeToggle } from "@/@core/theme/ThemeToggle";
-import RegisterModal from "@/components/modals/auth/RegisterModal";
 import SiginModal from "@/components/modals/auth/SiginModal";
 import { cn } from "@/lib/utils";
 
 import { useSelection } from "@/lib/useSelection";
-import { Truck, User } from "lucide-react";
+import { Truck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import AuthHeaderDropdown from "../dropdown/AuthHeaderDropdown";
@@ -23,15 +22,6 @@ export default function Topbar() {
             {/* Left: Info links */}
             <div className="">
               <ul className="flex gap-4 text-muted-foreground">
-                {/* <li>
-                  <Link
-                    href="/about"
-                    className="hover:text-primary transition-colors flex items-center gap-1"
-                  >
-                    <User className="w-4 h-4" />
-                    About Us
-                  </Link>
-                </li> */}
                 <li>
                   <Link
                     href="/track-order"

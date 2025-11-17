@@ -1,12 +1,18 @@
 "use client";
 
 import { Screen } from "@/@core/layout";
+import { getAuth } from "@/action/auth";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
-import { Button } from "@/components/ui/button";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
+import { Button } from "@/components/ui/button";
+import {
+  useAddToWishlistMutation,
+  useGetWishlistQuery,
+  useRemoveFromWishlistMutation,
+} from "@/store/services/wishlistAPi";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 const breadcrumbData = [
@@ -44,309 +50,96 @@ interface WishlistItem {
   created_at: string;
 }
 
-interface ApiResponse {
-  success: number;
-  detail: string;
-  data: WishlistItem[];
-  total: number;
-}
-
-// Utility function to get access token from cookies
-const getAccessToken = (): string | null => {
-  if (typeof document === 'undefined') return null;
-  
-  const cookies = document.cookie.split(';');
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
-    if (name === 'access_token') {
-      return decodeURIComponent(value);
-    }
-  }
-  return null;
-};
-
-// API client with authorization
-const apiClient = {
-  async get(url: string) {
-    const token = getAccessToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  },
-
-  async delete(url: string) {
-    const token = getAccessToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers,
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  },
-
-  async put(url: string, data: any) {
-    const token = getAccessToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  },
-
-  async post(url: string, data: any) {
-    const token = getAccessToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  },
-};
-
 const WishlistPage = () => {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  // const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const { user } = getAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [operationLoading, setOperationLoading] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchWishlist();
-  }, []);
+  const { data: wishlistData, refetch } = useGetWishlistQuery(undefined, {
+    skip: !user, // don’t run query if not logged in
+  });
+  const wishlist = wishlistData?.data ?? [];
+  const totalWishlist = wishlistData?.total ?? 0;
+  const [addToWishlist] = useAddToWishlistMutation();
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
-  const fetchWishlist = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data: ApiResponse = await apiClient.get('https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=200');
-      
-      if (data.success === 1) {
-        setWishlist(data.data);
-      } else {
-        throw new Error(data.detail || 'Failed to fetch wishlist');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Error fetching wishlist:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // useEffect(() => {
+  //   fetchWishlist();
+  // }, []);
 
-  const removeFromWishlist = async (itemId: number) => {
-    try {
-      setOperationLoading(itemId);
-      const response = await apiClient.delete(`https://api.ctspk.com/wishlist/remove/${itemId}`);
-      
-      if (response.success === 1) {
-        setWishlist(prev => prev.filter(item => item.id !== itemId));
-        toast.success("Item removed from wishlist");
-      } else {
-        throw new Error(response.detail || 'Failed to remove item from wishlist');
-      }
-    } catch (err) {
-      console.error('Error removing item from wishlist:', err);
-      toast.error('Failed to remove item from wishlist. Please try again.');
-    } finally {
-      setOperationLoading(null);
-    }
-  };
+  // const fetchWishlist = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     const data: ApiResponse = await apiClient.get('https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=200');
 
-  const updateWishlistItem = async (itemId: number, updateData: any) => {
-    try {
-      setOperationLoading(itemId);
-      const response = await apiClient.put(`https://api.ctspk.com/wishlist/update/${itemId}`, updateData);
-      
-      if (response.success === 1) {
-        // Refresh the wishlist to get updated data
-        await fetchWishlist();
-      } else {
-        throw new Error(response.detail || 'Failed to update wishlist item');
-      }
-    } catch (err) {
-      console.error('Error updating wishlist item:', err);
-      toast.error('Failed to update wishlist item. Please try again.');
-    } finally {
-      setOperationLoading(null);
-    }
-  };
+  //     if (data.success === 1) {
+  //       setWishlist(data.data);
+  //     } else {
+  //       throw new Error(data.detail || 'Failed to fetch wishlist');
+  //     }
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : 'An error occurred');
+  //     console.error('Error fetching wishlist:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // const removeFromWishlist = async (itemId: number) => {
+  //   try {
+  //     setOperationLoading(itemId);
+  //     const response = await apiClient.delete(`https://api.ctspk.com/wishlist/remove/${itemId}`);
+
+  //     if (response.success === 1) {
+  //       setWishlist(prev => prev.filter(item => item.id !== itemId));
+  //       toast.success("Item removed from wishlist");
+  //     } else {
+  //       throw new Error(response.detail || 'Failed to remove item from wishlist');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error removing item from wishlist:', err);
+  //     toast.error('Failed to remove item from wishlist. Please try again.');
+  //   } finally {
+  //     setOperationLoading(null);
+  //   }
+  // };
+
+  // const updateWishlistItem = async (itemId: number, updateData: any) => {
+  //   try {
+  //     setOperationLoading(itemId);
+  //     const response = await apiClient.put(`https://api.ctspk.com/wishlist/update/${itemId}`, updateData);
+
+  //     if (response.success === 1) {
+  //       // Refresh the wishlist to get updated data
+  //       await refetch();
+  //     } else {
+  //       throw new Error(response.detail || 'Failed to update wishlist item');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error updating wishlist item:', err);
+  //     toast.error('Failed to update wishlist item. Please try again.');
+  //   } finally {
+  //     setOperationLoading(null);
+  //   }
+  // };
 
   // Add single item to cart
-  const addToCart = async (item: WishlistItem) => {
-    try {
-      setOperationLoading(item.id);
-      
-      // Get shop_id from the product data
-      const shopId = item.product.shop_id;
-      
-      if (!shopId) {
-        throw new Error('Shop ID not found for this product');
-      }
-
-      const cartData = {
-        product_id: item.product_id,
-        shop_id: shopId, // Send shop_id
-        quantity: 1,
-        variation_option_id: item.variation_option_id
-      };
-
-      console.log('Adding to cart:', cartData); // Debug log
-
-      const response = await apiClient.post('https://api.ctspk.com/cart/create', cartData);
-      
-      if (response.success === 1) {
-        toast.success("Item added to cart successfully");
-        // Optionally remove from wishlist after adding to cart
-        // await removeFromWishlist(item.id);
-      } else {
-        throw new Error(response.detail || 'Failed to add item to cart');
-      }
-    } catch (err) {
-      console.error('Error adding item to cart:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to add item to cart. Please try again.');
-    } finally {
-      setOperationLoading(null);
-    }
-  };
 
   // Add all in-stock items to cart
-  const moveAllToCart = async () => {
-    try {
-      setOperationLoading(-1); // Use -1 to indicate bulk operation
-      
-      const inStockItems = wishlist.filter(item => item.product.in_stock);
-      
-      if (inStockItems.length === 0) {
-        toast.warning("No in-stock items to add to cart");
-        return;
-      }
-
-      // Prepare items with shop_id for bulk create
-      const cartItems = inStockItems.map(item => {
-        const shopId = item.product.shop_id;
-        
-        if (!shopId) {
-          console.warn(`Shop ID not found for product ${item.product_id}`);
-        }
-
-        return {
-          product_id: item.product_id,
-          shop_id: shopId, // Send shop_id for each item
-          quantity: 1,
-          variation_option_id: item.variation_option_id
-        };
-      });
-
-      // Filter out items without shop_id
-      const validCartItems = cartItems.filter(item => item.shop_id);
-
-      if (validCartItems.length === 0) {
-        throw new Error('No valid items with shop ID found');
-      }
-
-      const bulkCartData = {
-        items: validCartItems
-      };
-
-      console.log('Bulk adding to cart:', bulkCartData); // Debug log
-
-      const response = await apiClient.post('https://api.ctspk.com/cart/bulk-create', bulkCartData);
-      
-      if (response.success === 1) {
-        toast.success(`Successfully added ${validCartItems.length} items to cart`);
-        
-        // Optionally remove all added items from wishlist
-        // for (const item of inStockItems) {
-        //   await removeFromWishlist(item.id);
-        // }
-      } else {
-        throw new Error(response.detail || 'Failed to add items to cart');
-      }
-    } catch (err) {
-      console.error('Error moving items to cart:', err);
-      toast.error(err instanceof Error ? err.message : 'Failed to add items to cart. Please try again.');
-    } finally {
-      setOperationLoading(null);
-    }
-  };
 
   const shareWishlist = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'My Wishlist',
-        text: 'Check out my wishlist!',
+        title: "My Wishlist",
+        text: "Check out my wishlist!",
         url: window.location.href,
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('Wishlist link copied to clipboard!');
-    }
-  };
-
-  const clearWishlist = async () => {
-    if (confirm('Are you sure you want to clear your entire wishlist?')) {
-      try {
-        setOperationLoading(-2); // Use -2 to indicate clear operation
-        
-        // Remove all items one by one
-        for (const item of wishlist) {
-          await apiClient.delete(`https://api.ctspk.com/wishlist/remove/${item.id}`);
-        }
-        
-        setWishlist([]);
-        toast.success("Wishlist cleared successfully");
-      } catch (err) {
-        console.error('Error clearing wishlist:', err);
-        toast.error('Failed to clear wishlist. Please try again.');
-      } finally {
-        setOperationLoading(null);
-      }
+      toast.success("Wishlist link copied to clipboard!");
     }
   };
 
@@ -361,8 +154,8 @@ const WishlistPage = () => {
     return wishlist.reduce((total, item) => total + item.product.price, 0);
   };
 
-  const inStockItems = wishlist.filter(item => item.product.in_stock);
-  const outOfStockItems = wishlist.filter(item => !item.product.in_stock);
+  const inStockItems = wishlist.filter((item) => item.product.in_stock);
+  const outOfStockItems = wishlist.filter((item) => !item.product.in_stock);
 
   if (loading) {
     return (
@@ -381,12 +174,12 @@ const WishlistPage = () => {
           <div className="w-24 h-24 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
             <ErrorIcon className="w-12 h-12 text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Wishlist</h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            {error}
-          </p>
-          <Button 
-            onClick={fetchWishlist}
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error Loading Wishlist
+          </h2>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">{error}</p>
+          <Button
+            onClick={() => refetch()}
             className="bg-primary text-white hover:bg-primary-dark"
           >
             Try Again
@@ -399,45 +192,40 @@ const WishlistPage = () => {
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
-      
+
       <div className="pt-12">
         <div className="container mx-auto px-4">
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Wishlist</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                My Wishlist
+              </h1>
               <p className="text-gray-600">
-                {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'} saved for later
+                {wishlist.length} {wishlist.length === 1 ? "item" : "items"}{" "}
+                saved for later
               </p>
             </div>
-            
+
             {wishlist.length > 0 && (
               <div className="flex flex-wrap gap-3 mt-4 lg:mt-0">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={shareWishlist}
                   className="flex items-center gap-2"
                 >
                   <ShareIcon />
                   Share Wishlist
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={moveAllToCart}
-                  disabled={inStockItems.length === 0 || operationLoading === -1}
-                  className="flex items-center gap-2"
-                >
-                  <CartIcon />
-                  {operationLoading === -1 ? 'Adding...' : `Add All to Cart (${inStockItems.length})`}
-                </Button>
-                <Button 
-                  variant="outline" 
+
+                {/* <Button
+                  variant="outline"
                   onClick={clearWishlist}
                   disabled={operationLoading === -2}
                   className="text-red-600 border-red-200 hover:bg-red-50"
                 >
-                  {operationLoading === -2 ? 'Clearing...' : 'Clear All'}
-                </Button>
+                  {operationLoading === -2 ? "Clearing..." : "Clear All"}
+                </Button> */}
               </div>
             )}
           </div>
@@ -448,9 +236,12 @@ const WishlistPage = () => {
               <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
                 <HeartIcon className="w-12 h-12 text-gray-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Your wishlist is empty
+              </h2>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Save items you love to your wishlist. Review them anytime and easily move them to your cart.
+                Save items you love to your wishlist. Review them anytime and
+                easily move them to your cart.
               </p>
               <Link href="/products">
                 <Button className="bg-primary text-white hover:bg-primary-dark">
@@ -469,13 +260,13 @@ const WishlistPage = () => {
                       Available Items ({inStockItems.length})
                     </h3>
                     <div className="space-y-4">
-                      {inStockItems.map((item) => (
+                      {inStockItems.map((item: any) => (
                         <WishlistItemCard
                           key={item.id}
                           item={item}
                           onRemove={removeFromWishlist}
-                          onUpdate={updateWishlistItem}
-                          onAddToCart={addToCart}
+                          // onUpdate={updateWishlistItem}
+                          onAddToCart={addToWishlist}
                           isLoading={operationLoading === item.id}
                         />
                       ))}
@@ -490,13 +281,13 @@ const WishlistPage = () => {
                       Out of Stock ({outOfStockItems.length})
                     </h3>
                     <div className="space-y-4">
-                      {outOfStockItems.map((item) => (
+                      {outOfStockItems.map((item: any) => (
                         <WishlistItemCard
                           key={item.id}
                           item={item}
                           onRemove={removeFromWishlist}
-                          onUpdate={updateWishlistItem}
-                          onAddToCart={addToCart}
+                          // onUpdate={updateWishlistItem}
+                          onAddToCart={addToWishlist}
                           isLoading={operationLoading === item.id}
                         />
                       ))}
@@ -508,8 +299,10 @@ const WishlistPage = () => {
               {/* Sidebar Summary */}
               <div className="lg:col-span-1">
                 <div className="bg-gray-50 rounded-lg p-6 sticky top-24">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Wishlist Summary</h3>
-                  
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Wishlist Summary
+                  </h3>
+
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Items</span>
@@ -517,17 +310,23 @@ const WishlistPage = () => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">In Stock</span>
-                      <span className="text-green-600">{inStockItems.length}</span>
+                      <span className="text-green-600">
+                        {inStockItems.length}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Out of Stock</span>
-                      <span className="text-red-600">{outOfStockItems.length}</span>
+                      <span className="text-red-600">
+                        {outOfStockItems.length}
+                      </span>
                     </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4 mb-6">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-900 font-semibold">Total Value</span>
+                      <span className="text-gray-900 font-semibold">
+                        Total Value
+                      </span>
                       <div className="text-right">
                         <div className="text-lg font-bold text-primary">
                           Rs.{getTotalPrice().toFixed(2)}
@@ -541,24 +340,33 @@ const WishlistPage = () => {
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     className="w-full bg-primary text-white hover:bg-primary-dark mb-3"
-                    onClick={moveAllToCart}
-                    disabled={inStockItems.length === 0 || operationLoading === -1}
+                    // onClick={moveAllToCart}
+                    disabled={
+                      inStockItems.length === 0 || operationLoading === -1
+                    }
                   >
-                    {operationLoading === -1 ? 'Adding...' : 'Add All to Cart'}
+                    {operationLoading === -1 ? "Adding..." : "Add All to Cart"}
                   </Button>
-                  
-                  <Button variant="outline" className="w-full" onClick={shareWishlist}>
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={shareWishlist}
+                  >
                     Share Wishlist
                   </Button>
                 </div>
 
                 {/* Recently Viewed */}
                 <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recently Viewed</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Recently Viewed
+                  </h3>
                   <p className="text-gray-600 text-sm">
-                    Your recently viewed items will appear here as you browse our store.
+                    Your recently viewed items will appear here as you browse
+                    our store.
                   </p>
                 </div>
               </div>
@@ -571,16 +379,14 @@ const WishlistPage = () => {
 };
 
 // Wishlist Item Card Component
-const WishlistItemCard = ({ 
-  item, 
+const WishlistItemCard = ({
+  item,
   onRemove,
-  onUpdate,
   onAddToCart,
-  isLoading = false
-}: { 
-  item: WishlistItem; 
+  isLoading = false,
+}: {
+  item: WishlistItem;
   onRemove: (id: number) => void;
-  onUpdate: (id: number, data: any) => void;
   onAddToCart: (item: WishlistItem) => void;
   isLoading?: boolean;
 }) => {
@@ -588,7 +394,7 @@ const WishlistItemCard = ({
 
   const handleAddToCart = async () => {
     if (!item.product.in_stock) return;
-    
+
     setIsAddingToCart(true);
     try {
       await onAddToCart(item);
@@ -598,7 +404,8 @@ const WishlistItemCard = ({
   };
 
   const price = item.product.sale_price || item.product.price;
-  const hasSale = item.product.sale_price && item.product.sale_price < item.product.price;
+  const hasSale =
+    item.product.sale_price && item.product.sale_price < item.product.price;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
@@ -614,8 +421,8 @@ const WishlistItemCard = ({
               className="object-cover w-full h-full"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                target.nextElementSibling?.classList.remove('hidden');
+                target.style.display = "none";
+                target.nextElementSibling?.classList.remove("hidden");
               }}
             />
             <div className="hidden w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
@@ -631,10 +438,14 @@ const WishlistItemCard = ({
               {item.product.name}
             </h3>
           </Link>
-          
+
           <div className="flex items-center gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <span className={`text-lg font-semibold ${hasSale ? 'text-red-600' : 'text-gray-900'}`}>
+              <span
+                className={`text-lg font-semibold ${
+                  hasSale ? "text-red-600" : "text-gray-900"
+                }`}
+              >
                 Rs.{price.toFixed(2)}
               </span>
               {hasSale && (
@@ -646,9 +457,17 @@ const WishlistItemCard = ({
           </div>
 
           <div className="flex items-center gap-2 mb-3">
-            <div className={`w-2 h-2 rounded-full ${item.product.in_stock ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className={`text-sm ${item.product.in_stock ? 'text-green-600' : 'text-red-600'}`}>
-              {item.product.in_stock ? 'In Stock' : 'Out of Stock'}
+            <div
+              className={`w-2 h-2 rounded-full ${
+                item.product.in_stock ? "bg-green-500" : "bg-red-500"
+              }`}
+            ></div>
+            <span
+              className={`text-sm ${
+                item.product.in_stock ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {item.product.in_stock ? "In Stock" : "Out of Stock"}
             </span>
           </div>
 
@@ -659,9 +478,9 @@ const WishlistItemCard = ({
               disabled={!item.product.in_stock || isAddingToCart || isLoading}
               className="bg-primary text-white hover:bg-primary-dark text-xs"
             >
-              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+              {isAddingToCart ? "Adding..." : "Add to Cart"}
             </Button>
-            
+
             <Button
               size="sm"
               variant="outline"
@@ -669,7 +488,7 @@ const WishlistItemCard = ({
               disabled={isLoading}
               className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
             >
-              {isLoading ? 'Removing...' : 'Remove'}
+              {isLoading ? "Removing..." : "Remove"}
             </Button>
           </div>
         </div>
@@ -681,25 +500,55 @@ const WishlistItemCard = ({
 // Icons (keep the same as before)
 const HeartIcon = ({ className = "w-5 h-5" }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
   </svg>
 );
 
 const ShareIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+    />
   </svg>
 );
 
 const CartIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+    />
   </svg>
 );
 
 const ErrorIcon = ({ className = "w-5 h-5" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    />
   </svg>
 );
 

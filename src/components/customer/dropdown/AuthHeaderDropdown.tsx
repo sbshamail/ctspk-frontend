@@ -13,17 +13,19 @@ import { AuthDataType } from "@/utils/modelTypes";
 import { LogOut, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import { useRouter } from "next/navigation";
 
 interface AuthHeaderDropdownProps {
   auth: AuthDataType;
 }
 const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { user } = auth || {};
   const handleLogout = () => {
     clearSession(); // remove cookie
     dispatch(logoutUser());
+    router.refresh();
   };
   return (
     <DropdownMenu>
@@ -50,7 +52,7 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
             My Orders
           </Link>
         </DropdownMenuItem>
-         <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild>
           <Link href="/wishlist">Wishlist</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -58,7 +60,7 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
             Profiles
           </Link>
         </DropdownMenuItem>
-        
+
         {/* <DropdownMenuItem asChild>
           <Link href="/my-coupons" className="cursor-pointer">
             My Coupons
@@ -79,8 +81,7 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
           <Link href="/return-refund" className="cursor-pointer">
             Return & Refund Policy
           </Link>
-        </DropdownMenuItem>*/        
-         }
+        </DropdownMenuItem>*/}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => handleLogout()}

@@ -1,6 +1,5 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
 import React from "react";
 import { useForm } from "react-hook-form";
 
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { saveSession } from "@/action/auth";
 import { fetchApi } from "@/action/fetchApi";
 import { authLoading, setAuth } from "@/store/features/authSlice";
+import { useRouter } from "next/navigation";
 
 import { InputField } from "@/components/formFields/InputField";
 import { PasswordField } from "@/components/formFields/PasswordField";
@@ -24,6 +24,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ close }: LoginFormProps) {
+  const router = useRouter();
   // const dispatch = useAppDispatch();
   const { items: cartItems, dispatch } = useSelection("localCart", true);
   const [openForgot, setOpenForgot] = React.useState(false);
@@ -101,7 +102,7 @@ export function LoginForm({ close }: LoginFormProps) {
 
         // Sync cart to backend after successful login
         await syncCartToBackend(access_token);
-
+        router.refresh();
         close();
       } else {
         setError("Invalid email or password.");

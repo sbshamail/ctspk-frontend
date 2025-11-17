@@ -26,10 +26,9 @@ export const ProductFavorite = ({
 }: ProductFavoriteProps) => {
   const { user } = getAuth();
 
-  const { data, isLoading, isFetching } = useGetWishlistQuery(undefined, {
+  const { data: wishlistData } = useGetWishlistQuery(undefined, {
     skip: !user, // don’t run query if not logged in
   });
-  const { data: wishlistData } = useGetWishlistQuery();
   const wishlist = wishlistData?.data ?? [];
   const totalWishlist = wishlistData?.total ?? 0;
 
