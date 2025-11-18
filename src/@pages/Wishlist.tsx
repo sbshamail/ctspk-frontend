@@ -2,9 +2,13 @@
 
 import { Screen } from "@/@core/layout";
 import { getAuth } from "@/action/auth";
+import { fetchApi } from "@/action/fetchApi";
 import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { Button } from "@/components/ui/button";
+import { useCartService } from "@/lib/cartService";
+import { useAppDispatch } from "@/lib/hooks";
+import { cartApi } from "@/store/services/cartApi";
 import {
   useAddToWishlistMutation,
   useGetWishlistQuery,
@@ -47,17 +51,22 @@ interface WishlistItem {
   product_id: number;
   variation_option_id: number | null;
   product: Product;
-  created_at: string;
+  created_at?: string;
 }
 
 const WishlistPage = () => {
-  // const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const { user } = getAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { add: addToCart } = useCartService();
+
   const [operationLoading, setOperationLoading] = useState<number | null>(null);
 
-  const { data: wishlistData, refetch } = useGetWishlistQuery(undefined, {
+  const {
+    data: wishlistData,
+    refetch,
+    isLoading,
+    isError,
+  } = useGetWishlistQuery(undefined, {
     skip: !user, // don’t run query if not logged in
   });
   const wishlist = wishlistData?.data ?? [];
@@ -65,70 +74,44 @@ const WishlistPage = () => {
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
-  // useEffect(() => {
-  //   fetchWishlist();
-  // }, []);
+  const addAllWishlistToCart = async (cartItems: WishlistItem[]) => {
+    try {
+      // Get cart from localStorage
+      // const localCart = localStorage.getItem('myapp_cart');
 
-  // const fetchWishlist = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-  //     const data: ApiResponse = await apiClient.get('https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=200');
+      if (cartItems) {
+        if (Array.isArray(cartItems) && cartItems.length > 0) {
+          // Transform cart items to match backend format
+          const items = cartItems.map((item: WishlistItem) => ({
+            product_id: item.product?.id || 0,
+            shop_id: item.product.shop_id || 0,
+            quantity: 1,
+            variation_option_id: item.variation_option_id || null,
+          }));
+          // Call bulk create API
+          const response = await fetchApi({
+            url: "cart/bulk-create",
+            method: "POST",
+            data: { items },
+          });
 
-  //     if (data.success === 1) {
-  //       setWishlist(data.data);
-  //     } else {
-  //       throw new Error(data.detail || 'Failed to fetch wishlist');
-  //     }
-  //   } catch (err) {
-  //     setError(err instanceof Error ? err.message : 'An error occurred');
-  //     console.error('Error fetching wishlist:', err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const removeFromWishlist = async (itemId: number) => {
-  //   try {
-  //     setOperationLoading(itemId);
-  //     const response = await apiClient.delete(`https://api.ctspk.com/wishlist/remove/${itemId}`);
-
-  //     if (response.success === 1) {
-  //       setWishlist(prev => prev.filter(item => item.id !== itemId));
-  //       toast.success("Item removed from wishlist");
-  //     } else {
-  //       throw new Error(response.detail || 'Failed to remove item from wishlist');
-  //     }
-  //   } catch (err) {
-  //     console.error('Error removing item from wishlist:', err);
-  //     toast.error('Failed to remove item from wishlist. Please try again.');
-  //   } finally {
-  //     setOperationLoading(null);
-  //   }
-  // };
-
-  // const updateWishlistItem = async (itemId: number, updateData: any) => {
-  //   try {
-  //     setOperationLoading(itemId);
-  //     const response = await apiClient.put(`https://api.ctspk.com/wishlist/update/${itemId}`, updateData);
-
-  //     if (response.success === 1) {
-  //       // Refresh the wishlist to get updated data
-  //       await refetch();
-  //     } else {
-  //       throw new Error(response.detail || 'Failed to update wishlist item');
-  //     }
-  //   } catch (err) {
-  //     console.error('Error updating wishlist item:', err);
-  //     toast.error('Failed to update wishlist item. Please try again.');
-  //   } finally {
-  //     setOperationLoading(null);
-  //   }
-  // };
-
-  // Add single item to cart
-
-  // Add all in-stock items to cart
+          if (response) {
+            // Clear local cart after successful sync
+            dispatch(
+              cartApi.endpoints.getCart.initiate(undefined, {
+                forceRefetch: true,
+              })
+            );
+            console.log("Cart synced successfully");
+          } else {
+            console.warn("Failed to sync cart:", response?.detail);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing cart:", error);
+    }
+  };
 
   const shareWishlist = () => {
     if (navigator.share) {
@@ -157,7 +140,7 @@ const WishlistPage = () => {
   const inStockItems = wishlist.filter((item) => item.product.in_stock);
   const outOfStockItems = wishlist.filter((item) => !item.product.in_stock);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Screen>
         <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -166,7 +149,7 @@ const WishlistPage = () => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <Screen>
         <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -177,7 +160,7 @@ const WishlistPage = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Error Loading Wishlist
           </h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">{error}</p>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">{isError}</p>
           <Button
             onClick={() => refetch()}
             className="bg-primary text-white hover:bg-primary-dark"
@@ -257,16 +240,16 @@ const WishlistPage = () => {
                 {inStockItems.length > 0 && (
                   <div className="mb-8">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Available Items ({inStockItems.length})
+                      Available Items ({totalWishlist})
                     </h3>
                     <div className="space-y-4">
                       {inStockItems.map((item: any) => (
                         <WishlistItemCard
                           key={item.id}
                           item={item}
-                          onRemove={removeFromWishlist}
+                          onRemove={() => removeFromWishlist({ id: item.id })}
                           // onUpdate={updateWishlistItem}
-                          onAddToCart={addToWishlist}
+                          onAddToCart={addToCart}
                           isLoading={operationLoading === item.id}
                         />
                       ))}
@@ -285,7 +268,7 @@ const WishlistPage = () => {
                         <WishlistItemCard
                           key={item.id}
                           item={item}
-                          onRemove={removeFromWishlist}
+                          onRemove={() => removeFromWishlist({ id: item.id })}
                           // onUpdate={updateWishlistItem}
                           onAddToCart={addToWishlist}
                           isLoading={operationLoading === item.id}
@@ -342,7 +325,8 @@ const WishlistPage = () => {
 
                   <Button
                     className="w-full bg-primary text-white hover:bg-primary-dark mb-3"
-                    // onClick={moveAllToCart}
+                    // @ts-ignore
+                    onClick={() => addAllWishlistToCart(inStockItems)}
                     disabled={
                       inStockItems.length === 0 || operationLoading === -1
                     }
@@ -379,6 +363,7 @@ const WishlistPage = () => {
 };
 
 // Wishlist Item Card Component
+
 const WishlistItemCard = ({
   item,
   onRemove,
@@ -387,7 +372,7 @@ const WishlistItemCard = ({
 }: {
   item: WishlistItem;
   onRemove: (id: number) => void;
-  onAddToCart: (item: WishlistItem) => void;
+  onAddToCart: any;
   isLoading?: boolean;
 }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -397,7 +382,11 @@ const WishlistItemCard = ({
 
     setIsAddingToCart(true);
     try {
-      await onAddToCart(item);
+      await onAddToCart({
+        product: item.product,
+        shop_id: item.product.shop_id,
+        quantity: 1,
+      });
     } finally {
       setIsAddingToCart(false);
     }

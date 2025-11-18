@@ -6,4 +6,5 @@ export interface WishlistItemType {
   product_id: number;
   variation_option_id: number | null;
   product: ProductDataType;
+  created_at?: string;
 }

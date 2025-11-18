@@ -24,6 +24,7 @@ export interface ProductDataType {
   product_type: string; // ProductType Enum on backend
   category: CategoryReadProductType;
   shop: ShopReadForProductType;
+  shop_id: number;
   manufacturer_id?: number | null;
   in_stock: boolean;
   unit?: string | null;
