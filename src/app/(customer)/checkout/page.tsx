@@ -332,6 +332,17 @@ export default function CheckoutPage() {
   // Auto-fill shipping address from billing address when checkbox is unchecked
   useEffect(() => {
     if (!shipToDifferentAddress) {
+      const subscription = watch((value, { name, type }) => {
+        // Only copy from billing to shipping when user types in billing fields
+        if (name?.startsWith('billing_address.')) {
+          setValue("address", value.billing_address?.street || "");
+          setValue("city", value.billing_address?.city || "");
+          setValue("zip", value.billing_address?.postal_code || "");
+          setValue("country", value.billing_address?.country || "Pakistan");
+        }
+      });
+
+      // Initial copy when checkbox is unchecked
       const billingStreet = watch("billing_address.street");
       const billingCity = watch("billing_address.city");
       const billingPostalCode = watch("billing_address.postal_code");
@@ -341,6 +352,8 @@ export default function CheckoutPage() {
       setValue("city", billingCity);
       setValue("zip", billingPostalCode);
       setValue("country", billingCountry);
+
+      return () => subscription.unsubscribe();
     }
   }, [shipToDifferentAddress, watch, setValue]);
 
@@ -585,8 +598,18 @@ export default function CheckoutPage() {
       if (res?.success) {
         // Clear the entire cart after successful order
         await clear();
-        toast.success(res.detail);
-        router.push("/product");
+
+        // Get tracking number from response
+        const trackingNumber = res.data?.tracking_number;
+
+        if (trackingNumber) {
+          // Redirect to order success page with tracking number
+          router.push(`/order-success?tracking=${trackingNumber}`);
+        } else {
+          // Fallback: show success message and redirect to home
+          toast.success(res.detail || "Order placed successfully!");
+          router.push("/");
+        }
       } else {
         setServerError(res?.detail || "Something went wrong.");
       }
@@ -815,17 +838,27 @@ export default function CheckoutPage() {
               </div>
 
               {/* Ship to different address */}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="different-address"
-                  checked={shipToDifferentAddress}
-                  onCheckedChange={(checked) =>
-                    setShipToDifferentAddress(checked as boolean)
-                  }
-                />
-                <Label htmlFor="different-address" className="text-sm">
-                  Ship to a different address?
-                </Label>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="different-address"
+                    checked={shipToDifferentAddress}
+                    onCheckedChange={(checked) =>
+                      setShipToDifferentAddress(checked as boolean)
+                    }
+                  />
+                  <Label htmlFor="different-address" className="text-sm">
+                    Ship to a different address?
+                  </Label>
+                </div>
+
+                {/* Show shipping address errors only when "ship to different address" is NOT checked */}
+                {!shipToDifferentAddress && (errors.address || errors.city) && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                    {errors.address && <p>{errors.address.message}</p>}
+                    {errors.city && <p>{errors.city.message}</p>}
+                  </div>
+                )}
               </div>
 
               {/* Shipping Information (conditional) */}

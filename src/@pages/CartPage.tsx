@@ -21,12 +21,32 @@ const breadcrumbData = [
   { link: "/cart", name: "Cart" },
 ];
 
-// Helper function to get the effective price
+// Helper function to get the effective price (without variation)
 const getEffectivePrice = (product: any): number => {
   // If sale_price exists and is greater than 0, use sale_price, otherwise use regular price
   return product.sale_price && product.sale_price > 0
     ? product.sale_price
     : product.price;
+};
+
+// Helper function to get the actual unit price for a cart item (includes variation price)
+const getItemUnitPrice = (item: CartItemType): number => {
+  // For variable products, check if variation has its own price
+  if (item.variation_option_id && item.product.variation_options) {
+    const variation = item.product.variation_options.find(
+      (v: any) => v.id === item.variation_option_id
+    );
+    if (variation?.price) {
+      return parseFloat(variation.price);
+    }
+    // If variation has sale_price, use it
+    if (variation?.sale_price && parseFloat(variation.sale_price) > 0) {
+      return parseFloat(variation.sale_price);
+    }
+  }
+
+  // Fallback to product's effective price (sale_price or regular price)
+  return getEffectivePrice(item.product);
 };
 
 // Helper to get variation options text
@@ -67,10 +87,15 @@ const CartPage = () => {
   // Calculate totals for ALL products
   const totalItems = useMemo(() => cart.length, [cart]);
 
+  const totalQuantity = useMemo(
+    () => cart.reduce((acc, item) => acc + item.quantity, 0),
+    [cart]
+  );
+
   const totalAmount = useMemo(
     () =>
       cart.reduce(
-        (acc, item) => acc + getEffectivePrice(item.product) * item.quantity,
+        (acc, item) => acc + getItemUnitPrice(item) * item.quantity,
         0
       ),
     [cart]
@@ -118,15 +143,9 @@ const CartPage = () => {
               {variationText && (
                 <div className="mt-1">
                   <p className="text-xs text-muted-foreground">
-                    Variation: {variationText}
+                    {variationText}
                   </p>
                 </div>
-              )}
-              {/* Show variation option ID for debugging */}
-              {row.variation_option_id && (
-                <p className="text-xs text-gray-500">
-                  Variation ID: {row.variation_option_id}
-                </p>
               )}
             </div>
           </div>
@@ -137,21 +156,11 @@ const CartPage = () => {
     {
       title: "Unit Price",
       render: ({ row }) => {
-        // For variable products, use the variation price if available
-        let price = getEffectivePrice(row.product);
-
-        if (row.variation_option_id && row.product.variation_options) {
-          const variation = row.product.variation_options.find(
-            (v: any) => v.id === row.variation_option_id
-          );
-          if (variation?.price) {
-            price = parseFloat(variation.price);
-          }
-        }
+        const unitPrice = getItemUnitPrice(row);
 
         return (
           <div className="text-center font-medium">
-            Rs {price?.toLocaleString()}
+            Rs {unitPrice.toLocaleString()}
           </div>
         );
       },
@@ -181,19 +190,9 @@ const CartPage = () => {
     {
       title: "Subtotal",
       render: ({ row }) => {
-        // For variable products, use the variation price if available
-        let unitPrice = getEffectivePrice(row.product);
-
-        if (row.variation_option_id && row.product.variation_options) {
-          const variation = row.product.variation_options.find(
-            (v: any) => v.id === row.variation_option_id
-          );
-          if (variation?.price) {
-            unitPrice = parseFloat(variation.price);
-          }
-        }
-
+        const unitPrice = getItemUnitPrice(row);
         const subtotal = unitPrice * row.quantity;
+
         return (
           <div className="text-center font-medium">
             Rs {subtotal.toLocaleString()}
@@ -255,10 +254,18 @@ const CartPage = () => {
           {/* Summary for ALL products */}
           {cart.length > 0 && (
             <div className="border rounded-lg p-6 space-y-3 h-fit">
-              <div className="flex justify-between">
-                <span>Total Items</span>
+              <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Items in cart</span>
                 <span className="font-medium">{totalItems}</span>
               </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total quantity</span>
+                <span className="font-medium">{totalQuantity}</span>
+              </div>
+
               <div className="flex justify-between">
                 <span>Subtotal</span>
                 <span className="font-medium">
@@ -266,10 +273,16 @@ const CartPage = () => {
                 </span>
               </div>
 
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Shipping</span>
+                <span>Calculated at checkout</span>
+              </div>
+
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
                 <span>Rs {totalAmount.toLocaleString()}</span>
               </div>
+
               <Link href="/checkout">
                 <Button className="w-full bg-primary text-white">
                   Proceed To Checkout →

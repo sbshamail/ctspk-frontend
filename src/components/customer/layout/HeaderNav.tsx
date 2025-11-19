@@ -13,73 +13,65 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/store/services/categoryApi";
+import { useGetBrandsQuery } from "@/store/services/brandApi";
 import { CategoryDataType } from "@/utils/modelTypes";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, Mic, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useCart } from "@/context/cartContext";
+import { MainLogo } from "@/components/logo/MainLogo";
+import { useRouter } from "next/navigation";
 
 interface HeaderNavProps {
   y: number;
 }
-export function HeaderNav({ y }: HeaderNavProps) {
-  const { data, isLoading, isError } = useGetCategoriesQuery();
 
-  const categories: CategoryDataType[] = data?.data ?? [];
+export function HeaderNav({ y }: HeaderNavProps) {
+  const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError } = useGetCategoriesQuery();
+  const { data: brandsData, isLoading: brandsLoading, isError: brandsError } = useGetBrandsQuery(undefined, {
+    skip: typeof window === 'undefined',
+  });
+  const { cart } = useCart();
+  const router = useRouter();
+
+  const categories: CategoryDataType[] = categoriesData?.data ?? [];
+  const brands = brandsData?.data ?? [];
 
   const [open, setOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeSubCategory, setActiveSubCategory] = useState<string | null>(
-    null
-  );
-  const [visibleCategories, setVisibleCategories] = useState<number>(
-    categories.length
-  );
+  const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null);
+  const [visibleCategories, setVisibleCategories] = useState<number>(0);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navRef = useRef<HTMLDivElement>(null);
   const categoriesRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   const calculateVisibleCategories = () => {
-  //     if (navRef.current && categoriesRef.current) {
-  //       const containerWidth = navRef.current.offsetWidth;
-  //       const iconsWidth = 120; // reserve space for icons
-  //       const moreButtonWidth = 90; // reserve space for "MORE" button
-  //       const availableWidth = containerWidth - iconsWidth - moreButtonWidth;
+  // Calculate cart count
+  const cartCount = cart?.length || 0;
+  const wishlistCount = 0; // TODO: Implement wishlist count
 
-  //       let totalWidth = 0;
-  //       let maxVisible = 0;
+  // Handle search submission
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/product?searchTerm=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+      setShowSearch(false);
+    }
+  };
 
-  //       // get all rendered buttons inside categoriesRef
-  //       const buttons = categoriesRef.current.querySelectorAll("button");
-
-  //       for (let i = 0; i < buttons.length; i++) {
-  //         const btnWidth = (buttons[i] as HTMLButtonElement).offsetWidth + 8; // include spacing
-  //         if (totalWidth + btnWidth <= availableWidth) {
-  //           totalWidth += btnWidth;
-  //           maxVisible++;
-  //         } else {
-  //           break;
-  //         }
-  //       }
-
-  //       setVisibleCategories(Math.max(1, maxVisible)); // at least 1 always visible
-  //     }
-  //   };
-
-  //   calculateVisibleCategories();
-  //   window.addEventListener("resize", calculateVisibleCategories);
-  //   return () =>
-  //     window.removeEventListener("resize", calculateVisibleCategories);
-  // }, [categories]);
+  // Calculate visible categories only after component mounts and categories are loaded
   useEffect(() => {
+    if (categories.length === 0) return;
+
     const calculateVisibleCategories = () => {
-      if (!navRef.current || categories.length === 0) return;
+      if (!navRef.current) return;
 
       const containerWidth = navRef.current.offsetWidth;
-      const iconsWidth = 120; // right icons
+      const iconsWidth = 120;
       let availableWidth = containerWidth - iconsWidth;
 
-      // Measure widths of ALL categories (even those that might go into More)
       const buttonWidths = Array.from(
         categoriesRef.current?.querySelectorAll("button") ?? []
       ).map((btn) => (btn as HTMLButtonElement).offsetWidth + 8);
@@ -91,14 +83,13 @@ export function HeaderNav({ y }: HeaderNavProps) {
         if (totalWidth + buttonWidths[i] <= availableWidth) {
           totalWidth += buttonWidths[i];
         } else {
-          maxVisible = i; // stop here
+          maxVisible = i;
           break;
         }
       }
 
-      // If not all categories fit, reserve space for "More" button and recalc
       if (maxVisible < categories.length) {
-        availableWidth = containerWidth - iconsWidth - 90; // subtract More btn
+        availableWidth = containerWidth - iconsWidth - 90;
         totalWidth = 0;
         maxVisible = 0;
         for (let i = 0; i < buttonWidths.length; i++) {
@@ -114,10 +105,16 @@ export function HeaderNav({ y }: HeaderNavProps) {
       setVisibleCategories(Math.max(1, maxVisible));
     };
 
-    calculateVisibleCategories();
-    window.addEventListener("resize", calculateVisibleCategories);
-    return () =>
-      window.removeEventListener("resize", calculateVisibleCategories);
+    requestAnimationFrame(() => {
+      calculateVisibleCategories();
+    });
+
+    const handleResize = () => {
+      requestAnimationFrame(calculateVisibleCategories);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [categories]);
 
   const handleCategoryHover = (category: CategoryDataType) => {
@@ -147,20 +144,39 @@ export function HeaderNav({ y }: HeaderNavProps) {
     return category.children.find((sub) => sub.name === activeSubCategory);
   };
 
+  // Function to generate brand URL with correct encoding
+  const getBrandUrl = (brandId: number) => {
+    const filterParam = `columnFilters=%5B%5B"manufacturer_id"%2C${brandId}%5D%5D`;
+    return `/product?${filterParam}`;
+  };
+
+  // Function to generate category URL for level 3 items
+  const getCategoryUrl = (categoryName: string, categoryId?: number) => {
+    if (categoryId) {
+      const filterParam = `columnFilters=%5B%5B"category.root_id"%2C${categoryId}%5D%5D`;
+      return `/product/list?${filterParam}`;
+    }
+    // Fallback to search term if no ID
+    return {
+      pathname: "/product/list",
+      query: { searchTerm: categoryName },
+    };
+  };
+
   const mainCategories = categories.slice(0, visibleCategories);
   const overflowCategories = categories.slice(visibleCategories);
 
-  if (isError) {
+  if (categoriesLoading || (brandsLoading && brands.length === 0)) {
+    return <LayoutSkeleton header={true} />;
+  }
+
+  if (categoriesError) {
     return null;
   }
 
-  if (isLoading) {
-    return <LayoutSkeleton header={true} />;
-  }
   return (
     <div className="relative" onMouseLeave={handleMouseLeave}>
       {/* Main Navigation Bar */}
-
       <Screen>
         <nav className="w-full bg-background">
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -168,91 +184,191 @@ export function HeaderNav({ y }: HeaderNavProps) {
               className="flex items-center justify-between h-16"
               ref={navRef}
             >
-              {/* Main Categories */}
-              <div
-                className="flex items-center space-x-1 flex-1 overflow-hidden pr-4"
-                ref={categoriesRef}
-              >
-                {mainCategories.map((category) => (
+              {/* Left Side: Logo (only visible when scrolled) and Search Icon */}
+              {y > 100 && (
+                <div className="flex items-center space-x-4">
+                  <MainLogo />
                   <button
-                    key={category.name}
-                    className={cn(
-                      "flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-md whitespace-nowrap",
-                      activeCategory === category.name
-                        ? "text-primary bg-accent"
-                        : "text-foreground hover:text-primary hover:bg-accent/50"
-                    )}
-                    onMouseEnter={() => handleCategoryHover(category)}
+                    onClick={() => setShowSearch(!showSearch)}
+                    className="p-2 hover:bg-accent/50 rounded-md transition-colors"
+                    aria-label="Search"
                   >
-                    <span className="truncate">
-                      {category.name.toUpperCase()}
-                    </span>
-                    {category.children && <ChevronDown className="w-4 h-4" />}
+                    <Search className="w-5 h-5" />
                   </button>
-                ))}
-              </div>
+                </div>
+              )}
 
-              {/* Right Side: More Button + Icons */}
-              <div className="flex items-center space-x-2 flex-shrink-0 ml-4">
-                {overflowCategories.length > 0 && (
-                  <DropdownMenu open={open} onOpenChange={setOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 border border-border"
+              {/* Menu Items - Reordered: Brands, Categories, New Arrival, Sales, Limited Edition */}
+              <div className="flex items-center space-x-1 flex-1 overflow-hidden px-4">
+                {/* Brands Dropdown - FIRST */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 whitespace-nowrap">
+                      <span>BRANDS</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-h-96 overflow-y-auto">
+                    {brands.map((brand) => (
+                      <DropdownMenuItem key={brand.id} asChild>
+                        <Link
+                          href={getBrandUrl(brand.id)}
+                          className="cursor-pointer w-full"
+                        >
+                          {brand.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    {brandsError && (
+                      <DropdownMenuItem disabled>
+                        Failed to load brands
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Categories - SECOND */}
+                <div
+                  className="flex items-center space-x-1 flex-1 overflow-hidden"
+                  ref={categoriesRef}
+                >
+                  {mainCategories.map((category) => (
+                    <button
+                      key={category.name}
+                      className={cn(
+                        "flex items-center space-x-1 px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-md whitespace-nowrap",
+                        activeCategory === category.name
+                          ? "text-primary bg-accent"
+                          : "text-foreground hover:text-primary hover:bg-accent/50"
+                      )}
+                      onMouseEnter={() => handleCategoryHover(category)}
+                    >
+                      <span className="truncate">
+                        {category.name.toUpperCase()}
+                      </span>
+                      {category.children && <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  ))}
+
+                  {/* More Categories Dropdown */}
+                  {overflowCategories.length > 0 && (
+                    <DropdownMenu open={open} onOpenChange={setOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 border border-border"
+                          onMouseEnter={() => setOpen(true)}
+                          onMouseLeave={() => setOpen(false)}
+                        >
+                          <span>MORE</span>
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent
+                        align="end"
                         onMouseEnter={() => setOpen(true)}
                         onMouseLeave={() => setOpen(false)}
                       >
-                        <span>MORE</span>
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent
-                      align="end"
-                      onMouseEnter={() => setOpen(true)}
-                      onMouseLeave={() => setOpen(false)}
-                    >
-                      {overflowCategories.map((category, index) => (
-                        <div key={category.name}>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onMouseEnter={() => handleCategoryHover(category)}
-                          >
-                            <span className="font-medium">{category.name}</span>
-                            {category.children && (
-                              <ChevronRight className="w-4 h-4 ml-auto" />
+                        {overflowCategories.map((category, index) => (
+                          <div key={category.name}>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onMouseEnter={() => handleCategoryHover(category)}
+                            >
+                              <span className="font-medium">{category.name}</span>
+                              {category.children && (
+                                <ChevronRight className="w-4 h-4 ml-auto" />
+                              )}
+                            </DropdownMenuItem>
+                            {index < overflowCategories.length - 1 && (
+                              <DropdownMenuSeparator />
                             )}
-                          </DropdownMenuItem>
-                          {index < overflowCategories.length - 1 && (
-                            <DropdownMenuSeparator />
-                          )}
-                        </div>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-
-                {/* Navigation Icons */}
-                <div className="flex items-center space-x-2 border-l border-border pl-4">
-                  <Link
-                    href="/wishlist"
-                    className="p-2 hover:bg-accent/50 rounded-md transition-colors"
-                  >
-                    <HeartIcon />
-                  </Link>
-                  <Link
-                    href="/cart"
-                    className="p-2 hover:bg-accent/50 rounded-md transition-colors"
-                  >
-                    <ShoppingCartIcon />
-                  </Link>
-                  {y > 0 && <Search className="w-4 h-4" />}
+                          </div>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
+
+                {/* Additional Menu Items - New Arrival, Sales, Limited Edition */}
+                <Link
+                  href="/new-arrivals"
+                  className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 whitespace-nowrap"
+                >
+                  NEW ARRIVAL
+                </Link>
+                <Link
+                  href="/sales"
+                  className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 whitespace-nowrap"
+                >
+                  SALES
+                </Link>
+                <Link
+                  href="/limited-edition"
+                  className="px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200 whitespace-nowrap"
+                >
+                  LIMITED EDITION
+                </Link>
+              </div>
+
+              {/* Right Side: Wishlist and Cart Icons with Badges */}
+              <div className="flex items-center space-x-2 border-l border-border pl-4">
+                <Link
+                  href="/wishlist"
+                  className="p-2 hover:bg-accent/50 rounded-md transition-colors"
+                >
+                  <HeartIcon />
+                </Link>
+                <Link
+                  href="/cart"
+                  className="p-2 hover:bg-accent/50 rounded-md transition-colors"
+                >
+                  <ShoppingCartIcon />
+                </Link>
               </div>
             </div>
+
+            {/* Sticky Search Bar (appears when scrolled and search icon is clicked) */}
+            {y > 100 && showSearch && (
+              <div className="pb-4 pt-2 animate-in slide-in-from-top duration-300">
+                <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
+                  <div className="relative flex items-center">
+                    <Search className="absolute left-3 w-5 h-5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search products..."
+                      className="w-full pl-10 pr-20 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-12 p-1 hover:bg-accent/50 rounded-md transition-colors"
+                      aria-label="Voice search"
+                    >
+                      <Mic className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowSearch(false);
+                        setSearchQuery("");
+                      }}
+                      className="absolute right-2 p-1 hover:bg-accent/50 rounded-md transition-colors"
+                      aria-label="Close search"
+                    >
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         </nav>
       </Screen>
+
+      {/* Mega Menu Dropdown */}
       {activeCategory && (
         <div className="absolute top-full left-0 w-full z-50 shadow-lg border-b border-border bg-popover">
           <Screen>
@@ -296,10 +412,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                       {getActiveSubCategory()?.children?.map((item) => (
                         <Link
                           key={item.name}
-                          href={{
-                            pathname: "/product",
-                            query: { searchTerm: item.name },
-                          }}
+                          href={getCategoryUrl(item.name, item.id)}
                           className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200"
                         >
                           {item.name}

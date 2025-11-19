@@ -1,7 +1,7 @@
 "use client";
 import { useCartService } from "@/lib/cartService";
 import { CartItemType } from "@/utils/modelTypes";
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
 
 export interface CartServiceType {
   cart: CartItemType[];
@@ -21,11 +21,19 @@ const CartContext = createContext<CartServiceType>(null!);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const cartService = useCartService();
+  const prevAuthRef = useRef(cartService.isAuth);
 
-  // ✅ ensure backend cart fetched only once
+  // ✅ Refetch cart when auth state changes
   useEffect(() => {
-    if (cartService.isAuth) cartService.refetchCart();
-  }, [cartService.isAuth]);
+    // Only refetch when transitioning to authenticated state
+    if (cartService.isAuth && !prevAuthRef.current) {
+      // Clear the session storage flag to allow fresh fetch
+      sessionStorage.removeItem("cartFetched");
+      cartService.refetchCart();
+    }
+
+    prevAuthRef.current = cartService.isAuth;
+  }, [cartService.isAuth, cartService.refetchCart]);
 
   return (
     <CartContext.Provider value={cartService}>{children}</CartContext.Provider>

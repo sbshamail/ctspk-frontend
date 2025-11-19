@@ -35,6 +35,19 @@ export default async function page({ params }: ProductPageProps) {
     { name: product.data.name },
   ];
 
+  // Get category ID for related products
+  // Try multiple possible category field paths
+  const categoryId =
+    product.data.category_id ||
+    product.data.category?.id ||
+    product.data.category?.root_id;
+
+  console.log('Product category data:', {
+    category_id: product.data.category_id,
+    category: product.data.category,
+    selectedId: categoryId
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Screen>
@@ -43,7 +56,15 @@ export default async function page({ params }: ProductPageProps) {
           <ProductDetail product={product.data} />
         </main>
         <div className="shadow p-4 rounded-lg mt-8">
-          <ProductSlider title="You might also like" />
+          {categoryId ? (
+            <ProductSlider
+              title="You might also like"
+              columnFilters={[["category_id", categoryId]]}
+              limit={10}
+            />
+          ) : (
+            <ProductSlider title="You might also like" limit={10} />
+          )}
         </div>
       </Screen>
     </div>

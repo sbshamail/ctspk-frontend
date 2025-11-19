@@ -5,7 +5,10 @@ import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useGetGroupedFAQsQuery } from "@/store/services/faqApi";
+import { useSubmitSupportMutation } from "@/store/services/contactApi";
+import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -13,87 +16,91 @@ const breadcrumbData = [
 ];
 
 const CustomerSupport = () => {
-  const [activeCategory, setActiveCategory] = useState("general");
+  const [activeCategory, setActiveCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    category: "",
+    message: ""
+  });
+  const [responseMessage, setResponseMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
-  const supportCategories = [
-    {
-      id: "general",
-      name: "General Help",
-      icon: "?",
-      questions: [
-        {
-          question: "How do I create an account?",
-          answer: "Click on the 'Sign Up' button in the top right corner, fill in your details, and verify your email address to get started."
-        },
-        {
-          question: "What payment methods do you accept?",
-          answer: "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers for certain services."
-        },
-        {
-          question: "How can I reset my password?",
-          answer: "Click 'Forgot Password' on the login page, enter your email, and follow the instructions sent to your inbox."
-        }
-      ]
-    },
-    {
-      id: "billing",
-      name: "Billing & Payments",
-      icon: "??",
-      questions: [
-        {
-          question: "When will I be charged?",
-          answer: "For subscriptions, you'll be charged on the same date each month or year based on your billing cycle. One-time purchases are charged immediately."
-        },
-        {
-          question: "How do I update my payment method?",
-          answer: "Go to your account settings, select 'Billing', and click 'Update Payment Method' to add or change your payment details."
-        },
-        {
-          question: "Can I get a refund?",
-          answer: "We offer a 30-day money-back guarantee for most services. Contact our support team with your order details to request a refund."
-        }
-      ]
-    },
-    {
-      id: "technical",
-      name: "Technical Support",
-      icon: "??",
-      questions: [
-        {
-          question: "The website is not loading properly",
-          answer: "Try clearing your browser cache and cookies, or use a different browser. If the issue persists, contact our technical team."
-        },
-        {
-          question: "How do I report a bug?",
-          answer: "Use the 'Report Issue' feature in your account settings or email our technical team with details about the problem you're experiencing."
-        },
-        {
-          question: "Is there a mobile app?",
-          answer: "Yes! You can download our mobile app from the Apple App Store or Google Play Store for a better mobile experience."
-        }
-      ]
-    },
-    {
-      id: "account",
-      name: "Account Management",
-      icon: "??",
-      questions: [
-        {
-          question: "How do I delete my account?",
-          answer: "Go to Account Settings, scroll to the bottom, and click 'Delete Account'. Note: This action is permanent and cannot be undone."
-        },
-        {
-          question: "Can I change my username?",
-          answer: "Yes, you can change your username once every 30 days from your account settings under the 'Profile' section."
-        },
-        {
-          question: "How do I update my email address?",
-          answer: "Navigate to Account Settings, click on 'Email', and follow the verification process to update your email address."
-        }
-      ]
+  const { data: faqData, isLoading: faqLoading, error: faqError } = useGetGroupedFAQsQuery();
+  const [submitSupport, { isLoading: submitting }] = useSubmitSupportMutation();
+
+  // Map API data to supportCategories format
+  const supportCategories = React.useMemo(() => {
+    if (!faqData?.data || !Array.isArray(faqData.data)) return [];
+
+    return faqData.data.map(faqType => ({
+      id: faqType.id,
+      name: faqType.name,
+      icon: faqType.icon || "?",
+      questions: faqType.questions.map(faq => ({
+        question: faq.question,
+        answer: faq.answer
+      }))
+    }));
+  }, [faqData]);
+
+  // Set initial active category when data loads
+  useEffect(() => {
+    if (supportCategories.length > 0 && !activeCategory) {
+      setActiveCategory(supportCategories[0].id);
     }
-  ];
+  }, [supportCategories, activeCategory]);
+
+  // Auto-dismiss response message after 10 seconds
+  useEffect(() => {
+    if (responseMessage) {
+      const timer = setTimeout(() => {
+        setResponseMessage(null);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [responseMessage]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await submitSupport(formData).unwrap();
+
+      if (response.success) {
+        setResponseMessage({
+          type: 'success',
+          message: response.detail || 'Your message has been sent successfully! We will get back to you soon.'
+        });
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          category: "",
+          message: ""
+        });
+      } else {
+        setResponseMessage({
+          type: 'error',
+          message: response.detail || 'Failed to send message. Please try again.'
+        });
+      }
+    } catch (error: any) {
+      setResponseMessage({
+        type: 'error',
+        message: error?.data?.detail || 'An error occurred. Please try again later.'
+      });
+    }
+  };
 
   const contactMethods = [
     {
@@ -194,44 +201,54 @@ const CustomerSupport = () => {
               <p className="text-gray-600">Quick answers to common questions</p>
             </div>
 
-            {/* Category Tabs */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {supportCategories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={activeCategory === category.id ? "default" : "outline"}
-                  onClick={() => setActiveCategory(category.id)}
-                  className="flex items-center gap-2 px-6"
-                >
-                  <span>{category.icon}</span>
-                  {category.name}
-                </Button>
-              ))}
-            </div>
-
-            {/* FAQ Items */}
-            <div className="max-w-4xl mx-auto space-y-4">
-              {filteredQuestions.length > 0 ? (
-                filteredQuestions.map((item, index) => (
-                  <FAQItem
-                    key={index}
-                    question={item.question}
-                    answer={item.answer}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No results found for "{searchQuery}"</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSearchQuery("")}
-                    className="mt-4"
-                  >
-                    Clear Search
-                  </Button>
+            {faqLoading ? (
+              <LayoutSkeleton />
+            ) : faqError ? (
+              <div className="text-center py-8">
+                <p className="text-red-500">Failed to load FAQs. Please try again later.</p>
+              </div>
+            ) : (
+              <>
+                {/* Category Tabs */}
+                <div className="flex flex-wrap justify-center gap-2 mb-8">
+                  {supportCategories.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={activeCategory === category.id ? "default" : "outline"}
+                      onClick={() => setActiveCategory(category.id)}
+                      className="flex items-center gap-2 px-6"
+                    >
+                      <span>{category.icon}</span>
+                      {category.name}
+                    </Button>
+                  ))}
                 </div>
-              )}
-            </div>
+
+                {/* FAQ Items */}
+                <div className="max-w-4xl mx-auto space-y-4">
+                  {filteredQuestions.length > 0 ? (
+                    filteredQuestions.map((item, index) => (
+                      <FAQItem
+                        key={index}
+                        question={item.question}
+                        answer={item.answer}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No results found for "{searchQuery}"</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => setSearchQuery("")}
+                        className="mt-4"
+                      >
+                        Clear Search
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Contact Form Section */}
@@ -260,7 +277,7 @@ const CustomerSupport = () => {
               </div>
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
-                <form className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -269,8 +286,11 @@ const CustomerSupport = () => {
                       <Input
                         type="text"
                         id="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
                         placeholder="Enter your name"
                         className="w-full"
+                        required
                       />
                     </div>
                     <div>
@@ -280,12 +300,15 @@ const CustomerSupport = () => {
                       <Input
                         type="email"
                         id="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
                         placeholder="Enter your email"
                         className="w-full"
+                        required
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                       Subject *
@@ -293,8 +316,11 @@ const CustomerSupport = () => {
                     <Input
                       type="text"
                       id="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
                       placeholder="What can we help you with?"
                       className="w-full"
+                      required
                     />
                   </div>
 
@@ -304,7 +330,10 @@ const CustomerSupport = () => {
                     </label>
                     <select
                       id="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:border-primary focus:ring-1 focus:ring-primary"
+                      required
                     >
                       <option value="">Select a category</option>
                       <option value="general">General Inquiry</option>
@@ -322,14 +351,32 @@ const CustomerSupport = () => {
                     <Textarea
                       id="message"
                       rows={5}
+                      value={formData.message}
+                      onChange={handleInputChange}
                       placeholder="Please describe your issue in detail..."
                       className="w-full"
+                      required
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-primary text-white">
-                    Send Message
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary text-white"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Sending..." : "Send Message"}
                   </Button>
+
+                  {/* Response Message */}
+                  {responseMessage && (
+                    <div className={`p-4 rounded-lg ${
+                      responseMessage.type === 'success'
+                        ? 'bg-green-50 text-green-800 border border-green-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}>
+                      <p className="text-sm font-medium">{responseMessage.message}</p>
+                    </div>
+                  )}
                 </form>
               </div>
             </div>

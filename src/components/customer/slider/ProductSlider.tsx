@@ -96,8 +96,8 @@ const ProductSlider = ({
       <Carousel
         plugins={autoplay ? [plugin?.current] : []}
         className="w-full"
-        onMouseEnter={autoplay && plugin?.current?.stop}
-        onMouseLeave={autoplay && plugin?.current?.reset}
+        onMouseEnter={autoplay ? () => plugin?.current?.stop() : undefined}
+        onMouseLeave={autoplay ? () => plugin?.current?.reset() : undefined}
         setApi={setApi} // ✅ pass setter so api is captured
       >
         <CarouselContent>

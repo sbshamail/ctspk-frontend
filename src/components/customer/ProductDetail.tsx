@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cartContext";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { ZoomIn, ZoomOut, ShoppingCart, Store } from "lucide-react";
+
 interface ProductDetailProps {
   product: {
     id: number;
@@ -49,7 +51,7 @@ interface ProductDetailProps {
       sku: string;
       is_active: boolean;
     }>;
-    shop: { id: number };
+    shop: { id: number; name?: string };
   };
 }
 
@@ -59,6 +61,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
   >({});
   const [selectedImage, setSelectedImage] = useState(product.image.original);
   const [quantity, setQuantity] = useState(1);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
 
   const { add } = useCart();
 
@@ -119,7 +123,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   };
 
   // Handle add to cart
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product.product_type === "variable" && !selectedVariation) {
       alert("Please select all options");
       return;
@@ -161,7 +165,15 @@ export function ProductDetail({ product }: ProductDetailProps) {
     };
 
     console.log("Adding to cart:", productToAdd);
-    add(productToAdd);
+
+    try {
+      await add(productToAdd);
+      // Show success feedback
+      alert(`✓ ${product.name} added to cart!`);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+      alert("Failed to add to cart. Please try again.");
+    }
   };
 
   // Update image when variation changes
@@ -171,33 +183,74 @@ export function ProductDetail({ product }: ProductDetailProps) {
     }
   }, [selectedVariation]);
 
+  // Handle mouse move for zoom
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomed) return;
+
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomPosition({ x, y });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Images */}
         <div className="space-y-4">
-          {/* Main Image */}
-          <div className="w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px] aspect-square mx-auto border rounded-lg overflow-hidden">
-            <Image
-              src={selectedImage}
-              alt={product.name}
-              width={600}
-              height={600}
-              className="w-full h-full object-cover rounded-2xl shadow-lg"
-            />
+          {/* Main Image with Zoom */}
+          <div className="relative w-full max-w-[300px] sm:max-w-[400px] md:max-w-[500px] lg:max-w-[600px] aspect-square mx-auto border rounded-lg overflow-hidden bg-white">
+            <div
+              className="relative w-full h-full cursor-crosshair"
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setIsZoomed(true)}
+              onMouseLeave={() => setIsZoomed(false)}
+            >
+              <Image
+                src={selectedImage}
+                alt={product.name}
+                width={600}
+                height={600}
+                className={`w-full h-full object-contain transition-transform duration-200 ${
+                  isZoomed ? 'scale-150' : 'scale-100'
+                }`}
+                style={
+                  isZoomed
+                    ? {
+                        transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                      }
+                    : undefined
+                }
+              />
+            </div>
+
+            {/* Zoom Controls */}
+            <div className="absolute bottom-4 right-4 flex gap-2">
+              <button
+                onClick={() => setIsZoomed(!isZoomed)}
+                className="bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors"
+                title={isZoomed ? "Zoom Out" : "Zoom In"}
+              >
+                {isZoomed ? (
+                  <ZoomOut className="w-5 h-5 text-gray-700" />
+                ) : (
+                  <ZoomIn className="w-5 h-5 text-gray-700" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Thumbnail Gallery */}
           {allImages.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto pb-2">
               {allImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(image.original)}
-                  className={`flex-shrink-0 border-2 rounded-lg overflow-hidden ${
+                  className={`flex-shrink-0 border-2 rounded-lg overflow-hidden transition-all ${
                     selectedImage === image.original
-                      ? "border-primary"
-                      : "border-transparent"
+                      ? "border-primary scale-105"
+                      : "border-gray-300 hover:border-primary/50"
                   }`}
                 >
                   <Image
@@ -217,17 +270,33 @@ export function ProductDetail({ product }: ProductDetailProps) {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-            <p className="text-gray-600 mt-2">{product.description}</p>
+
+            {/* Shop Name */}
+            {product.shop?.name && (
+              <div className="flex items-center gap-2 mt-3">
+                <Store className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600">
+                  Sold by: <span className="font-semibold text-gray-900">{product.shop.name}</span>
+                </span>
+              </div>
+            )}
+
+            <p className="text-gray-600 mt-3">{product.description}</p>
           </div>
 
           {/* Price */}
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-gray-900">
+            <span className="text-3xl font-bold text-primary">
               Rs {displayPrice.toLocaleString()}
             </span>
             {product.sale_price && product.sale_price > 0 && (
               <span className="text-lg text-gray-500 line-through">
                 Rs {product.price.toLocaleString()}
+              </span>
+            )}
+            {product.sale_price && product.sale_price > 0 && (
+              <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-semibold">
+                Save {Math.round(((product.price - product.sale_price) / product.price) * 100)}%
               </span>
             )}
           </div>
@@ -314,11 +383,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
               displayQuantity === 0 ||
               (product.product_type === "variable" && !selectedVariation)
             }
-            className="w-full bg-primary text-white py-3 px-6 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary hover:bg-primary/90 text-white py-6 px-6 rounded-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             size="lg"
           >
+            <ShoppingCart className="w-5 h-5 mr-2" />
             {product.product_type === "variable" && !selectedVariation
-              ? "Select Options"
+              ? "Select Options First"
               : displayQuantity === 0
               ? "Out of Stock"
               : "Add to Cart"}

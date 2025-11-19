@@ -39,20 +39,26 @@ export const useCartService = () => {
     isLoading,
   } = useGetCartQuery(undefined, {
     skip: !isAuth,
+    refetchOnMountOrArgChange: true, // Always refetch when component mounts or auth changes
   });
 
   const [addToBackend] = useAddToCartMutation();
   const [removeBackend] = useRemoveCartMutation();
   const [removeSelectedBackend] = useRemoveSelectedCartMutation();
   const [clearBackend] = useClearCartMutation();
+
   // 🧠 Re-compute cart whenever auth/local/backend changes
   const cart: CartItemType[] = useMemo(
     () => (isAuth ? backendCartData || [] : localCart),
     [isAuth, localCart, backendCartData]
   );
 
+  // Clear session storage when user logs out
   useMountFirstEffect(() => {
-    if (!isAuth) return;
+    if (!isAuth) {
+      sessionStorage.removeItem("cartFetched");
+      return;
+    }
     const hasFetched = sessionStorage.getItem("cartFetched");
     if (!hasFetched) {
       refetchCart();
@@ -137,34 +143,38 @@ export const useCartService = () => {
     item: CartItemType & { variation_option_id?: number | null }
   ) => {
     if (isAuth) {
+      // First update the cache optimistically
+      const patchResult = dispatch(
+        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+          if (!Array.isArray(draft)) return;
+          // Match by product ID AND variation_option_id for variable products
+          const idx = draft.findIndex((i: CartItemType) => {
+            const productMatch = i.product.id === item.product.id;
+            const variationMatch = i.variation_option_id === item.variation_option_id;
+            return productMatch && variationMatch;
+          });
+          if (idx >= 0) {
+            // Increment quantity if same product+variation exists
+            draft[idx] = { ...draft[idx], quantity: draft[idx].quantity + item.quantity };
+          } else {
+            draft.push(item);
+          }
+        })
+      );
+
+      // Then trigger the backend sync
       debouncedAdd(
         item.product.id,
         item.shop_id,
         item.quantity,
         item.variation_option_id
       );
-      dispatch(
-        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
-          if (!Array.isArray(draft)) return;
-          const idx = draft.findIndex(
-            (i: CartItemType) => i.product.id === item.product.id
-          );
-          if (idx >= 0) draft[idx] = item;
-          else draft.push(item);
-        })
-      );
-      // await addToBackend({
-      //   product_id: item.product.id,
-      //   shop_id: item.shop_id,
-      //   quantity: item.quantity,
-      //   variation_option_id: item.variation_option_id || null, // ✅ Add variation_option_id
-      // });
     } else {
       console.log("Adding to local cart:", item);
       dispatch(
         addItem({
           ...item,
-          variation_option_id: item.variation_option_id || null, // ✅ Add to local cart
+          variation_option_id: item.variation_option_id || null,
         })
       );
     }

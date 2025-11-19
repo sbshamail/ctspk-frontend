@@ -9,15 +9,21 @@ import { categoryApi } from "./services/categoryApi";
 import { orderApi } from "./services/orderApi";
 import { productApi } from "./services/productApi";
 import { wishlistApi } from "./services/wishlistAPi";
+import { brandApi } from './services/brandApi';
+import { faqApi } from './services/faqApi';
+import { contactApi } from './services/contactApi';
 export const makeStore = () =>
   configureStore({
     reducer: {
       // Add API reducer when you create it
       [productApi.reducerPath]: productApi.reducer,
       [categoryApi.reducerPath]: categoryApi.reducer,
+      [brandApi.reducerPath]: brandApi.reducer,
       [cartApi.reducerPath]: cartApi.reducer,
       [orderApi.reducerPath]: orderApi.reducer,
       [wishlistApi.reducerPath]: wishlistApi.reducer,
+      [faqApi.reducerPath]: faqApi.reducer,
+      [contactApi.reducerPath]: contactApi.reducer,
       localCart: cartReducer,
       auth: authReducer,
       loading: loadingReducer,
@@ -27,9 +33,12 @@ export const makeStore = () =>
       getDefaultMiddleware().concat(
         productApi.middleware,
         categoryApi.middleware,
+        brandApi.middleware,
         cartApi.middleware,
         orderApi.middleware,
-        wishlistApi.middleware
+        wishlistApi.middleware,
+        faqApi.middleware,
+        contactApi.middleware
       ), // Add API middleware(),
   });
 

@@ -7,6 +7,7 @@ import { Card } from "../ui/card";
 import { ProductCartButton } from "./ProductCartButton";
 import { ProductFavorite } from "./ProductFavorite";
 import ProductImage from "./ProductImage";
+import { Store } from "lucide-react";
 
 interface Props {
   name: string;
@@ -87,6 +88,16 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
               </div>
             </div>
             <div className="p-2">
+              {/* Shop Name */}
+              {props.shop?.name && (
+                <div className="flex items-center gap-1 mb-2">
+                  <Store className="w-3 h-3 text-gray-400" />
+                  <span className="text-xs text-gray-500 truncate">
+                    {props.shop.name}
+                  </span>
+                </div>
+              )}
+
               <h2 className="m-0 p-0 text-sm font-medium line-clamp-1 h-5 ">
                 {titleSubstring(name)}
               </h2>
