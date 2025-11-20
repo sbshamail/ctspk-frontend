@@ -36,12 +36,12 @@ const TrendPage = () => {
   const addQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams!.toString());
     params.set(key, value);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`/new-arrivals?${params.toString()}`);
     ``;
   };
 
   const deleteQueryAll = () => {
-    router.push(pathname!); // clears all search params
+    router.push('/new-arrivals'); // clears all search params
   };
 
   // infinite scroll

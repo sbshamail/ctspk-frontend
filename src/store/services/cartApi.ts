@@ -1,18 +1,10 @@
 import { CartItemType } from "@/utils/modelTypes";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createBaseQuery } from "./baseQuery";
 
 export const cartApi = createApi({
   reducerPath: "cartApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/cart`,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth?.data?.access_token;
-
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
+  baseQuery: createBaseQuery("/cart"),
   tagTypes: ["Cart"],
   endpoints: (builder) => ({
     // ---------- GET CART ----------

@@ -1,6 +1,6 @@
 import { WishlistItemType } from "@/utils/modelTypes"; // create if needed
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createBaseQuery } from "./baseQuery";
 
 export interface WishlistQueryParams {
   page: number;
@@ -14,14 +14,7 @@ export interface WishlistQueryParams {
 
 export const wishlistApi = createApi({
   reducerPath: "wishlistApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/wishlist`,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth?.data?.access_token;
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
+  baseQuery: createBaseQuery("/wishlist"),
   tagTypes: ["Wishlist"],
 
   endpoints: (builder) => ({

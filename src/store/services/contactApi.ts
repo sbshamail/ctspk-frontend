@@ -1,5 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createPublicBaseQuery } from "./baseQuery";
 
 export interface ContactFormData {
   name: string;
@@ -17,9 +17,7 @@ export interface ContactFormResponse {
 
 export const contactApi = createApi({
   reducerPath: "contactApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-  }),
+  baseQuery: createPublicBaseQuery(""),
   tagTypes: ["Contact"],
   endpoints: (builder) => ({
     submitSupport: builder.mutation<ContactFormResponse, ContactFormData>({

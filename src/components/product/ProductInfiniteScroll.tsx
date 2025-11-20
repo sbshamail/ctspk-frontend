@@ -32,12 +32,15 @@ const ProductInfiniteScroll = ({
 
   // Update local state whenever new data arrives from parent
   useEffect(() => {
+    // Ensure data is always an array
+    const validData = Array.isArray(data) ? data : [];
+
     if (page === 1) {
-      setAllProducts(data);
-    } else if (data && data.length > 0) {
-      setAllProducts((prev) => [...prev, ...data]);
+      setAllProducts(validData);
+    } else if (validData.length > 0) {
+      setAllProducts((prev) => [...prev, ...validData]);
     }
-  }, [data]);
+  }, [data, page]);
 
   // Check if there are more products left to fetch
   const hasMore = allProducts.length < count;

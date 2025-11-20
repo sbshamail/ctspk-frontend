@@ -398,28 +398,20 @@ export default function CheckoutPage() {
     return 0;
   }, [shippingClass, subtotal]);
 
-  // Calculate tax amount
-  const taxAmount = useMemo(() => {
-    if (!taxClass) return 0;
-
-    const taxRate = parseFloat(taxClass.rate) || 0; // 🔴 FIX: Added null check
-    const taxableAmount = subtotal - productDiscount;
-    return (taxableAmount * taxRate) / 100;
-  }, [taxClass, subtotal, productDiscount]);
-
   // Calculate coupon discount with minimum cart amount validation
+  // ✅ IMPORTANT: Coupon is applied BEFORE tax calculation
   const couponDiscount = useMemo(() => {
     if (!appliedCoupon) return 0;
 
     // Check minimum cart amount requirement
-    const minCartAmount = parseFloat(appliedCoupon.minimum_cart_amount) || 0; // 🔴 FIX: Added null check
+    const minCartAmount = parseFloat(appliedCoupon.minimum_cart_amount) || 0;
     const discountableAmount = subtotal - productDiscount;
 
     if (minCartAmount > 0 && subtotal < minCartAmount) {
       return 0; // Coupon not applicable if cart doesn't meet minimum amount
     }
 
-    const couponAmount = parseFloat(appliedCoupon.amount) || 0; // 🔴 FIX: Added null check
+    const couponAmount = parseFloat(appliedCoupon.amount) || 0;
 
     if (appliedCoupon.type === "fixed") {
       return Math.min(couponAmount, discountableAmount);
@@ -428,6 +420,17 @@ export default function CheckoutPage() {
     }
     return 0;
   }, [appliedCoupon, subtotal, productDiscount]);
+
+  // Calculate tax amount
+  // ✅ IMPORTANT: Tax is calculated AFTER coupon discount
+  const taxAmount = useMemo(() => {
+    if (!taxClass) return 0;
+
+    const taxRate = parseFloat(taxClass.rate) || 0;
+    // Tax is applied on: subtotal - product discount - coupon discount
+    const taxableAmount = subtotal - productDiscount - couponDiscount;
+    return (taxableAmount * taxRate) / 100;
+  }, [taxClass, subtotal, productDiscount, couponDiscount]);
 
   // Check if coupon meets minimum cart amount requirement
   const isCouponApplicable = useMemo(() => {
@@ -1200,7 +1203,7 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {taxAmount > 0 && (
+                {taxClass && taxAmount > 0 && (
                   <div className="flex items-center justify-between">
                     <span>
                       Tax{" "}
@@ -1208,6 +1211,13 @@ export default function CheckoutPage() {
                         `(${taxClass.name} - ${taxClass.rate}%)`}
                     </span>
                     <span>{currencyFormatter(taxAmount)}</span>
+                  </div>
+                )}
+
+                {shippingCost > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span>Shipping</span>
+                    <span>{currencyFormatter(shippingCost)}</span>
                   </div>
                 )}
               </div>

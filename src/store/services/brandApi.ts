@@ -1,11 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createPublicBaseQuery } from "./baseQuery";
 
 export const brandApi = createApi({
   reducerPath: "brandApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-  }),
+  baseQuery: createPublicBaseQuery(""),
   tagTypes: ["Brands"],
   endpoints: (builder) => ({
     getBrands: builder.query<{ data: any[] }, void>({

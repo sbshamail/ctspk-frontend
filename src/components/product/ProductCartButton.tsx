@@ -34,6 +34,12 @@ export const ProductCartButton: FC<Props> = ({
       return;
     }
 
+    // ✅ Validate shop data exists
+    if (!product.shop?.id) {
+      console.error("Product missing shop data:", product);
+      return;
+    }
+
     // For simple products or variable products with selected variation
     add({
       product: product,

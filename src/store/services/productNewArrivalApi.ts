@@ -1,6 +1,6 @@
 // src/redux/services/productApi.ts
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createPublicBaseQuery } from "./baseQuery";
 import { toQueryString } from "./fn";
 
 export type ProductQueryParams = {
@@ -15,9 +15,7 @@ export type ProductQueryParams = {
 
 export const productApi = createApi({
   reducerPath: "productApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-  }),
+  baseQuery: createPublicBaseQuery(""),
   tagTypes: ["Products"],
   endpoints: (builder) => ({
     getProducts: builder.query<
@@ -27,6 +25,14 @@ export const productApi = createApi({
       query: (params) => {
         const query = toQueryString(params);
         return { url: `/product/new-arrivals?is_active=true&days=30&sort_by=created_at&sort_order=desc&${query}`, method: "GET" };
+      },
+      transformResponse: (response: { data: any[]; total: number }) => {
+        // ✅ Ensure all products have shop data
+        const transformedData = response.data.map((product) => ({
+          ...product,
+          shop: product.shop || { id: product.shop_id || 1, name: product.shop_name || "Default Shop" },
+        }));
+        return { data: transformedData, total: response.total };
       },
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {

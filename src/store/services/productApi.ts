@@ -1,6 +1,6 @@
 // src/redux/services/productApi.ts
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createPublicBaseQuery } from "./baseQuery";
 import { toQueryString } from "./fn";
 
 export type ProductQueryParams = {
@@ -11,13 +11,12 @@ export type ProductQueryParams = {
   numberRange?: [string, number, number]; // e.g. ["amount", 0, 1000]
   dateRange?: [string, string, string]; // e.g. ["created_at","01-01-2025","01-12-2025"]
   sort?: [string, "asc" | "desc"];
+  level?: string; // "2" for level 2 categories (related products)
 };
 
 export const productApi = createApi({
   reducerPath: "productApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-  }),
+  baseQuery: createPublicBaseQuery(""),
   tagTypes: ["Products"],
   endpoints: (builder) => ({
     getProducts: builder.query<
@@ -25,6 +24,28 @@ export const productApi = createApi({
       ProductQueryParams
     >({
       query: (params) => {
+        // ✅ Check if this is a level 2 category (related products)
+        if (params.level === "2" && params.columnFilters) {
+          // Extract category ID from columnFilters [["category.id", 22]]
+          const categoryIdFilter = params.columnFilters.find(
+            (filter) => filter[0] === "category.id"
+          );
+
+          if (categoryIdFilter && categoryIdFilter[1]) {
+            const categoryId = categoryIdFilter[1];
+            const query = toQueryString({
+              ...params,
+              columnFilters: undefined, // Remove columnFilters for related endpoint
+              level: undefined, // Remove level from query string
+            });
+            return {
+              url: `/product/products/related/${categoryId}?${query}`,
+              method: "GET"
+            };
+          }
+        }
+
+        // Default: use regular product list endpoint
         const query = toQueryString(params);
         return { url: `/product/list?${query}`, method: "GET" };
       },
@@ -37,10 +58,11 @@ export const productApi = createApi({
           columnFilters = null,
           numberRange = null,
           dateRange = null,
-          sort = null, // 👈 include sort
+          sort = null,
+          level = null, // ✅ Include level
         } = queryArgs;
 
-        return `${endpointName}-${page}-${limit}-${searchTerm}-${columnFilters}-${numberRange}-${dateRange}-${sort}`;
+        return `${endpointName}-${page}-${limit}-${searchTerm}-${columnFilters}-${numberRange}-${dateRange}-${sort}-${level}`;
       },
 
       merge: (currentCache, newItems, { arg }) => {
@@ -68,7 +90,8 @@ export const productApi = createApi({
           currentArg?.columnFilters !== previousArg?.columnFilters ||
           currentArg?.dateRange !== previousArg?.dateRange ||
           currentArg?.numberRange !== previousArg?.numberRange ||
-          currentArg?.sort !== previousArg?.sort
+          currentArg?.sort !== previousArg?.sort ||
+          currentArg?.level !== previousArg?.level // ✅ Include level
         );
       },
     }),

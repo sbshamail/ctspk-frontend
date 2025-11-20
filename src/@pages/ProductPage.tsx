@@ -64,6 +64,7 @@ const ProductPage = () => {
   const sortQuery = searchParams!.get("sort") ?? "";
   const numberRangeQuery = searchParams!.get("numberRange") ?? "";
   const columnFiltersQuery = searchParams!.get("columnFilters") ?? "";
+  const levelQuery = searchParams!.get("level") ?? ""; // ✅ Get level parameter
 
   useEffect(() => {
     const searchTermChanged = filters.searchTerm !== searchTermQuery;
@@ -72,12 +73,14 @@ const ProductPage = () => {
       JSON.stringify(filters.numberRange) !== numberRangeQuery;
     const columnFiltersChanged =
       JSON.stringify(filters.columnFilters) !== columnFiltersQuery;
+    const levelChanged = filters.level !== levelQuery; // ✅ Check level change
 
     if (
       searchTermChanged ||
       sortChanged ||
       numberRangeChanged ||
-      columnFiltersChanged
+      columnFiltersChanged ||
+      levelChanged // ✅ Include level in change detection
     ) {
       setFilters((prev) => ({
         ...prev,
@@ -91,9 +94,10 @@ const ProductPage = () => {
         columnFilters: columnFiltersQuery
           ? JSON.parse(columnFiltersQuery)
           : undefined,
+        level: levelQuery || undefined, // ✅ Pass level to filters
       }));
     }
-  }, [searchTermQuery, sortQuery, numberRangeQuery, columnFiltersQuery]);
+  }, [searchTermQuery, sortQuery, numberRangeQuery, columnFiltersQuery, levelQuery]);
 
   let categoriesList: string[] = [];
   try {

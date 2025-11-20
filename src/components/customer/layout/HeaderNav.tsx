@@ -40,7 +40,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
   const [open, setOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null);
-  const [visibleCategories, setVisibleCategories] = useState<number>(0);
+  const [visibleCategories, setVisibleCategories] = useState<number>(categories.length);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -129,6 +129,15 @@ export function HeaderNav({ y }: HeaderNavProps) {
     setActiveSubCategory(subCategoryName);
   };
 
+  // Handle level 2 subcategory click - use same URL format as level 3
+  const handleSubCategoryClick = (subCategory: CategoryDataType) => {
+    if (subCategory.id) {
+      // Use category.id filter with level=2 to distinguish from level 3
+      const filterParam = `columnFilters=%5B%5B"category.id"%2C${subCategory.id}%5D%5D&level=2`;
+      router.push(`/product?${filterParam}`);
+    }
+  };
+
   const handleMouseLeave = () => {
     setActiveCategory(null);
     setActiveSubCategory(null);
@@ -150,17 +159,23 @@ export function HeaderNav({ y }: HeaderNavProps) {
     return `/product?${filterParam}`;
   };
 
-  // Function to generate category URL for level 3 items
-  const getCategoryUrl = (categoryName: string, categoryId?: number) => {
-    if (categoryId) {
-      const filterParam = `columnFilters=%5B%5B"category.root_id"%2C${categoryId}%5D%5D`;
-      return `/product/list?${filterParam}`;
+  // Function to generate category URL for level 3 items (use category.id)
+  const getLevel3CategoryUrl = (categoryId: number) => {
+    const filterParam = `columnFilters=%5B%5B"category.id"%2C${categoryId}%5D%5D`;
+    return `/product?${filterParam}`;
+  };
+
+  // Function to generate category URL for level 1 (use category.root_id)
+  const getLevel1CategoryUrl = (rootId: number) => {
+    const filterParam = `columnFilters=%5B%5B"category.root_id"%2C${rootId}%5D%5D`;
+    return `/product?${filterParam}`;
+  };
+
+  // Handle level 1 category click
+  const handleCategoryClick = (category: CategoryDataType) => {
+    if (category.root_id) {
+      router.push(getLevel1CategoryUrl(category.root_id));
     }
-    // Fallback to search term if no ID
-    return {
-      pathname: "/product/list",
-      query: { searchTerm: categoryName },
-    };
   };
 
   const mainCategories = categories.slice(0, visibleCategories);
@@ -242,6 +257,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                           : "text-foreground hover:text-primary hover:bg-accent/50"
                       )}
                       onMouseEnter={() => handleCategoryHover(category)}
+                      onClick={() => handleCategoryClick(category)}
                     >
                       <span className="truncate">
                         {category.name.toUpperCase()}
@@ -274,6 +290,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                             <DropdownMenuItem
                               className="cursor-pointer"
                               onMouseEnter={() => handleCategoryHover(category)}
+                              onClick={() => handleCategoryClick(category)}
                             >
                               <span className="font-medium">{category.name}</span>
                               {category.children && (
@@ -392,6 +409,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                         onMouseEnter={() =>
                           handleSubCategoryHover(subCategory.name)
                         }
+                        onClick={() => handleSubCategoryClick(subCategory)}
                       >
                         <span>{subCategory.name}</span>
                         {subCategory.children && (
@@ -412,7 +430,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                       {getActiveSubCategory()?.children?.map((item) => (
                         <Link
                           key={item.name}
-                          href={getCategoryUrl(item.name, item.id)}
+                          href={item.id ? getLevel3CategoryUrl(item.id) : '#'}
                           className="block px-3 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors duration-200"
                         >
                           {item.name}

@@ -82,11 +82,31 @@ export const useCartService = () => {
         data: { product_id, shop_id, quantity, variation_option_id },
       });
       const newItem = res?.data;
-      if (!newItem) return;
 
       if (res?.success !== 1) {
         console.warn("Cart update failed:", res?.detail || res?.message);
         initiateRefetch();
+        return;
+      }
+
+      // ✅ Update cache with the complete item from backend
+      if (newItem) {
+        dispatch(
+          cartApi.util.updateQueryData("getCart", undefined, (draft) => {
+            if (!Array.isArray(draft)) return;
+            const idx = draft.findIndex((i: CartItemType) => {
+              const productMatch = i.product.id === newItem.product.id;
+              const variationMatch = i.variation_option_id === newItem.variation_option_id;
+              return productMatch && variationMatch;
+            });
+            if (idx >= 0) {
+              // Replace with complete backend data
+              draft[idx] = newItem;
+            } else {
+              draft.push(newItem);
+            }
+          })
+        );
       }
     } catch (err) {
       console.error("Cart update error:", err);
@@ -143,8 +163,8 @@ export const useCartService = () => {
     item: CartItemType & { variation_option_id?: number | null }
   ) => {
     if (isAuth) {
-      // First update the cache optimistically
-      const patchResult = dispatch(
+      // ✅ First update the cache optimistically with existing item or increment quantity
+      dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
           // Match by product ID AND variation_option_id for variable products
@@ -157,13 +177,22 @@ export const useCartService = () => {
             // Increment quantity if same product+variation exists
             draft[idx] = { ...draft[idx], quantity: draft[idx].quantity + item.quantity };
           } else {
-            draft.push(item);
+            // ✅ Create a temporary cart item structure for optimistic UI
+            const tempCartItem: CartItemType = {
+              id: Date.now(), // Temporary ID until backend responds
+              product: item.product,
+              quantity: item.quantity,
+              shop_id: item.shop_id,
+              variation_option_id: item.variation_option_id || null,
+            };
+            draft.push(tempCartItem);
           }
         })
       );
 
-      // Then trigger the backend sync
-      debouncedAdd(
+      // ✅ Then trigger the backend sync (non-debounced for immediate update)
+      // Backend will replace the temporary item with real data
+      await syncCartCreate(
         item.product.id,
         item.shop_id,
         item.quantity,

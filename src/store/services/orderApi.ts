@@ -1,17 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createBaseQuery } from "./baseQuery";
 import { QueryParams, toQueryString } from "./fn";
 
 export const orderApi = createApi({
   reducerPath: "orderApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/order`,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth?.data?.access_token;
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
+  baseQuery: createBaseQuery("/order"),
   tagTypes: ["Orders", "Returns", "Reviews"],
   endpoints: (builder) => ({
     // ✅ Get paginated + searchable order list

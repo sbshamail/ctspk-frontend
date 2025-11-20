@@ -1,5 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../../../config";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createPublicBaseQuery } from "./baseQuery";
 
 export interface FAQItem {
   id: number;
@@ -23,9 +23,7 @@ export interface FAQResponse {
 
 export const faqApi = createApi({
   reducerPath: "faqApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}`,
-  }),
+  baseQuery: createPublicBaseQuery(""),
   tagTypes: ["FAQ"],
   endpoints: (builder) => ({
     getGroupedFAQs: builder.query<FAQResponse, void>({

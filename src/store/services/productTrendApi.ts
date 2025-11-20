@@ -28,6 +28,14 @@ export const productApi = createApi({
         const query = toQueryString(params);
         return { url: `/product/trending?days=30&${query}`, method: "GET" };
       },
+      transformResponse: (response: { data: any[]; total: number }) => {
+        // ✅ Ensure all products have shop data
+        const transformedData = response.data.map((product) => ({
+          ...product,
+          shop: product.shop || { id: product.shop_id || 1, name: product.shop_name || "Default Shop" },
+        }));
+        return { data: transformedData, total: response.total };
+      },
 
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         const {

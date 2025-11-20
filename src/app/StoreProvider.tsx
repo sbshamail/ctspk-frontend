@@ -16,11 +16,11 @@ export default function StoreProvider({
   if (!storeRef.current) {
     // Create the store instance the first time this renders
     storeRef.current = makeStore();
-  }
-  const store = storeRef.current;
-  // 🟢 Preload auth state before rendering
-  if (serverAuth) {
-    store.dispatch(setAuth(serverAuth));
+
+    // 🟢 Preload auth state immediately after store creation (not during render)
+    if (serverAuth) {
+      storeRef.current.dispatch(setAuth(serverAuth));
+    }
   }
 
   return <Provider store={storeRef.current}>{children}</Provider>;
