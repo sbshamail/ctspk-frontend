@@ -67,7 +67,7 @@ export const useCartService = () => {
   }, [isAuth]);
 
   // ##########################################
-  // ### Method to update redux immediately and call backend after 1 second
+  // ### Method to update redux immediately and call backend
   // ##########################################
   const syncCartCreate = async (
     product_id: number,
@@ -81,36 +81,19 @@ export const useCartService = () => {
         method: "POST",
         data: { product_id, shop_id, quantity, variation_option_id },
       });
-      const newItem = res?.data;
 
       if (res?.success !== 1) {
         console.warn("Cart update failed:", res?.detail || res?.message);
-        initiateRefetch();
+        // ✅ Force refetch on failure
+        refetchCart();
         return;
       }
 
-      // ✅ Update cache with the complete item from backend
-      if (newItem) {
-        dispatch(
-          cartApi.util.updateQueryData("getCart", undefined, (draft) => {
-            if (!Array.isArray(draft)) return;
-            const idx = draft.findIndex((i: CartItemType) => {
-              const productMatch = i.product.id === newItem.product.id;
-              const variationMatch = i.variation_option_id === newItem.variation_option_id;
-              return productMatch && variationMatch;
-            });
-            if (idx >= 0) {
-              // Replace with complete backend data
-              draft[idx] = newItem;
-            } else {
-              draft.push(newItem);
-            }
-          })
-        );
-      }
+      // ✅ Always force refetch after successful add to ensure cache is in sync
+      refetchCart();
     } catch (err) {
       console.error("Cart update error:", err);
-      initiateRefetch();
+      refetchCart();
     }
   };
   const syncCartUpdate = async (id: number | string, qty: number) => {
@@ -123,11 +106,12 @@ export const useCartService = () => {
 
       if (res?.success !== 1) {
         console.warn("Cart update failed:", res?.detail || res?.message);
-        initiateRefetch();
       }
+      // ✅ Always refetch to ensure sync
+      refetchCart();
     } catch (err) {
       console.error("Cart update error:", err);
-      initiateRefetch();
+      refetchCart();
     }
   };
   const syncCartDelete = async (id: number | string) => {
@@ -139,11 +123,12 @@ export const useCartService = () => {
 
       if (res?.success !== 1) {
         console.warn("Cart delete failed:", res?.detail || res?.message);
-        initiateRefetch();
       }
+      // ✅ Always refetch to ensure sync
+      refetchCart();
     } catch (err) {
-      console.error("Cart update error:", err);
-      initiateRefetch();
+      console.error("Cart delete error:", err);
+      refetchCart();
     }
   };
   // ######## This debounced function is called backend fn after 1 second
@@ -163,35 +148,7 @@ export const useCartService = () => {
     item: CartItemType & { variation_option_id?: number | null }
   ) => {
     if (isAuth) {
-      // ✅ First update the cache optimistically with existing item or increment quantity
-      dispatch(
-        cartApi.util.updateQueryData("getCart", undefined, (draft) => {
-          if (!Array.isArray(draft)) return;
-          // Match by product ID AND variation_option_id for variable products
-          const idx = draft.findIndex((i: CartItemType) => {
-            const productMatch = i.product.id === item.product.id;
-            const variationMatch = i.variation_option_id === item.variation_option_id;
-            return productMatch && variationMatch;
-          });
-          if (idx >= 0) {
-            // Increment quantity if same product+variation exists
-            draft[idx] = { ...draft[idx], quantity: draft[idx].quantity + item.quantity };
-          } else {
-            // ✅ Create a temporary cart item structure for optimistic UI
-            const tempCartItem: CartItemType = {
-              id: Date.now(), // Temporary ID until backend responds
-              product: item.product,
-              quantity: item.quantity,
-              shop_id: item.shop_id,
-              variation_option_id: item.variation_option_id || null,
-            };
-            draft.push(tempCartItem);
-          }
-        })
-      );
-
-      // ✅ Then trigger the backend sync (non-debounced for immediate update)
-      // Backend will replace the temporary item with real data
+      // ✅ Call backend API and refetch cart after success
       await syncCartCreate(
         item.product.id,
         item.shop_id,
@@ -209,31 +166,20 @@ export const useCartService = () => {
     }
   };
 
-  const initiateRefetch = () => {
-    dispatch(
-      cartApi.endpoints.getCart.initiate(undefined, {
-        forceRefetch: true,
-      })
-    );
-  };
 
   const update = async (id: number, qty: number) => {
     if (isAuth) {
-      // Instant Redux Query update manually
+      // ✅ Optimistic update for instant UI feedback
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
-
           const idx = draft.findIndex((i: CartItemType) => i.product.id === id);
-
           if (idx >= 0) {
-            // 🔥 Force new object & array reference for UI re-render
-            const updated = { ...draft[idx], quantity: qty };
-            console.log({ updated });
-            draft.splice(idx, 1, updated);
+            draft[idx] = { ...draft[idx], quantity: qty };
           }
         })
       );
+      // ✅ Debounced backend call + refetch
       debouncedUpdate(id, qty);
     } else {
       dispatch(updateItem({ id, qty }));
@@ -242,17 +188,15 @@ export const useCartService = () => {
 
   const remove = async (id: number) => {
     if (isAuth) {
-      // console.log("Removing cart:", id);
-      // await removeBackend(id);
-      // Instant Redux Query update manually
+      // ✅ Optimistic update for instant UI feedback
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
-
           const idx = draft.findIndex((i: CartItemType) => i.product.id === id);
           if (idx >= 0) draft.splice(idx, 1);
         })
       );
+      // ✅ Debounced backend call + refetch
       debouncedDelete(id);
     } else {
       dispatch(removeItem(id));

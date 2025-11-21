@@ -402,28 +402,63 @@ export default function OrderSuccessPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Order Items</h3>
               <div className="space-y-4">
-                {orderData.order_products.map((product) => (
-                  <div key={product.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
-                    <Image
-                      src={product.product.image.original}
-                      alt={product.product.name}
-                      width={80}
-                      height={80}
-                      className="rounded-lg object-cover"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">{product.product.name}</h4>
-                      {product.shop_name && (
-                        <p className="text-sm text-gray-600">Sold by: {product.shop_name}</p>
-                      )}
-                      <p className="text-sm text-gray-600">Quantity: {product.order_quantity}</p>
+                {orderData.order_products.map((product) => {
+                  // ✅ Get variation image if available, otherwise use product image
+                  const variationImage = product.variation_snapshot?.image?.original ||
+                                        product.variation_data?.image?.original;
+                  const productImage = product.product?.image?.original || "/placeholder-image.jpg";
+                  const displayImage = variationImage || productImage;
+
+                  // ✅ Get variation options text
+                  const getVariationText = () => {
+                    if (product.variation_snapshot?.title) {
+                      return product.variation_snapshot.title;
+                    }
+                    if (product.variation_snapshot?.options) {
+                      return Object.entries(product.variation_snapshot.options)
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join(", ");
+                    }
+                    if (product.variation_data?.title) {
+                      return product.variation_data.title;
+                    }
+                    if (product.variation_data?.options) {
+                      return Object.entries(product.variation_data.options)
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join(", ");
+                    }
+                    return null;
+                  };
+
+                  const variationText = getVariationText();
+
+                  return (
+                    <div key={product.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                      <Image
+                        src={displayImage}
+                        alt={product.product.name}
+                        width={80}
+                        height={80}
+                        className="rounded-lg object-cover"
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">{product.product.name}</h4>
+                        {/* ✅ Show variation options */}
+                        {variationText && (
+                          <p className="text-sm text-primary font-medium">{variationText}</p>
+                        )}
+                        {product.shop_name && (
+                          <p className="text-sm text-gray-600">Sold by: {product.shop_name}</p>
+                        )}
+                        <p className="text-sm text-gray-600">Quantity: {product.order_quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">{formatCurrency(product.subtotal)}</p>
+                        <p className="text-sm text-gray-600">{formatCurrency(product.unit_price)} each</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">{formatCurrency(product.subtotal)}</p>
-                      <p className="text-sm text-gray-600">{formatCurrency(product.unit_price)} each</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

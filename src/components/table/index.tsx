@@ -22,13 +22,28 @@ export type TableProps<T = any> =
   | TableWithPagination<T>
   | TableWithoutPagination<T>;
 
-export function Table<T extends Record<string, any>>(props: TableProps<T>) {
+export interface TableFilterProps {
+  fromDate?: string | null;
+  setFromDate?: (d: string | null) => void;
+  toDate?: string | null;
+  setToDate?: (d: string | null) => void;
+  globalFilter?: string | null;
+  setGlobalFilter?: (v: string | null) => void;
+}
+
+export function Table<T extends Record<string, any>>(props: TableProps<T> & TableFilterProps) {
   const {
     data,
     columns,
     selectedRows,
     setSelectedRows,
     showPagination,
+    fromDate,
+    setFromDate,
+    toDate,
+    setToDate,
+    globalFilter,
+    setGlobalFilter,
     ...rest
   } = props;
   const [fullScreen, setFullScreen] = useState(false);
@@ -46,13 +61,13 @@ export function Table<T extends Record<string, any>>(props: TableProps<T>) {
         <div ref={headerRef}>
           <TableHeader
             columns={columns}
-            dates={{
-              fromDate: null,
-              setFromDate: () => {},
-              toDate: null,
-              setToDate: () => {},
-            }}
-            globalFilters={{ globalFilter: null, setGlobalFilter: () => {} }}
+            dates={setFromDate && setToDate ? {
+              fromDate: fromDate ?? null,
+              setFromDate,
+              toDate: toDate ?? null,
+              setToDate,
+            } : undefined}
+            globalFilters={setGlobalFilter ? { globalFilter: globalFilter ?? null, setGlobalFilter } : undefined}
             showFullScreen={{ fullScreen, setFullScreen }}
           />
         </div>

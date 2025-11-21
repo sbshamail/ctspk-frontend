@@ -215,19 +215,45 @@ export default function OrderDetailPage({ id }: { id: string }) {
     }
   };
 
-  // Helper function to get product image
+  // Helper function to get product image - prioritize variation image for variable products
   const getProductImage = (product: OrderProductRead) => {
-    // Try different possible image paths
-    return product.product_snapshot?.image?.thumbnail || 
+    // ✅ First try variation image (for variable products)
+    const variationImage = product.variation_snapshot?.image?.original ||
+                          product.variation_snapshot?.image?.thumbnail ||
+                          product.variation_data?.image?.original ||
+                          product.variation_data?.image?.thumbnail;
+
+    if (variationImage) return variationImage;
+
+    // Fallback to product snapshot image
+    return product.product_snapshot?.image?.thumbnail ||
            product.product_snapshot?.image?.original ||
            product.product_snapshot?.image ||
            product.product?.image?.thumbnail ||
            product.product?.image?.original ||
            product.product?.image ||
-           product.variation_snapshot?.image?.thumbnail ||
-           product.variation_snapshot?.image?.original ||
-           product.variation_snapshot?.image ||
            "/placeholder.png";
+  };
+
+  // ✅ Helper function to get variation text
+  const getVariationText = (product: OrderProductRead) => {
+    if (product.variation_snapshot?.title) {
+      return product.variation_snapshot.title;
+    }
+    if (product.variation_snapshot?.options) {
+      return Object.entries(product.variation_snapshot.options)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    if (product.variation_data?.title) {
+      return product.variation_data.title;
+    }
+    if (product.variation_data?.options) {
+      return Object.entries(product.variation_data.options)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    return null;
   };
 
   // Helper function to get product name
@@ -417,9 +443,10 @@ export default function OrderDetailPage({ id }: { id: string }) {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-lg">{getProductName(item)}</p>
-                      {item.variation_snapshot && (
-                        <p className="text-sm text-muted-foreground">
-                          Variant: {item.variation_snapshot.title}
+                      {/* ✅ Show variation options */}
+                      {getVariationText(item) && (
+                        <p className="text-sm text-primary font-medium">
+                          {getVariationText(item)}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
@@ -697,7 +724,7 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!product) return;
-    
+
     onSubmit({
       order_id: orderId,
       product_id: product.product_id,
@@ -706,6 +733,27 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
       comment,
       variation_option_id: product.variation_option_id,
     });
+  };
+
+  // ✅ Get correct image for variable products
+  const getDialogProductImage = () => {
+    const variationImage = product?.variation_snapshot?.image?.original ||
+                          product?.variation_snapshot?.image?.thumbnail ||
+                          product?.variation_data?.image?.original ||
+                          product?.variation_data?.image?.thumbnail;
+    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+  };
+
+  // ✅ Get variation text
+  const getDialogVariationText = () => {
+    if (product?.variation_snapshot?.title) return product.variation_snapshot.title;
+    if (product?.variation_snapshot?.options) {
+      return Object.entries(product.variation_snapshot.options)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    if (product?.variation_data?.title) return product.variation_data.title;
+    return null;
   };
 
   if (!product) return null;
@@ -720,7 +768,7 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
           <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
             <div className="relative w-16 h-16 rounded overflow-hidden border bg-white">
               <Image
-                src={product.product_snapshot?.image?.thumbnail || "/placeholder.png"}
+                src={getDialogProductImage()}
                 alt={product.product_snapshot?.name || "Product image"}
                 width={64}
                 height={64}
@@ -733,9 +781,9 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
             </div>
             <div>
               <p className="font-medium text-lg">{product.product_snapshot?.name}</p>
-              {product.variation_snapshot && (
-                <p className="text-sm text-muted-foreground">
-                  Variant: {product.variation_snapshot.title}
+              {getDialogVariationText() && (
+                <p className="text-sm text-primary font-medium">
+                  {getDialogVariationText()}
                 </p>
               )}
             </div>
@@ -814,15 +862,36 @@ interface ReturnDialogProps {
   product: OrderProductRead | any;
 }
 
-function ReturnDialog({ 
-  isOpen, 
-  onClose, 
-  returnType, 
-  returnReason, 
-  onReasonChange, 
+function ReturnDialog({
+  isOpen,
+  onClose,
+  returnType,
+  returnReason,
+  onReasonChange,
   onSubmit,
-  product 
+  product
 }: ReturnDialogProps) {
+  // ✅ Get correct image for variable products
+  const getReturnProductImage = () => {
+    const variationImage = product?.variation_snapshot?.image?.original ||
+                          product?.variation_snapshot?.image?.thumbnail ||
+                          product?.variation_data?.image?.original ||
+                          product?.variation_data?.image?.thumbnail;
+    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+  };
+
+  // ✅ Get variation text
+  const getReturnVariationText = () => {
+    if (product?.variation_snapshot?.title) return product.variation_snapshot.title;
+    if (product?.variation_snapshot?.options) {
+      return Object.entries(product.variation_snapshot.options)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    if (product?.variation_data?.title) return product.variation_data.title;
+    return null;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -831,14 +900,14 @@ function ReturnDialog({
             {returnType === "full_order" ? "Return Entire Order" : "Return Product"}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {returnType === "single_product" && product && (
             <div className="border rounded-lg p-4 bg-gray-50">
               <div className="flex items-center gap-4">
                 <div className="relative w-16 h-16 rounded overflow-hidden border bg-white">
                   <Image
-                    src={product.product_snapshot?.image?.thumbnail || "/placeholder.png"}
+                    src={getReturnProductImage()}
                     alt={product.product_snapshot?.name || "Product image"}
                     width={64}
                     height={64}
@@ -851,9 +920,9 @@ function ReturnDialog({
                 </div>
                 <div>
                   <p className="font-medium text-lg">{product.product_snapshot?.name}</p>
-                  {product.variation_snapshot && (
-                    <p className="text-sm text-muted-foreground">
-                      Variant: {product.variation_snapshot.title}
+                  {getReturnVariationText() && (
+                    <p className="text-sm text-primary font-medium">
+                      {getReturnVariationText()}
                     </p>
                   )}
                   <p className="text-sm">Quantity: {product.order_quantity}</p>

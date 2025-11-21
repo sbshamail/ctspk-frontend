@@ -6,16 +6,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ColumnType } from "@/components/table/MainTable";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useGetOrdersQuery } from "@/store/services/orderApi";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { OrderReadNested, OrderStatusEnum, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { format, parse } from "date-fns";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -44,23 +44,32 @@ export default function OrdersPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
-  
+  const [globalFilter, setGlobalFilter] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState<string | null>(null);
+  const [toDate, setToDate] = useState<string | null>(null);
+
   // Cancel dialog states
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderReadNested | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [notifyCustomer, setNotifyCustomer] = useState(true);
 
-  // Use useEffect to reset page when search term changes
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm]);
+  // Build dateRange for API (fromDate/toDate are in yyyy-MM-dd format from InputDateField)
+  const dateRange = useMemo(() => {
+    if (fromDate && toDate) {
+      // Convert yyyy-MM-dd to dd-MM-yyyy for API
+      const fromFormatted = format(parse(fromDate, "yyyy-MM-dd", new Date()), "dd-MM-yyyy");
+      const toFormatted = format(parse(toDate, "yyyy-MM-dd", new Date()), "dd-MM-yyyy");
+      return ["created_at", fromFormatted, toFormatted] as [string, string, string];
+    }
+    return undefined;
+  }, [fromDate, toDate]);
 
   const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({
     page,
     limit,
-    searchTerm,
+    searchTerm: globalFilter || undefined,
+    dateRange,
   });
 
   const orders = data?.data ?? [];
@@ -273,16 +282,7 @@ export default function OrdersPage() {
   return (
     <Screen className="py-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Orders</h1>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search customer or tracking..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
-          />
-          <Button onClick={() => setPage(1)}>Search</Button>
-        </div>
+        <h1 className="text-2xl font-semibold">My Orders</h1>
       </div>
 
       {isLoading ? (
@@ -299,7 +299,12 @@ export default function OrdersPage() {
           currentPage={page}
           setCurrentPage={setPage}
           showPagination={true}
-          //totalPages={totalPages}
+          fromDate={fromDate}
+          setFromDate={setFromDate}
+          toDate={toDate}
+          setToDate={setToDate}
+          globalFilter={globalFilter}
+          setGlobalFilter={setGlobalFilter}
         />
       )}
 

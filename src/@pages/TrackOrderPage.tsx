@@ -420,31 +420,68 @@ const TrackOrderPage = () => {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Order Items</h3>
                 <div className="space-y-4">
-                  {orderData.order_products.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                        {item.product.image ? (
-                          <Image
-                            src={item.product.image.thumbnail}
-                            alt={item.product.name}
-                            width={64}
-                            height={64}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="text-gray-400 text-xs">No image</span>
-                        )}
+                  {orderData.order_products.map((item) => {
+                    // ✅ Get variation image if available, otherwise use product image
+                    const variationImage = item.variation_snapshot?.image?.original ||
+                                          item.variation_snapshot?.image?.thumbnail ||
+                                          item.variation_data?.image?.original ||
+                                          item.variation_data?.image?.thumbnail;
+                    const productImage = item.product?.image?.thumbnail || item.product?.image?.original;
+                    const displayImage = variationImage || productImage;
+
+                    // ✅ Get variation options text
+                    const getVariationText = () => {
+                      if (item.variation_snapshot?.title) {
+                        return item.variation_snapshot.title;
+                      }
+                      if (item.variation_snapshot?.options) {
+                        return Object.entries(item.variation_snapshot.options)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(", ");
+                      }
+                      if (item.variation_data?.title) {
+                        return item.variation_data.title;
+                      }
+                      if (item.variation_data?.options) {
+                        return Object.entries(item.variation_data.options)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(", ");
+                      }
+                      return null;
+                    };
+
+                    const variationText = getVariationText();
+
+                    return (
+                      <div key={item.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                          {displayImage ? (
+                            <Image
+                              src={displayImage}
+                              alt={item.product.name}
+                              width={64}
+                              height={64}
+                              className="object-cover"
+                            />
+                          ) : (
+                            <span className="text-gray-400 text-xs">No image</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{item.product.name}</h4>
+                          {/* ✅ Show variation options */}
+                          {variationText && (
+                            <p className="text-sm text-primary font-medium">{variationText}</p>
+                          )}
+                          <p className="text-gray-600 text-sm">Quantity: {item.order_quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">Rs {item.unit_price}</p>
+                          <p className="text-gray-600 text-sm">Subtotal: Rs {item.subtotal}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.product.name}</h4>
-                        <p className="text-gray-600 text-sm">Quantity: {item.order_quantity}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">Rs {item.unit_price}</p>
-                        <p className="text-gray-600 text-sm">Subtotal: Rs {item.subtotal}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Order Summary */}

@@ -66,55 +66,61 @@ export function HeaderNav({ y }: HeaderNavProps) {
     if (categories.length === 0) return;
 
     const calculateVisibleCategories = () => {
-      if (!navRef.current) return;
+      if (!navRef.current || !categoriesRef.current) return;
 
       const containerWidth = navRef.current.offsetWidth;
-      const iconsWidth = 120;
-      let availableWidth = containerWidth - iconsWidth;
+      const iconsWidth = 150; // Space for search, cart, wishlist icons
+      const moreButtonWidth = 100; // Width of "More" dropdown button
+      const availableWidth = containerWidth - iconsWidth;
 
-      const buttonWidths = Array.from(
-        categoriesRef.current?.querySelectorAll("button") ?? []
-      ).map((btn) => (btn as HTMLButtonElement).offsetWidth + 8);
+      const buttons = categoriesRef.current.querySelectorAll("button");
+      if (buttons.length === 0) return;
 
-      let totalWidth = 0;
-      let maxVisible = categories.length;
+      // Calculate actual button widths
+      const buttonWidths = Array.from(buttons).map(
+        (btn) => (btn as HTMLButtonElement).offsetWidth + 8 // 8px gap
+      );
 
-      for (let i = 0; i < buttonWidths.length; i++) {
-        if (totalWidth + buttonWidths[i] <= availableWidth) {
-          totalWidth += buttonWidths[i];
-        } else {
-          maxVisible = i;
-          break;
-        }
+      // Calculate total width of all buttons
+      const totalButtonsWidth = buttonWidths.reduce((sum, w) => sum + w, 0);
+
+      // ✅ If all buttons fit, show all categories (no "More" needed)
+      if (totalButtonsWidth <= availableWidth) {
+        setVisibleCategories(categories.length);
+        return;
       }
 
-      if (maxVisible < categories.length) {
-        availableWidth = containerWidth - iconsWidth - 90;
-        totalWidth = 0;
-        maxVisible = 0;
-        for (let i = 0; i < buttonWidths.length; i++) {
-          if (totalWidth + buttonWidths[i] <= availableWidth) {
-            totalWidth += buttonWidths[i];
-            maxVisible++;
-          } else {
-            break;
-          }
+      // ✅ Otherwise, calculate how many fit with "More" button
+      const availableForButtons = availableWidth - moreButtonWidth;
+      let totalWidth = 0;
+      let maxVisible = 0;
+
+      for (let i = 0; i < buttonWidths.length; i++) {
+        if (totalWidth + buttonWidths[i] <= availableForButtons) {
+          totalWidth += buttonWidths[i];
+          maxVisible++;
+        } else {
+          break;
         }
       }
 
       setVisibleCategories(Math.max(1, maxVisible));
     };
 
-    requestAnimationFrame(() => {
+    // Wait for DOM to be fully rendered
+    const timeoutId = setTimeout(() => {
       calculateVisibleCategories();
-    });
+    }, 100);
 
     const handleResize = () => {
-      requestAnimationFrame(calculateVisibleCategories);
+      calculateVisibleCategories();
     };
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(timeoutId);
+    };
   }, [categories]);
 
   const handleCategoryHover = (category: CategoryDataType) => {

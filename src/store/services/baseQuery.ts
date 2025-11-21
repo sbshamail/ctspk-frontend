@@ -66,12 +66,11 @@ export const baseQueryWithReauth: (
             return result;
           }
 
-          // Call refresh endpoint
+          // Call refresh endpoint with token as query parameter
           const refreshResult = await baseQuery(
             {
-              url: `${API_URL}/refresh`,
+              url: `${API_URL}/refresh?refresh_token=${refreshToken}`,
               method: "POST",
-              body: { refresh_token: refreshToken },
             },
             api,
             extraOptions
