@@ -29,6 +29,7 @@ type Product = {
   price: number;
   sale_price?: number | null;
   image: CartImageType;
+  quantity?: number; // stock level
   // Add the missing properties that exist in your API response
   variation_options?: VariationOption[];
 };

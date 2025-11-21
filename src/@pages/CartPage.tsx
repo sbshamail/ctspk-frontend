@@ -74,6 +74,21 @@ const getVariationOptionsText = (item: CartItemType): string => {
   return "";
 };
 
+// Helper to get available stock for a cart item
+const getAvailableStock = (item: CartItemType): number => {
+  // For variable products, get variation stock
+  if (item.variation_option_id && item.product.variation_options) {
+    const variation = item.product.variation_options.find(
+      (v: any) => v.id === item.variation_option_id
+    );
+    if (variation?.quantity !== undefined) {
+      return variation.quantity;
+    }
+  }
+  // Fallback to product stock
+  return item.product.quantity ?? 999;
+};
+
 const CartPage = () => {
   const { cart, update, remove, clear, loading, removeSelected, isAuth } =
     useCart();
@@ -168,23 +183,31 @@ const CartPage = () => {
     },
     {
       title: "Quantity",
-      render: ({ row }) => (
-        <div className="flex justify-center">
-          <input
-            type="number"
-            min={1}
-            value={row.quantity}
-            onChange={(e) => {
-              const newQuantity = parseInt(e.target.value, 10);
-              if (newQuantity > 0) {
-                // ✅ Updated to handle variation products correctly
-                update(row.product.id, newQuantity);
-              }
-            }}
-            className="w-16 border rounded px-2 py-1 text-center bg-background"
-          />
-        </div>
-      ),
+      render: ({ row }) => {
+        const maxStock = getAvailableStock(row);
+        return (
+          <div className="flex flex-col items-center">
+            <input
+              type="number"
+              min={1}
+              max={maxStock}
+              value={row.quantity}
+              onChange={(e) => {
+                const newQuantity = parseInt(e.target.value, 10);
+                if (newQuantity > 0 && newQuantity <= maxStock) {
+                  update(row.product.id, newQuantity);
+                } else if (newQuantity > maxStock) {
+                  update(row.product.id, maxStock);
+                }
+              }}
+              className="w-16 border rounded px-2 py-1 text-center bg-background"
+            />
+            <span className="text-xs text-muted-foreground mt-1">
+              Stock: {maxStock}
+            </span>
+          </div>
+        );
+      },
       className: "text-center",
     },
     {
