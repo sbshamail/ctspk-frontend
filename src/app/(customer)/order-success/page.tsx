@@ -8,6 +8,7 @@ import Image from "next/image";
 import { fetchApi } from "@/action/fetchApi";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Link from "next/link";
+import { OrderInvoice } from "@/components/invoice/OrderInvoice";
 
 interface OrderTrackingResponse {
   success: number;
@@ -29,6 +30,7 @@ interface OrderTrackingResponse {
     language: string;
     coupon_id: number | null;
     discount: number;
+    coupon_discount?: number;
     payment_gateway: string;
     shipping_address: {
       country: string;
@@ -75,6 +77,9 @@ interface OrderTrackingResponse {
       order_quantity: string;
       unit_price: number;
       subtotal: number;
+      sale_price?: number;
+      item_discount?: number;
+      item_tax?: number;
       admin_commission: string;
       item_type: string;
       variation_data: any;
@@ -432,6 +437,17 @@ export default function OrderSuccessPage() {
 
                   const variationText = getVariationText();
 
+                  // Calculate pricing
+                  // unit_price = regular/original price
+                  // sale_price = discounted price (what customer pays)
+                  // item_discount = unit_price - sale_price (per item)
+                  const quantity = parseFloat(product.order_quantity);
+                  const unitPrice = product.unit_price; // Regular price
+                  const salePrice = product.sale_price || 0; // Discounted price
+                  const hasDiscount = salePrice > 0 && salePrice < unitPrice;
+                  const priceToShow = hasDiscount ? salePrice : unitPrice; // What customer actually pays
+                  const discountPerItem = hasDiscount ? (unitPrice - salePrice) : 0;
+
                   return (
                     <div key={product.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
                       <Image
@@ -450,11 +466,36 @@ export default function OrderSuccessPage() {
                         {product.shop_name && (
                           <p className="text-sm text-gray-600">Sold by: {product.shop_name}</p>
                         )}
-                        <p className="text-sm text-gray-600">Quantity: {product.order_quantity}</p>
+                        <div className="text-sm mt-1">
+                          {hasDiscount ? (
+                            <div>
+                              <span className="text-gray-500 line-through mr-2">
+                                Rs {unitPrice} each
+                              </span>
+                              <span className="text-green-600 font-medium">
+                                Rs {salePrice} each
+                              </span>
+                              {discountPerItem > 0 && (
+                                <p className="text-xs text-green-600">
+                                  Save Rs {discountPerItem * quantity}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-600">Rs {unitPrice} each</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">Quantity: {product.order_quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">{formatCurrency(product.subtotal)}</p>
-                        <p className="text-sm text-gray-600">{formatCurrency(product.unit_price)} each</p>
+                        {hasDiscount && (
+                          <p className="text-sm text-gray-500 line-through">
+                            Rs {(unitPrice * quantity).toLocaleString()}
+                          </p>
+                        )}
+                        <p className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-gray-900'}`}>
+                          Rs {product.subtotal.toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   );
@@ -491,27 +532,66 @@ export default function OrderSuccessPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{formatCurrency(orderData.amount)}</span>
+                  <span className="font-medium">
+                    Rs. {orderData.order_products.reduce((acc: number, product: any) => {
+                      return acc + (product.unit_price * parseFloat(product.order_quantity));
+                    }, 0).toLocaleString()}
+                  </span>
                 </div>
+
+                {(() => {
+                  // Calculate total product discount
+                  const productDiscount = orderData.order_products.reduce((acc: number, product: any) => {
+                    const salePrice = product.sale_price || 0;
+                    if (salePrice > 0 && salePrice < product.unit_price) {
+                      return acc + ((product.unit_price - salePrice) * parseFloat(product.order_quantity));
+                    }
+                    return acc;
+                  }, 0);
+
+                  // Use discount from order OR calculated product discount (whichever is available)
+                  const discountToShow = orderData.discount || productDiscount;
+
+                  return (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount</span>
+                      <span className="font-medium">-Rs. {discountToShow.toLocaleString()}</span>
+                    </div>
+                  );
+                })()}
+
+                {orderData.coupon_discount !== undefined && orderData.coupon_discount !== null && orderData.coupon_discount>0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Coupon Discount</span>
+                    <span className="font-medium">-Rs. {orderData.coupon_discount.toLocaleString()}</span>
+                  </div>
+                )}
+                {orderData.delivery_fee > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">{formatCurrency(orderData.delivery_fee)}</span>
+                  <span className="text-gray-600">Shipping Fee</span>
+                  <span className="font-medium">{formatCurrency(orderData.delivery_fee || 0)}</span>
                 </div>
+                )}
+                {orderData.sales_tax > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">{formatCurrency(orderData.sales_tax)}</span>
+                  <span className="font-medium">{formatCurrency(orderData.sales_tax || 0)}</span>
                 </div>
-                {orderData.discount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span className="font-medium">-{formatCurrency(orderData.discount)}</span>
-                  </div>
                 )}
                 <div className="border-t pt-3 flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span className="text-primary">{formatCurrency(orderData.total)}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Invoice */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+              <OrderInvoice
+                orderData={orderData}
+                formatCurrency={formatCurrency}
+                formatDate={formatDate}
+              />
             </div>
 
             {/* Action Buttons */}

@@ -13,13 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { 
+import {
   useGetOrderQuery
 } from "@/store/services/orderApi";
 import { Screen } from "@/@core/layout";
 import { useState } from "react";
 import { OrderReadNested, OrderStatusEnum, OrderProductRead, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
+import { OrderInvoice } from "@/components/invoice/OrderInvoice";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -421,7 +422,16 @@ export default function OrderDetailPage({ id }: { id: string }) {
           <section>
             <h3 className="text-lg font-semibold mb-4">Order Items</h3>
             <div className="space-y-6">
-              {order.order_products.map((item: OrderProductRead, index: number) => (
+              {order.order_products.map((item: OrderProductRead, index: number) => {
+                // Calculate pricing
+                const quantity = parseFloat(item.order_quantity);
+                const unitPrice = item.unit_price; // Regular price
+                const salePrice = item.sale_price || 0; // Discounted price
+                const hasDiscount = salePrice > 0 && salePrice < unitPrice;
+                const priceToShow = hasDiscount ? salePrice : unitPrice;
+                const discountPerItem = hasDiscount ? (unitPrice - salePrice) : 0;
+
+                return (
                 <div
                   key={item.id}
                   className="flex items-center justify-between gap-6 border-b border-border pb-6"
@@ -443,21 +453,46 @@ export default function OrderDetailPage({ id }: { id: string }) {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-lg">{getProductName(item)}</p>
-                      {/* ✅ Show variation options */}
                       {getVariationText(item) && (
                         <p className="text-sm text-primary font-medium">
                           {getVariationText(item)}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-sm">Quantity:</span>
-                        <span className="font-medium">{item.order_quantity}</span>
-                        <span className="mx-2">......</span>
-                        <span className="font-medium">{currencyFormatter(item.unit_price)}</span>
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">Quantity:</span>
+                          <span className="font-medium">{item.order_quantity}</span>
+                        </div>
+                        <div className="mt-1">
+                          {hasDiscount ? (
+                            <div>
+                              <span className="text-gray-500 line-through text-sm mr-2">
+                                Rs {unitPrice} each
+                              </span>
+                              <span className="text-green-600 font-medium">
+                                Rs {salePrice} each
+                              </span>
+                              {discountPerItem > 0 && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Save Rs {discountPerItem * quantity}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="font-medium">Rs {unitPrice} each</span>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-lg font-semibold mt-2">
-                        Subtotal: {currencyFormatter(item.subtotal)}
-                      </p>
+                      <div className="mt-2">
+                        {hasDiscount && (
+                          <p className="text-sm text-gray-500 line-through">
+                            Rs {(unitPrice * quantity).toLocaleString()}
+                          </p>
+                        )}
+                        <p className={`text-lg font-semibold ${hasDiscount ? 'text-green-600' : ''}`}>
+                          Subtotal: Rs {item.subtotal.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   
@@ -492,7 +527,8 @@ export default function OrderDetailPage({ id }: { id: string }) {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
@@ -506,32 +542,53 @@ export default function OrderDetailPage({ id }: { id: string }) {
               <div className="space-y-3 max-w-md">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>{currencyFormatter(order.amount)}</span>
+                  <span>
+                    Rs {order.order_products.reduce((acc: number, product: OrderProductRead) => {
+                      return acc + (product.unit_price * parseFloat(product.order_quantity));
+                    }, 0).toLocaleString()}
+                  </span>
                 </div>
-                {order.discount && order.discount > 0 && (
-                  <div className="flex justify-between">
-                    <span>Discount:</span>
-                    <span className="text-green-600">-{currencyFormatter(order.discount)}</span>
-                  </div>
-                )}
-                {order.coupon_discount && order.coupon_discount > 0 && (
+
+                {(() => {
+                  const productDiscount = order.order_products.reduce((acc: number, product: OrderProductRead) => {
+                    const salePrice = product.sale_price || 0;
+                    if (salePrice > 0 && salePrice < product.unit_price) {
+                      return acc + ((product.unit_price - salePrice) * parseFloat(product.order_quantity));
+                    }
+                    return acc;
+                  }, 0);
+
+                  const discountToShow = order.discount || productDiscount;
+
+                  return discountToShow > 0 ? (
+                    <div className="flex justify-between">
+                      <span>Discount:</span>
+                      <span className="text-green-600">-Rs {discountToShow.toLocaleString()}</span>
+                    </div>
+                  ) : null;
+                })()}
+
+                {order.coupon_discount !== undefined && order.coupon_discount !== null && order.coupon_discount > 0 && (
                   <div className="flex justify-between">
                     <span>Coupon Discount:</span>
-                    <span className="text-green-600">-{currencyFormatter(order.coupon_discount)}</span>
+                    <span className="text-green-600">-Rs {order.coupon_discount.toLocaleString()}</span>
                   </div>
                 )}
-                {order.sales_tax && order.sales_tax > 0 && (
-                  <div className="flex justify-between">
-                    <span>Sales Tax:</span>
-                    <span>{currencyFormatter(order.sales_tax)}</span>
-                  </div>
-                )}
+
                 {order.delivery_fee && order.delivery_fee > 0 && (
                   <div className="flex justify-between">
-                    <span>Delivery Fee:</span>
+                    <span>Shipping Fee:</span>
                     <span>{currencyFormatter(order.delivery_fee)}</span>
                   </div>
                 )}
+
+                {order.sales_tax && order.sales_tax > 0 && (
+                  <div className="flex justify-between">
+                    <span>Tax:</span>
+                    <span>{currencyFormatter(order.sales_tax)}</span>
+                  </div>
+                )}
+
                 <Separator />
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total:</span>
@@ -570,6 +627,26 @@ export default function OrderDetailPage({ id }: { id: string }) {
                 </div>
               </div>
             </div>
+          </section>
+
+          <Separator />
+
+          {/* Invoice Section */}
+          <section>
+            <OrderInvoice
+              orderData={order}
+              formatCurrency={currencyFormatter}
+              formatDate={(dateString: string | null) => {
+                if (!dateString) return "Not yet";
+                return new Date(dateString).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              }}
+            />
           </section>
         </CardContent>
       </Card>

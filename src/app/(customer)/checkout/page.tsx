@@ -357,22 +357,45 @@ export default function CheckoutPage() {
     }
   }, [shipToDifferentAddress, watch, setValue]);
 
-  // Calculate subtotal from ALL cart items with proper price handling for variations
+  // Calculate subtotal using ACTUAL/REGULAR prices (before any discounts)
   const subtotal = useMemo(
     () =>
-      cart?.reduce(
-        (acc, item) => acc + getEffectivePrice(item) * item.quantity,
-        0
-      ) || 0,
+      cart?.reduce((acc, item) => {
+        // For variable products, get variation regular price
+        if (item.variation_option_id && item.product.variation_options) {
+          const variation = item.product.variation_options.find(
+            (v: any) => v.id === item.variation_option_id
+          );
+          if (variation?.price) {
+            return acc + parseFloat(variation.price) * item.quantity;
+          }
+        }
+        // For simple products, use regular price
+        return acc + (item.product.price || 0) * item.quantity;
+      }, 0) || 0,
     [cart]
   );
 
-  // Calculate product discount (when price > sale_price and sale_price > 0)
+  // Calculate product discount (when sale_price exists and is lower than regular price)
   const productDiscount = useMemo(() => {
     return (
       cart?.reduce((acc, item) => {
-        const regularPrice = item.product.price;
-        const salePrice = item.product.sale_price || 0; // 🔴 FIX: Added null check
+        let regularPrice = item.product.price || 0;
+        let salePrice = 0;
+
+        // For variable products, check variation prices
+        if (item.variation_option_id && item.product.variation_options) {
+          const variation = item.product.variation_options.find(
+            (v: any) => v.id === item.variation_option_id
+          );
+          if (variation) {
+            regularPrice = parseFloat(variation.price) || 0;
+            salePrice = parseFloat(variation.sale_price || "0") || 0;
+          }
+        } else {
+          // For simple products
+          salePrice = item.product.sale_price || 0;
+        }
 
         if (salePrice > 0 && regularPrice > salePrice) {
           return acc + (regularPrice - salePrice) * item.quantity;
@@ -1001,20 +1024,34 @@ export default function CheckoutPage() {
 
               {cart?.map((item, index) => {
                 const {
-                  product: { name, image, id, price, sale_price },
+                  product: { name, image, id },
                   quantity,
                 } = item || {};
 
-                // ✅ Use the helper function to get correct price
-                const unitPrice = getEffectivePrice(item);
-                const subtotal = unitPrice * quantity;
-                const variationText = getVariationDisplayText(item);
+                let regularPrice = item.product.price || 0;
+                let salePrice = 0;
+                let hasDiscount = false;
 
-                // 🔴 FIX: Added null checks for price and sale_price
-                const regularPrice = price || 0;
-                const salePrice = sale_price || 0;
-                const hasDiscount = salePrice > 0 && regularPrice > salePrice;
-                const regularPriceTotal = regularPrice * quantity;
+                // For variable products, check variation prices
+                if (item.variation_option_id && item.product.variation_options) {
+                  const variation = item.product.variation_options.find(
+                    (v: any) => v.id === item.variation_option_id
+                  );
+                  if (variation) {
+                    regularPrice = parseFloat(variation.price) || 0;
+                    salePrice = parseFloat(variation.sale_price || "0") || 0;
+                    hasDiscount = salePrice > 0 && regularPrice > salePrice;
+                  }
+                } else {
+                  // For simple products
+                  salePrice = item.product.sale_price || 0;
+                  hasDiscount = salePrice > 0 && regularPrice > salePrice;
+                }
+
+                const effectivePrice = hasDiscount ? salePrice : regularPrice;
+                const itemSubtotal = effectivePrice * quantity;
+                const regularSubtotal = regularPrice * quantity;
+                const variationText = getVariationDisplayText(item);
 
                 return (
                   <div
@@ -1036,20 +1073,34 @@ export default function CheckoutPage() {
                             {variationText}
                           </div>
                         )}
-                        <div className="text-xs text-muted-foreground">
-                          {currencyFormatter(unitPrice)} x {quantity}
+                        <div className="text-xs">
+                          {hasDiscount ? (
+                            <div className="flex flex-col">
+                              <span className="text-muted-foreground line-through">
+                                {currencyFormatter(regularPrice)} x {quantity}
+                              </span>
+                              <span className="text-green-600 font-medium">
+                                {currencyFormatter(effectivePrice)} x {quantity}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {currencyFormatter(effectivePrice)} x {quantity}
+                            </span>
+                          )}
                         </div>
-                        {hasDiscount && (
-                          <div className="text-xs text-green-600">
-                            Save{" "}
-                            {currencyFormatter(regularPriceTotal - subtotal)}
-                          </div>
-                        )}
                       </div>
                     </div>
-                    <span className="text-sm font-medium whitespace-nowrap">
-                      {currencyFormatter(subtotal)}
-                    </span>
+                    <div className="text-right">
+                      {hasDiscount && (
+                        <div className="text-xs text-muted-foreground line-through">
+                          {currencyFormatter(regularSubtotal)}
+                        </div>
+                      )}
+                      <span className={`text-sm font-medium whitespace-nowrap ${hasDiscount ? 'text-green-600' : ''}`}>
+                        {currencyFormatter(itemSubtotal)}
+                      </span>
+                    </div>
                   </div>
                 );
               })}

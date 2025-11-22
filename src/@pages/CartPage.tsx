@@ -107,14 +107,58 @@ const CartPage = () => {
     [cart]
   );
 
+  // Calculate subtotal using ACTUAL/REGULAR prices (before any discounts)
   const totalAmount = useMemo(
     () =>
-      cart.reduce(
-        (acc, item) => acc + getItemUnitPrice(item) * item.quantity,
-        0
-      ),
+      cart.reduce((acc, item) => {
+        let regularPrice = item.product.price || 0;
+
+        // For variable products, get variation regular price
+        if (item.variation_option_id && item.product.variation_options) {
+          const variation = item.product.variation_options.find(
+            (v: any) => v.id === item.variation_option_id
+          );
+          if (variation) {
+            regularPrice = parseFloat(variation.price) || 0;
+          }
+        }
+
+        return acc + regularPrice * item.quantity;
+      }, 0),
     [cart]
   );
+
+  // Calculate total discount/savings
+  const totalSavings = useMemo(() => {
+    return cart.reduce((acc, item) => {
+      let regularPrice = item.product.price || 0;
+      let salePrice = 0;
+
+      // For variable products
+      if (item.variation_option_id && item.product.variation_options) {
+        const variation = item.product.variation_options.find(
+          (v: any) => v.id === item.variation_option_id
+        );
+        if (variation) {
+          regularPrice = parseFloat(variation.price) || 0;
+          salePrice = parseFloat(variation.sale_price || "0") || 0;
+        }
+      } else {
+        // For simple products
+        salePrice = item.product.sale_price || 0;
+      }
+
+      if (salePrice > 0 && regularPrice > salePrice) {
+        return acc + (regularPrice - salePrice) * item.quantity;
+      }
+      return acc;
+    }, 0);
+  }, [cart]);
+
+  // Calculate final total after discounts
+  const finalTotal = useMemo(() => {
+    return totalAmount - totalSavings;
+  }, [totalAmount, totalSavings]);
 
   // ####################
   // -> Table Columns Start
@@ -172,10 +216,45 @@ const CartPage = () => {
       title: "Unit Price",
       render: ({ row }) => {
         const unitPrice = getItemUnitPrice(row);
+        let regularPrice = row.product.price || 0;
+        let salePrice = 0;
+        let hasDiscount = false;
+
+        // For variable products, check variation prices
+        if (row.variation_option_id && row.product.variation_options) {
+          const variation = row.product.variation_options.find(
+            (v: any) => v.id === row.variation_option_id
+          );
+          if (variation) {
+            regularPrice = parseFloat(variation.price) || 0;
+            salePrice = parseFloat(variation.sale_price || "0") || 0;
+            hasDiscount = salePrice > 0 && regularPrice > salePrice;
+          }
+        } else {
+          // For simple products
+          salePrice = row.product.sale_price || 0;
+          hasDiscount = salePrice > 0 && regularPrice > salePrice;
+        }
 
         return (
-          <div className="text-center font-medium">
-            Rs {unitPrice.toLocaleString()}
+          <div className="text-center">
+            {hasDiscount ? (
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-muted-foreground line-through">
+                  Rs {regularPrice.toLocaleString()}
+                </span>
+                <span className="font-medium text-green-600">
+                  Rs {unitPrice.toLocaleString()}
+                </span>
+                <span className="text-xs text-green-600">
+                  Save Rs {(regularPrice - unitPrice).toLocaleString()}
+                </span>
+              </div>
+            ) : (
+              <div className="font-medium">
+                Rs {unitPrice.toLocaleString()}
+              </div>
+            )}
           </div>
         );
       },
@@ -215,10 +294,45 @@ const CartPage = () => {
       render: ({ row }) => {
         const unitPrice = getItemUnitPrice(row);
         const subtotal = unitPrice * row.quantity;
+        let regularPrice = row.product.price || 0;
+        let salePrice = 0;
+        let hasDiscount = false;
+
+        // For variable products, check variation prices
+        if (row.variation_option_id && row.product.variation_options) {
+          const variation = row.product.variation_options.find(
+            (v: any) => v.id === row.variation_option_id
+          );
+          if (variation) {
+            regularPrice = parseFloat(variation.price) || 0;
+            salePrice = parseFloat(variation.sale_price || "0") || 0;
+            hasDiscount = salePrice > 0 && regularPrice > salePrice;
+          }
+        } else {
+          // For simple products
+          salePrice = row.product.sale_price || 0;
+          hasDiscount = salePrice > 0 && regularPrice > salePrice;
+        }
+
+        const regularSubtotal = regularPrice * row.quantity;
+        const totalSaved = regularSubtotal - subtotal;
 
         return (
-          <div className="text-center font-medium">
-            Rs {subtotal.toLocaleString()}
+          <div className="text-center">
+            {hasDiscount ? (
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-muted-foreground line-through">
+                  Rs {regularSubtotal.toLocaleString()}
+                </span>
+                <span className="font-medium text-green-600">
+                  Rs {subtotal.toLocaleString()}
+                </span>
+              </div>
+            ) : (
+              <div className="font-medium">
+                Rs {subtotal.toLocaleString()}
+              </div>
+            )}
           </div>
         );
       },
@@ -290,11 +404,20 @@ const CartPage = () => {
               </div>
 
               <div className="flex justify-between">
-                <span>Subtotal</span>
+                <span>Subtotal (Actual Price)</span>
                 <span className="font-medium">
                   Rs {totalAmount.toLocaleString()}
                 </span>
               </div>
+
+              {totalSavings > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Product Discount</span>
+                  <span className="font-semibold">
+                    -Rs {totalSavings.toLocaleString()}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Shipping</span>
@@ -303,8 +426,16 @@ const CartPage = () => {
 
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
-                <span>Rs {totalAmount.toLocaleString()}</span>
+                <span>Rs {finalTotal.toLocaleString()}</span>
               </div>
+
+              {totalSavings > 0 && (
+                <div className="bg-green-50 border border-green-200 p-3 rounded text-center">
+                  <p className="text-sm text-green-700">
+                    🎉 You're saving <span className="font-bold">Rs {totalSavings.toLocaleString()}</span> on this order!
+                  </p>
+                </div>
+              )}
 
               <Link href="/checkout">
                 <Button className="w-full bg-primary text-white">

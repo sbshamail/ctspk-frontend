@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Image from "next/image";
 import { useState } from "react";
+import { OrderInvoice } from "@/components/invoice/OrderInvoice";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -33,6 +34,7 @@ interface OrderTrackingResponse {
     language: string;
     coupon_id: number | null;
     discount: number;
+    coupon_discount?: number;
     payment_gateway: string;
     shipping_address: {
       country: string;
@@ -81,6 +83,9 @@ interface OrderTrackingResponse {
       order_quantity: string;
       unit_price: number;
       subtotal: number;
+      sale_price?: number;
+      item_discount?: number;
+      item_tax?: number;
       admin_commission: string;
       item_type: string;
       variation_data: any;
@@ -452,6 +457,14 @@ const TrackOrderPage = () => {
 
                     const variationText = getVariationText();
 
+                    // Calculate pricing
+                    const quantity = parseFloat(item.order_quantity);
+                    const unitPrice = item.unit_price; // Regular price
+                    const salePrice = item.sale_price || 0; // Discounted price
+                    const hasDiscount = salePrice > 0 && salePrice < unitPrice;
+                    const priceToShow = hasDiscount ? salePrice : unitPrice;
+                    const discountPerItem = hasDiscount ? (unitPrice - salePrice) : 0;
+
                     return (
                       <div key={item.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
                         <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
@@ -469,15 +482,39 @@ const TrackOrderPage = () => {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">{item.product.name}</h4>
-                          {/* ✅ Show variation options */}
                           {variationText && (
                             <p className="text-sm text-primary font-medium">{variationText}</p>
                           )}
-                          <p className="text-gray-600 text-sm">Quantity: {item.order_quantity}</p>
+                          <div className="text-sm mt-1">
+                            {hasDiscount ? (
+                              <div>
+                                <span className="text-gray-500 line-through mr-2">
+                                  Rs {unitPrice} each
+                                </span>
+                                <span className="text-green-600 font-medium">
+                                  Rs {salePrice} each
+                                </span>
+                                {discountPerItem > 0 && (
+                                  <p className="text-xs text-green-600">
+                                    Save Rs {discountPerItem * quantity}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-600">Rs {unitPrice} each</span>
+                            )}
+                          </div>
+                          <p className="text-gray-600 text-sm mt-1">Quantity: {item.order_quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">Rs {item.unit_price}</p>
-                          <p className="text-gray-600 text-sm">Subtotal: Rs {item.subtotal}</p>
+                          {hasDiscount && (
+                            <p className="text-sm text-gray-500 line-through">
+                              Rs {(unitPrice * quantity).toLocaleString()}
+                            </p>
+                          )}
+                          <p className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-gray-900'}`}>
+                            Rs {item.subtotal.toLocaleString()}
+                          </p>
                         </div>
                       </div>
                     );
@@ -489,20 +526,50 @@ const TrackOrderPage = () => {
                   <div className="max-w-md ml-auto space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Subtotal</span>
-                      <span className="text-gray-900">Rs {orderData.amount}</span>
+                      <span className="text-gray-900">
+                        Rs {orderData.order_products.reduce((acc: number, product: any) => {
+                          return acc + (product.unit_price * parseFloat(product.order_quantity));
+                        }, 0).toLocaleString()}
+                      </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Sales Tax</span>
-                      <span className="text-gray-900">Rs {orderData.sales_tax}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Delivery Fee</span>
-                      <span className="text-gray-900">Rs {orderData.delivery_fee}</span>
-                    </div>
-                    {orderData.discount > 0 && (
+
+                    {(() => {
+                      const productDiscount = orderData.order_products.reduce((acc: number, product: any) => {
+                        const salePrice = product.sale_price || 0;
+                        if (salePrice > 0 && salePrice < product.unit_price) {
+                          return acc + ((product.unit_price - salePrice) * parseFloat(product.order_quantity));
+                        }
+                        return acc;
+                      }, 0);
+
+                      const discountToShow = orderData.discount || productDiscount;
+
+                      return discountToShow > 0 ? (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Discount</span>
+                          <span className="text-green-600">-Rs {discountToShow.toLocaleString()}</span>
+                        </div>
+                      ) : null;
+                    })()}
+
+                    {orderData.coupon_discount !== undefined && orderData.coupon_discount !== null  && orderData.coupon_discount > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Discount</span>
-                        <span className="text-green-600">-Rs {orderData.discount}</span>
+                        <span className="text-gray-600">Coupon Discount</span>
+                        <span className="text-green-600">-Rs {orderData.coupon_discount.toLocaleString()}</span>
+                      </div>
+                    )}
+
+                    {orderData.delivery_fee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Shipping Fee</span>
+                        <span className="text-gray-900">Rs {orderData.delivery_fee.toLocaleString()}</span>
+                      </div>
+                    )}
+
+                    {orderData.sales_tax > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Tax</span>
+                        <span className="text-gray-900">Rs {orderData.sales_tax.toLocaleString()}</span>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-gray-200 pt-2">
@@ -537,6 +604,24 @@ const TrackOrderPage = () => {
                     <p>{orderData.billing_address.country} - {orderData.billing_address.zip_code}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Invoice Section */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <OrderInvoice
+                  orderData={orderData}
+                  formatCurrency={(amount: number) => amount.toLocaleString()}
+                  formatDate={(dateString: string | null) => {
+                    if (!dateString) return "Not yet";
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                  }}
+                />
               </div>
 
               {/* Need Help Section */}
