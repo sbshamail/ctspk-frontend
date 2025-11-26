@@ -38,7 +38,7 @@ const getAccessToken = () => {
 
 // Helper function to get API URL
 const getApiUrl = (endpoint: string) => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   // Remove trailing slash from baseUrl and leading slash from endpoint if needed
   const formattedBaseUrl = baseUrl.replace(/\/$/, '');
   const formattedEndpoint = endpoint.replace(/^\//, '');

@@ -104,28 +104,21 @@ const CustomerSupport = () => {
 
   const contactMethods = [
     {
-      icon: "??",
+      icon: <EmailIcon />,
       title: "Email Support",
       description: "Send us an email and we'll respond within 24 hours",
-      details: "support@example.com",
+      details: "support@ghertak.com",
       action: "Send Email"
     },
     {
-      icon: "??",
-      title: "Live Chat",
-      description: "Get instant help from our support team",
-      details: "Available 9AM-6PM EST",
-      action: "Start Chat"
-    },
-    {
-      icon: "??",
+      icon: <PhoneIcon />,
       title: "Phone Support",
       description: "Speak directly with our support agents",
       details: "+971 52 993 2054",
       action: "Call Now"
     },
     {
-      icon: "??",
+      icon: <HelpCenterIcon />,
       title: "Help Center",
       description: "Browse our comprehensive knowledge base",
       details: "500+ articles",
@@ -171,17 +164,19 @@ const CustomerSupport = () => {
           </div>
 
           {/* Quick Help Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {contactMethods.map((method, index) => (
               <div
                 key={index}
-                className="bg-white border border-gray-200 rounded-xl p-6 text-center hover:shadow-lg transition-shadow duration-300"
+                className="bg-white border border-gray-200 rounded-xl p-6 text-center hover:shadow-lg transition-shadow duration-300 flex flex-col items-center"
               >
-                <div className="text-3xl mb-4">{method.icon}</div>
+                <div className="text-3xl mb-4 text-primary">
+                  {method.icon}
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {method.title}
                 </h3>
-                <p className="text-gray-600 text-sm mb-3">
+                <p className="text-gray-600 text-sm mb-3 flex-grow">
                   {method.description}
                 </p>
                 <p className="text-primary font-medium text-sm mb-4">
@@ -225,7 +220,7 @@ const CustomerSupport = () => {
                 </div>
 
                 {/* FAQ Items */}
-                <div className="max-w-4xl mx-auto space-y-4">
+                <div className="max-w-8xl mx-auto space-y-4">
                   {filteredQuestions.length > 0 ? (
                     filteredQuestions.map((item, index) => (
                       <FAQItem
@@ -382,30 +377,9 @@ const CustomerSupport = () => {
             </div>
           </div>
 
-          {/* Support Status */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-16">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">All Systems Operational</h3>
-                  <p className="text-gray-600 text-sm">Last updated: Just now</p>
-                </div>
-              </div>
-              <Button variant="outline">View Status Page</Button>
-            </div>
-          </div>
+          
 
-          {/* Quick Links */}
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button variant="link" className="text-primary">Privacy Policy</Button>
-              <Button variant="link" className="text-primary">Terms of Service</Button>
-              <Button variant="link" className="text-primary">Community Forum</Button>
-              <Button variant="link" className="text-primary">API Documentation</Button>
-            </div>
-          </div>
+          
         </div>
       </div>
     </Screen>
@@ -446,6 +420,24 @@ const SearchIcon = () => (
 const ChevronDownIcon = () => (
   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+const EmailIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+  </svg>
+);
+
+const HelpCenterIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 

@@ -11,18 +11,24 @@ const breadcrumbData = [
   { link: "/", name: "Home" },
   { link: "/contact", name: "Contact Us" },
 ];
-
+const getApiUrl = (endpoint: string) => {
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+  const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+  const formattedEndpoint = endpoint.replace(/^\//, '');
+  return `${formattedBaseUrl}/${formattedEndpoint}`;
+};
 interface FormData {
   name: string;
   email: string;
-  title: string;
+  subject: string;
   message: string;
 }
 
 interface FormErrors {
   name?: string;
   email?: string;
-  title?: string;
+  subject?: string;
   message?: string;
 }
 
@@ -30,7 +36,7 @@ const ContactUs = () => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
-    title: "",
+    subject: "",
     message: "",
   });
 
@@ -55,11 +61,11 @@ const ContactUs = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    // Title validation
-    if (!formData.title.trim()) {
-      newErrors.title = "Title is required";
-    } else if (formData.title.trim().length < 5) {
-      newErrors.title = "Title must be at least 5 characters";
+    // subject validation
+    if (!formData.subject.trim()) {
+      newErrors.subject = "subject is required";
+    } else if (formData.subject.trim().length < 5) {
+      newErrors.subject = "subject must be at least 5 characters";
     }
 
     // Message validation
@@ -100,7 +106,7 @@ const ContactUs = () => {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(getApiUrl("/contactus/send"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +116,7 @@ const ContactUs = () => {
 
       if (response.ok) {
         setSubmitStatus("success");
-        setFormData({ name: "", email: "", title: "", message: "" });
+        setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
         setSubmitStatus("error");
       }
@@ -180,22 +186,22 @@ const ContactUs = () => {
                           )}
                         </div>
 
-                        {/* Title Field */}
+                        {/* subject Field */}
                         <div>
-                          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
                             Subject *
                           </label>
                           <Input
                             type="text"
-                            id="title"
-                            name="title"
-                            value={formData.title}
+                            id="subject"
+                            name="subject"
+                            value={formData.subject}
                             onChange={handleChange}
-                            className={`w-full ${errors.title ? "border-red-500" : ""}`}
+                            className={`w-full ${errors.subject ? "border-red-500" : ""}`}
                             placeholder="Enter the subject of your message"
                           />
-                          {errors.title && (
-                            <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                          {errors.subject && (
+                            <p className="text-red-500 text-sm mt-1">{errors.subject}</p>
                           )}
                         </div>
 

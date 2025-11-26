@@ -90,62 +90,6 @@ const AboutUs = () => {
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
       
-      {/* Hero Section */}
-      <section className="pt-12 pb-20 bg-gradient-to-br from-primary/5 to-primary/10">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-                Building the Future, <span className="text-primary">Together</span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                We are a passionate team of innovators, creators, and problem-solvers 
-                dedicated to delivering exceptional solutions that drive real impact 
-                for our clients and communities worldwide.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-primary text-white hover:bg-primary-dark">
-                  Our Story
-                </Button>
-                <Button size="lg" variant="outline">
-                  Meet the Team
-                </Button>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl h-96 lg:h-[500px] flex items-center justify-center">
-                <span className="text-white text-lg">Company Image</span>
-              </div>
-              {/* Replace with actual Image:
-              <Image
-                src="/about/hero-image.jpg"
-                alt="Our Team"
-                width={600}
-                height={500}
-                className="rounded-2xl object-cover"
-              />
-              */}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            {stats.map((stat, index) => (
-              <div key={index} className="p-6">
-                <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Mission & Vision Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
