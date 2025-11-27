@@ -1,15 +1,19 @@
 "use client";
 
 import { fetchApi } from "@/action/fetchApi";
+import { saveSession } from "@/action/auth";
 import { InputField } from "@/components/formFields/InputField";
 import { PasswordField } from "@/components/formFields/PasswordField";
 import { Button } from "@/components/ui/button";
+import { setAuth } from "@/store/features/authSlice";
+import { useSelection } from "@/lib/useSelection";
 
 import { registerSchema, RegisterSchemaType } from "@/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 interface Props {
   close: () => void;
   setSiginModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,6 +21,7 @@ interface Props {
 export function RegisterForm({ close, setSiginModal }: Props) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
+  const { dispatch } = useSelection("auth", true);
   const {
     register,
     handleSubmit,
@@ -27,45 +32,61 @@ export function RegisterForm({ close, setSiginModal }: Props) {
   });
 
   const onSubmit = async (values: RegisterSchemaType) => {
-  setServerError(null);
-  try {
-    const response = await fetch('https://api.ctspk.com/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(values),
-    });
-
-    let res;
+    setServerError(null);
     try {
-      res = await response.json();
-    } catch (parseError) {
-      // If JSON parsing fails
-      setServerError("Invalid response from server.");
-      return;
-    }
+      const response = await fetch('https://api.ctspk.com/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
 
-    console.log("Status:", response.status);
-    console.log("Response:", res);
+      let res;
+      try {
+        res = await response.json();
+      } catch (parseError) {
+        // If JSON parsing fails
+        const errorMessage = "Invalid response from server.";
+        setServerError(errorMessage);
+        toast.error(errorMessage);
+        return;
+      }
 
-    // Check both status code and success flag
-    if (response.ok && res?.success === 1) {
-      reset();
-      close();
-      setSiginModal(true);
-    } else {
-      // Handle both HTTP errors and API business logic errors
-      const errorMessage = res?.detail || 
-                          `Request failed with status ${response.status}` ||
-                          "Something went wrong. Please try again.";
+      console.log("Status:", response.status);
+      console.log("Response:", res);
+
+      // Check both status code and success flag
+      if (response.ok && res?.success === 1) {
+        // Successfully registered - now auto-login the user
+        const { access_token, refresh_token, user, exp } = res.data;
+
+        // Set auth in Redux store and save session (same as login)
+        dispatch(setAuth(res.data));
+        saveSession(user, access_token, refresh_token, exp);
+
+        // Show success toast
+        toast.success(res.detail || "Account created successfully!");
+
+        // Reset form and close modal
+        reset();
+        router.refresh();
+        close();
+      } else {
+        // Handle both HTTP errors and API business logic errors
+        const errorMessage = res?.detail ||
+                            `Request failed with status ${response.status}` ||
+                            "Something went wrong. Please try again.";
+        setServerError(errorMessage);
+        toast.error(errorMessage);
+      }
+    } catch (err) {
+      console.log("Network error:", err);
+      const errorMessage = "Network error. Please try again.";
       setServerError(errorMessage);
+      toast.error(errorMessage);
     }
-  } catch (err) {
-    console.log("Network error:", err);
-    setServerError("Network error. Please try again.");
-  }
-};
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
