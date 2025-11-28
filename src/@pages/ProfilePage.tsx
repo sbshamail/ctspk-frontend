@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useSelection } from "@/lib/useSelection";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -17,12 +18,12 @@ const breadcrumbData = [
 ];
 
 interface User {
-  id?: number; // Make id optional
+  id?: number;
   name: string;
   email: string;
-  phone_no: string;
+  phone_no?: string;
   avatar?: string;
-  image?: any; // Add image field
+  image?: any;
 }
 
 interface Address {
@@ -74,10 +75,16 @@ const getApiUrl = (endpoint: string) => {
 // Get user from cookies (user_session)
 const getUserFromCookies = (): User | null => {
   if (typeof document === 'undefined') return null;
-  
+
   const cookies = document.cookie.split(';');
   for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=');
+    const trimmedCookie = cookie.trim();
+    const separatorIndex = trimmedCookie.indexOf('=');
+    if (separatorIndex === -1) continue;
+
+    const name = trimmedCookie.substring(0, separatorIndex);
+    const value = trimmedCookie.substring(separatorIndex + 1);
+
     if (name === 'user_session') {
       try {
         return JSON.parse(decodeURIComponent(value));
@@ -190,6 +197,9 @@ const apiClient = {
 };
 
 const ProfilePage = () => {
+  const { data: auth, isLoading: authLoading } = useSelection("auth");
+  const authUser = auth?.user;
+
   const [user, setUser] = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,6 +221,9 @@ const ProfilePage = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Helper to get current user
+  const getCurrentUser = () => user || authUser;
  const [addressForm, setAddressForm] = useState({
   id: null as number | null,
   title: "",
@@ -233,14 +246,17 @@ const ProfilePage = () => {
   useEffect(() => {
     loadUserData();
     loadAddresses();
-  }, []);
+  }, [authUser]);
 
   const loadUserData = () => {
-    const userData = getUserFromCookies();
+    // Try to get user from Redux first, then fall back to cookies
+    const userData = authUser || getUserFromCookies();
+    console.log('Loading user data:', userData);
+
     if (userData) {
-      setUser(userData);
+      setUser(userData as User);
       setProfileForm({
-        name: userData.name,
+        name: userData.name || "",
         phone_no: userData.phone_no || "",
         image: userData.image || null,
       });
@@ -249,16 +265,21 @@ const ProfilePage = () => {
         setImagePreview(userData.image.thumbnail);
       } else if (userData.image?.original) {
         setImagePreview(userData.image.original);
-      } else if (userData.avatar) {
-        setImagePreview(userData.avatar);
       }
+      // Check for avatar field (for backward compatibility)
+      const userWithAvatar = userData as any;
+      if (!userData.image && userWithAvatar.avatar) {
+        setImagePreview(userWithAvatar.avatar);
+      }
+    } else {
+      console.error('Failed to load user from auth or cookies');
     }
     setLoading(false);
   };
 
   const loadAddresses = async () => {
     try {
-      const userData = getUserFromCookies();
+      const userData = authUser || getUserFromCookies();
       if (!userData || !userData.id) return;
 
       const data: ApiResponse = await apiClient.get(getApiUrl(`/address/list?user=${userData.id}&page=1&skip=0&limit=20`)
@@ -358,11 +379,12 @@ const ProfilePage = () => {
 
       if (response.success === 1) {
         // Update user in state and cookies
+        const current = getCurrentUser();
         const updatedUser = {
-          ...user,
+          ...current,
           ...profileData,
-          id: user?.id || 0,
-          email: user?.email || ""
+          id: current?.id || 0,
+          email: current?.email || ""
         };
         setUser(updatedUser as User);
 
@@ -422,7 +444,7 @@ const ProfilePage = () => {
     setError(null);
     setSuccess(null);
 
-    const userData = getUserFromCookies();
+    const userData = authUser || getUserFromCookies();
     if (!userData || !userData.id) {
       setError("User not found. Please log in again.");
       return;
@@ -523,7 +545,7 @@ const resetAddressForm = () => {
     const address = addresses.find(addr => addr.id === addressId);
     if (!address) return;
 
-    const userData = getUserFromCookies();
+    const userData = authUser || getUserFromCookies();
     if (!userData || !userData.id) {
       setError("User not found. Please log in again.");
       return;
@@ -548,7 +570,7 @@ const resetAddressForm = () => {
   }
 };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <Screen>
         <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -557,7 +579,10 @@ const resetAddressForm = () => {
     );
   }
 
-  if (!user) {
+  // Get the current user (either from state or auth)
+  const currentUser = getCurrentUser();
+
+  if (!currentUser) {
     return (
       <Screen>
         <BreadcrumbSimple data={breadcrumbData} className="py-6" />
@@ -565,7 +590,7 @@ const resetAddressForm = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h2>
           <p className="text-gray-600 mb-8">Please log in to view your profile.</p>
           <Button asChild>
-            <a href="/login">Login</a>
+            <a href="/">Go to Home</a>
           </Button>
         </div>
       </Screen>
@@ -575,7 +600,7 @@ const resetAddressForm = () => {
   return (
     <Screen>
       <BreadcrumbSimple data={breadcrumbData} className="py-6" />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
@@ -623,7 +648,7 @@ const resetAddressForm = () => {
                         ) : (
                           <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
                             <span className="text-4xl text-gray-500">
-                              {user.name.charAt(0).toUpperCase()}
+                              {currentUser?.name?.charAt(0)?.toUpperCase() || "U"}
                             </span>
                           </div>
                         )}
@@ -666,7 +691,7 @@ const resetAddressForm = () => {
                         <Input
                           id="email"
                           type="email"
-                          value={user.email}
+                          value={currentUser?.email || ""}
                           disabled
                           className="bg-gray-50"
                         />
