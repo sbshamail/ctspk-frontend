@@ -63,6 +63,18 @@ export interface OrderProductRead extends TimeStampReadModel {
   shop_slug?: string;
 }
 
+// Fulfillment Officer Types
+export interface FulfillmentUserInfo {
+  id: number;
+  name: string;
+  email: string;
+  avatar?: {
+    original?: string;
+    thumbnail?: string;
+    id?: number | null;
+  };
+}
+
 // Order Status History Types
 export interface OrderStatusRead extends TimeStampReadModel {
   id: number;
@@ -108,6 +120,7 @@ export interface OrderRead extends TimeStampReadModel {
   order_status: OrderStatusEnum;
   payment_status: PaymentStatusEnum;
   fullfillment_id?: number;
+  fullfillment_user_info?: FulfillmentUserInfo;
   assign_date?: string;
   shops?: any[];
   shop_count?: number;

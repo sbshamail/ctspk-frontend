@@ -626,6 +626,34 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   <p>{order.shipping_address?.zip || ""}</p>
                 </div>
               </div>
+
+              {/* Fulfillment Officer Info */}
+              {order.fullfillment_id && order.fullfillment_id > 0 && order.fullfillment_user_info && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Fulfillment Officer</h3>
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      {order.fullfillment_user_info.avatar?.thumbnail || order.fullfillment_user_info.avatar?.original ? (
+                        <img
+                          src={order.fullfillment_user_info.avatar.thumbnail || order.fullfillment_user_info.avatar.original}
+                          alt={order.fullfillment_user_info.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                          <span className="text-lg font-semibold text-primary">
+                            {order.fullfillment_user_info.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium">{order.fullfillment_user_info.name}</p>
+                        <p className="text-sm text-muted-foreground">{order.fullfillment_user_info.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

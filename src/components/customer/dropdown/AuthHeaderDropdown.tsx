@@ -10,7 +10,7 @@ import {
 import { useAppDispatch } from "@/lib/hooks";
 import { logoutUser } from "@/store/features/authSlice";
 import { AuthDataType } from "@/utils/modelTypes";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, Bell } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -47,6 +47,12 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="center" className="w-56">
+        <DropdownMenuItem asChild>
+          <Link href="/notifications" className="cursor-pointer">
+            <Bell className="mr-2 h-4 w-4" />
+            Notifications
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/my-orders" className="cursor-pointer">
             My Orders

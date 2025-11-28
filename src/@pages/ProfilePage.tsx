@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -21,6 +22,7 @@ interface User {
   email: string;
   phone_no: string;
   avatar?: string;
+  image?: any; // Add image field
 }
 
 interface Address {
@@ -199,12 +201,16 @@ const ProfilePage = () => {
   const [profileForm, setProfileForm] = useState({
     name: "",
     phone_no: "",
+    image: null as any,
   });
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
     confirm_password: "",
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
  const [addressForm, setAddressForm] = useState({
   id: null as number | null,
   title: "",
@@ -236,7 +242,16 @@ const ProfilePage = () => {
       setProfileForm({
         name: userData.name,
         phone_no: userData.phone_no || "",
+        image: userData.image || null,
       });
+      // Set image preview if user has an image
+      if (userData.image?.thumbnail) {
+        setImagePreview(userData.image.thumbnail);
+      } else if (userData.image?.original) {
+        setImagePreview(userData.image.original);
+      } else if (userData.avatar) {
+        setImagePreview(userData.avatar);
+      }
     }
     setLoading(false);
   };
@@ -248,12 +263,79 @@ const ProfilePage = () => {
 
       const data: ApiResponse = await apiClient.get(getApiUrl(`/address/list?user=${userData.id}&page=1&skip=0&limit=20`)
       );
-      
+
       if (data.success === 1) {
         setAddresses(data.data || []);
       }
     } catch (err) {
       console.error('Error loading addresses:', err);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (e.g., max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const token = getAccessToken();
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('files', file);
+      formData.append('thumbnail', 'true');
+
+      // Upload image to /media/create
+      const response = await fetch(getApiUrl('/media/create'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || 'Failed to upload image');
+      }
+
+      const result: ApiResponse = await response.json();
+
+      if (result.success === 1 && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        // Get the first uploaded image from the array
+        const uploadedImage = result.data[0];
+
+        // Set the uploaded image data to profileForm
+        setProfileForm({ ...profileForm, image: uploadedImage });
+
+        // Set preview using original or thumbnail
+        if (uploadedImage.thumbnail) {
+          setImagePreview(uploadedImage.thumbnail);
+        } else if (uploadedImage.original) {
+          setImagePreview(uploadedImage.original);
+        }
+
+        toast.success('Image uploaded successfully');
+      } else {
+        throw new Error(result.detail || 'Failed to upload image');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload image');
+      console.error('Image upload error:', err);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -263,32 +345,42 @@ const ProfilePage = () => {
       setError(null);
       setSuccess(null);
 
+      // Prepare profile data with image as JSON object
+      const profileData = {
+        name: profileForm.name,
+        phone_no: profileForm.phone_no,
+        image: profileForm.image, // Send image as JSON object
+      };
+
       const response: ApiResponse = await apiClient.put(getApiUrl("/user/profile"),
-        profileForm
+        profileData
       );
 
       if (response.success === 1) {
         // Update user in state and cookies
-        const updatedUser = { 
-          ...user, 
-          ...profileForm,
+        const updatedUser = {
+          ...user,
+          ...profileData,
           id: user?.id || 0,
           email: user?.email || ""
         };
         setUser(updatedUser as User);
-        
+
         // Update the user_session cookie with new data
         if (typeof document !== 'undefined') {
           const updatedUserCookie = JSON.stringify(updatedUser);
           document.cookie = `user_session=${encodeURIComponent(updatedUserCookie)}; path=/; max-age=86400`; // 24 hours
         }
-        
+
+        toast.success("Profile updated successfully!");
         setSuccess("Profile updated successfully!");
       } else {
         throw new Error(response.detail || 'Failed to update profile');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -518,7 +610,47 @@ const resetAddressForm = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={updateProfile} className="space-y-4">
+                  <form onSubmit={updateProfile} className="space-y-6">
+                    {/* Profile Image Upload Section */}
+                    <div className="flex flex-col items-center gap-4 pb-4 border-b">
+                      <div className="relative">
+                        {imagePreview ? (
+                          <img
+                            src={imagePreview}
+                            alt="Profile"
+                            className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
+                            <span className="text-4xl text-gray-500">
+                              {user.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingImage}
+                        >
+                          {uploadingImage ? "Uploading..." : "Change Profile Picture"}
+                        </Button>
+                        <p className="text-xs text-gray-500">
+                          Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Profile Form Fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="name">Full Name</Label>

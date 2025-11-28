@@ -52,6 +52,16 @@ interface OrderTrackingResponse {
     order_status: string;
     payment_status: string;
     fullfillment_id: number | null;
+    fullfillment_user_info?: {
+      id: number;
+      name: string;
+      email: string;
+      avatar?: {
+        original?: string;
+        thumbnail?: string;
+        id?: number | null;
+      };
+    };
     assign_date: string | null;
     shops: any[];
     shop_count: number;
@@ -525,6 +535,33 @@ export default function OrderSuccessPage() {
                 </div>
               </div>
             </div>
+
+            {/* Fulfillment Officer Info */}
+            {orderData.fullfillment_id && orderData.fullfillment_id > 0 && orderData.fullfillment_user_info && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Fulfillment Officer</h3>
+                <div className="flex items-center gap-4">
+                  {orderData.fullfillment_user_info.avatar?.thumbnail || orderData.fullfillment_user_info.avatar?.original ? (
+                    <img
+                      src={orderData.fullfillment_user_info.avatar.thumbnail || orderData.fullfillment_user_info.avatar.original}
+                      alt={orderData.fullfillment_user_info.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                      <span className="text-2xl font-semibold text-primary">
+                        {orderData.fullfillment_user_info.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-gray-900 text-lg">{orderData.fullfillment_user_info.name}</p>
+                    <p className="text-gray-600 text-sm">{orderData.fullfillment_user_info.email}</p>
+                    <p className="text-xs text-gray-500 mt-1">Your assigned fulfillment officer</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Order Summary */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">

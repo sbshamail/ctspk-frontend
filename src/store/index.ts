@@ -12,6 +12,7 @@ import { wishlistApi } from "./services/wishlistAPi";
 import { brandApi } from './services/brandApi';
 import { faqApi } from './services/faqApi';
 import { contactApi } from './services/contactApi';
+import { notificationApi } from './services/notificationApi';
 export const makeStore = () =>
   configureStore({
     reducer: {
@@ -24,6 +25,7 @@ export const makeStore = () =>
       [wishlistApi.reducerPath]: wishlistApi.reducer,
       [faqApi.reducerPath]: faqApi.reducer,
       [contactApi.reducerPath]: contactApi.reducer,
+      [notificationApi.reducerPath]: notificationApi.reducer,
       localCart: cartReducer,
       auth: authReducer,
       loading: loadingReducer,
@@ -38,7 +40,8 @@ export const makeStore = () =>
         orderApi.middleware,
         wishlistApi.middleware,
         faqApi.middleware,
-        contactApi.middleware
+        contactApi.middleware,
+        notificationApi.middleware
       ), // Add API middleware(),
   });
 
