@@ -12,20 +12,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-    #   - name: Install dependencies
-    #     run: |
-    #       pnpm install
+      - name: Install dependencies
+        run: |
+          pnpm install
 
-    #   - name: Build Next.js app
-    #     run: pnpm run build
+      - name: Build Next.js app
+        run: pnpm run build
 
-    #   - name: Restart Next.js service
-    #     run: |
-    #       # Navigate to project directory if needed
-    #       cd /path/to/your/project
+      - name: Restart Next.js service
+        run: |
 
-    #       # Install production dependencies
-    #       pnpm install --prod
+          # Install production dependencies
+          pnpm install --prod
 
-    #       # Restart your app with PM2 (replace "next-app" with your app name)
-    #       pm2 restart next-app || pm2 start npm --name "next-app" -- start
+          # Restart your app with PM2 (replace "next-app" with your app name)
+          pm2 restart next-app || pm2 start npm --name "next-app" -- start
