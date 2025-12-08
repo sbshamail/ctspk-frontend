@@ -5,6 +5,7 @@ import { useCart } from "@/context/cartContext";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ZoomIn, ZoomOut, ShoppingCart, Store } from "lucide-react";
+import { currencyFormatter } from "@/utils/helper";
 
 interface ProductDetailProps {
   product: {
@@ -287,11 +288,11 @@ export function ProductDetail({ product }: ProductDetailProps) {
           {/* Price */}
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-primary">
-              Rs {displayPrice.toLocaleString()}
+              {currencyFormatter(displayPrice)}
             </span>
             {product.sale_price && product.sale_price > 0 && (
               <span className="text-lg text-gray-500 line-through">
-                Rs {product.price.toLocaleString()}
+                {currencyFormatter(product.price)}
               </span>
             )}
             {product.sale_price && product.sale_price > 0 && (
@@ -401,7 +402,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 Selected Variation
               </h4>
               <p className="text-sm text-gray-600">{selectedVariation.title}</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 hidden">
                 SKU: {selectedVariation.sku}
               </p>
             </div>

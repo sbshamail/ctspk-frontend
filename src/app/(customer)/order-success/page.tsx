@@ -9,6 +9,7 @@ import { fetchApi } from "@/action/fetchApi";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Link from "next/link";
 import { OrderInvoice } from "@/components/invoice/OrderInvoice";
+import { currencyFormatter } from "@/utils/helper";
 
 interface OrderTrackingResponse {
   success: number;
@@ -240,9 +241,6 @@ export default function OrderSuccessPage() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return `Rs ${amount.toLocaleString()}`;
-  };
 
   if (loading) {
     return (
@@ -342,7 +340,7 @@ export default function OrderSuccessPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Total Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(orderData.total)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{currencyFormatter(orderData.total)}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Items</p>
@@ -500,11 +498,11 @@ export default function OrderSuccessPage() {
                       <div className="text-right">
                         {hasDiscount && (
                           <p className="text-sm text-gray-500 line-through">
-                            Rs {(unitPrice * quantity).toLocaleString()}
+                            {currencyFormatter(unitPrice * quantity)}
                           </p>
                         )}
                         <p className={`font-semibold ${hasDiscount ? 'text-green-600' : 'text-gray-900'}`}>
-                          Rs {product.subtotal.toLocaleString()}
+                          {currencyFormatter(product.subtotal)}
                         </p>
                       </div>
                     </div>
@@ -570,9 +568,9 @@ export default function OrderSuccessPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">
-                    Rs. {orderData.order_products.reduce((acc: number, product: any) => {
+                    {currencyFormatter(orderData.order_products.reduce((acc: number, product: any) => {
                       return acc + (product.unit_price * parseFloat(product.order_quantity));
-                    }, 0).toLocaleString()}
+                    }, 0))}
                   </span>
                 </div>
 
@@ -592,7 +590,7 @@ export default function OrderSuccessPage() {
                   return (
                     <div className="flex justify-between text-green-600">
                       <span>Discount</span>
-                      <span className="font-medium">-Rs. {discountToShow.toLocaleString()}</span>
+                      <span className="font-medium">-{currencyFormatter(discountToShow)}</span>
                     </div>
                   );
                 })()}
@@ -600,24 +598,24 @@ export default function OrderSuccessPage() {
                 {orderData.coupon_discount !== undefined && orderData.coupon_discount !== null && orderData.coupon_discount>0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Coupon Discount</span>
-                    <span className="font-medium">-Rs. {orderData.coupon_discount.toLocaleString()}</span>
+                    <span className="font-medium">-{currencyFormatter(orderData.coupon_discount)}</span>
                   </div>
                 )}
                 {orderData.delivery_fee > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping Fee</span>
-                  <span className="font-medium">{formatCurrency(orderData.delivery_fee || 0)}</span>
+                  <span className="font-medium">{currencyFormatter(orderData.delivery_fee || 0)}</span>
                 </div>
                 )}
                 {orderData.sales_tax > 0 && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">{formatCurrency(orderData.sales_tax || 0)}</span>
+                  <span className="font-medium">{currencyFormatter(orderData.sales_tax || 0)}</span>
                 </div>
                 )}
                 <div className="border-t pt-3 flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">{formatCurrency(orderData.total)}</span>
+                  <span className="text-primary">{currencyFormatter(orderData.total)}</span>
                 </div>
               </div>
             </div>
@@ -626,7 +624,7 @@ export default function OrderSuccessPage() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
               <OrderInvoice
                 orderData={orderData}
-                formatCurrency={formatCurrency}
+                formatCurrency={currencyFormatter}
                 formatDate={formatDate}
               />
             </div>

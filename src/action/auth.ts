@@ -58,5 +58,10 @@ export const clearSession = () => {
   Cookies.remove("user_session");
   Cookies.remove("user_session_exp");
   sessionStorage.removeItem("cartFetched");
+
+  // ✅ Clear localStorage cart on logout
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("myapp_cart");
+  }
   //   dispatch(logout());
 };

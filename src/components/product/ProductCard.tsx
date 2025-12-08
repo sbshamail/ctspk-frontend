@@ -1,4 +1,4 @@
-import { titleSubstring } from "@/utils/helper";
+import { titleSubstring, currencyFormatter } from "@/utils/helper";
 import Link from "next/link";
 import StarRating from "../starRating";
 import { ProductTag } from "../tag/ProductTag";
@@ -48,6 +48,22 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
     isVariableProduct &&
     props.variation_options &&
     props.variation_options.length > 0;
+
+  // ✅ Calculate min and max prices for variable products
+  let minPrice = price;
+  let maxPrice = price;
+
+  if (isVariableProduct && hasVariations && props.variation_options) {
+    const prices = props.variation_options.map((variation: any) => {
+      const varPrice = parseFloat(variation.sale_price || variation.price || "0");
+      return varPrice > 0 ? varPrice : parseFloat(variation.price || "0");
+    }).filter((p: number) => p > 0);
+
+    if (prices.length > 0) {
+      minPrice = Math.min(...prices);
+      maxPrice = Math.max(...prices);
+    }
+  }
 
   // ✅ For variable products, we need to handle cart addition differently
   // Show cart button only if it's a simple product OR variable product with available variations
@@ -107,16 +123,20 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
                     <StarRating averageRating={rating} disabled />
                   </div>
                   <div className="w-full flex justify-between">
-                    <PriceAndSalePrice
-                      price={price}
-                      salePrice={hasValidSalePrice ? sale_price : undefined}
-                      showPercentage={showPercentage}
-                    />
-                    {/* ✅ Show price range for variable products */}
-                    {isVariableProduct && hasVariations && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        From Rs {price.toLocaleString()}
-                      </span>
+                    {isVariableProduct && hasVariations ? (
+                      <div className="flex flex-col">
+                        <span className="text-foreground/80 font-semibold">
+                          {minPrice === maxPrice
+                            ? currencyFormatter(minPrice)
+                            : `${currencyFormatter(minPrice)} - ${currencyFormatter(maxPrice)}`}
+                        </span>
+                      </div>
+                    ) : (
+                      <PriceAndSalePrice
+                        price={price}
+                        salePrice={hasValidSalePrice ? sale_price : undefined}
+                        showPercentage={showPercentage}
+                      />
                     )}
                   </div>
                 </div>
@@ -129,6 +149,8 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
                         ...props,
                         product_type, // ✅ Pass product_type to cart button
                         id, // ✅ Ensure ID is passed
+                        min_price: minPrice,
+                        max_price: maxPrice,
                       }}
                     />
                   ) : (

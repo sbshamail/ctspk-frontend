@@ -18,6 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { currencyFormatter } from "@/utils/helper";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -312,11 +313,11 @@ const WishlistPage = () => {
                       </span>
                       <div className="text-right">
                         <div className="text-lg font-bold text-primary">
-                          Rs.{getTotalPrice().toFixed(2)}
+                          {currencyFormatter(getTotalPrice())}
                         </div>
                         {getTotalPrice() < getOriginalTotal() && (
                           <div className="text-sm text-gray-500 line-through">
-                            Rs.{getOriginalTotal().toFixed(2)}
+                            {currencyFormatter(getOriginalTotal())}
                           </div>
                         )}
                       </div>
@@ -435,11 +436,11 @@ const WishlistItemCard = ({
                   hasSale ? "text-red-600" : "text-gray-900"
                 }`}
               >
-                Rs.{price.toFixed(2)}
+                {currencyFormatter(price)}
               </span>
               {hasSale && (
                 <span className="text-sm text-gray-500 line-through">
-                  Rs.{item.product.price.toFixed(2)}
+                  {currencyFormatter(item.product.price)}
                 </span>
               )}
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/context/cartContext";
-import { Plus, ShoppingCart } from "lucide-react";
+import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { FC } from "react";
 interface Props {
@@ -16,13 +16,43 @@ export const ProductCartButton: FC<Props> = ({
   children,
   product,
 }) => {
-  const { add, cart } = useCart();
+  const { add, cart, update, remove } = useCart();
   const router = useRouter();
 
   // Check if product is variable and needs variation selection
   const isVariableProduct = product.product_type === "variable";
   const hasVariations = product.variation_options && product.variation_options.length > 0;
   const needsVariationSelection = isVariableProduct && !product.variation_option_id;
+
+  // Check if product is already in cart and get cart item details
+  const cartItem = cart.find((i) => {
+    const productMatch = i.product.id === product.id;
+    // For variable products, also match variation
+    if (product.variation_option_id) {
+      return productMatch && i.variation_option_id === product.variation_option_id;
+    }
+    return productMatch;
+  });
+
+  const isInCart = !!cartItem;
+  const currentQuantity = cartItem?.quantity || 0;
+
+  // Get available stock
+  const getAvailableStock = (): number => {
+    // For variable products, get variation stock
+    if (product.variation_option_id && product.variation_options) {
+      const variation = product.variation_options.find(
+        (v: any) => v.id === product.variation_option_id
+      );
+      if (variation?.quantity !== undefined) {
+        return variation.quantity;
+      }
+    }
+    // Fallback to product stock
+    return product.quantity ?? 999;
+  };
+
+  const maxStock = getAvailableStock();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -49,6 +79,64 @@ export const ProductCartButton: FC<Props> = ({
     });
   };
 
+  const handleIncrease = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (currentQuantity < maxStock) {
+      update(product.id, currentQuantity + 1);
+    }
+  };
+
+  const handleDecrease = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (currentQuantity > 1) {
+      update(product.id, currentQuantity - 1);
+    } else if (currentQuantity === 1) {
+      // Remove from cart if quantity is 1
+      remove(product.id);
+    }
+  };
+
+  // If product is in cart, show quantity controls
+  if (isInCart && !children) {
+    return (
+      <div onClick={(e) => e.preventDefault()}>
+        <div className="flex flex-col items-center gap-1">
+          {/* Plus button on top */}
+          <button
+            onClick={handleIncrease}
+            disabled={currentQuantity >= maxStock}
+            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Increase quantity"
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+
+          {/* Cart icon with quantity in center */}
+          <div className="relative">
+            <ShoppingCart className="w-8 h-8 text-primary" />
+            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">
+              {currentQuantity}
+            </span>
+          </div>
+
+          {/* Minus button on bottom */}
+          <button
+            onClick={handleDecrease}
+            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors"
+            title={currentQuantity === 1 ? "Remove from cart" : "Decrease quantity"}
+          >
+            <Minus className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Show add to cart button
   return (
     <div onClick={(e) => e.preventDefault()}>
       <div className="relative">
@@ -62,26 +150,7 @@ export const ProductCartButton: FC<Props> = ({
           ) : (
             <>
               <ShoppingCart className="w-8 h-8" />
-              {cart.some((i) => {
-                const productMatch = i.product.id === product.id;
-                // For variable products, also match variation
-                if (product.variation_option_id) {
-                  return productMatch && i.variation_option_id === product.variation_option_id;
-                }
-                return productMatch;
-              }) ? (
-                <span className="absolute top-0 right-0 -mt-2 text-xs min-w-[1.25rem] h-5 flex items-center justify-center p-0">
-                  {cart.find((i) => {
-                    const productMatch = i.product.id === product.id;
-                    if (product.variation_option_id) {
-                      return productMatch && i.variation_option_id === product.variation_option_id;
-                    }
-                    return productMatch;
-                  })?.quantity}
-                </span>
-              ) : (
-                <Plus className="w-3 h-3 absolute top-1 right-0 bg-white rounded-full" />
-              )}
+              <Plus className="w-3 h-3 absolute top-1 right-0 bg-white rounded-full" />
             </>
           )}
         </button>

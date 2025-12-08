@@ -103,6 +103,8 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedPayment, setSelectedPayment] = useState("cash_on_delivery");
   const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [billingIsDefault, setBillingIsDefault] = useState(false);
+  const [shippingIsDefault, setShippingIsDefault] = useState(false);
 
   // New state for tax, shipping, coupon, and delivery time
   const [taxClass, setTaxClass] = useState<any>(null);
@@ -328,6 +330,14 @@ export default function CheckoutPage() {
       }
     }
   }, [addresses, user, setValue]);
+
+  // ✅ Set first delivery time as default when delivery times are loaded
+  useEffect(() => {
+    if (deliveryTimes.length > 0 && !watch("delivery_time")) {
+      const firstDeliveryTime = deliveryTimes[0];
+      setValue("delivery_time", firstDeliveryTime.title || `slot-0`);
+    }
+  }, [deliveryTimes, setValue, watch]);
 
   // Auto-fill shipping address from billing address when checkbox is unchecked
   useEffect(() => {
@@ -577,6 +587,7 @@ export default function CheckoutPage() {
             state: "Federal",
             postal_code: values.zip,
             country: values.country,
+            is_default: shippingIsDefault,
           }
         : {
             name: values.name,
@@ -587,6 +598,7 @@ export default function CheckoutPage() {
             state: billingAddress.state,
             postal_code: billingAddress.postal_code,
             country: billingAddress.country,
+            is_default: billingIsDefault,
           },
       billing_address: {
         street: billingAddress.street,
@@ -594,6 +606,7 @@ export default function CheckoutPage() {
         state: billingAddress.state,
         postal_code: billingAddress.postal_code,
         country: billingAddress.country,
+        is_default: billingIsDefault,
       },
       payment_method: selectedPayment,
       cart: cart?.map((item) => ({
@@ -737,10 +750,10 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Personal Information */}
+              {/* Customer Information */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">
-                  Personal Information
+                  Customer Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -860,6 +873,20 @@ export default function CheckoutPage() {
                       readOnly
                     />
                   </div>
+                  {isAuth && (
+                    <div className="md:col-span-2 flex items-center space-x-2">
+                      <Checkbox
+                        id="billing-default"
+                        checked={billingIsDefault}
+                        onCheckedChange={(checked) =>
+                          setBillingIsDefault(checked as boolean)
+                        }
+                      />
+                      <Label htmlFor="billing-default" className="text-sm">
+                        Save as default billing address
+                      </Label>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -951,6 +978,20 @@ export default function CheckoutPage() {
                         readOnly
                       />
                     </div>
+                    {isAuth && (
+                      <div className="md:col-span-2 flex items-center space-x-2">
+                        <Checkbox
+                          id="shipping-default"
+                          checked={shippingIsDefault}
+                          onCheckedChange={(checked) =>
+                            setShippingIsDefault(checked as boolean)
+                          }
+                        />
+                        <Label htmlFor="shipping-default" className="text-sm">
+                          Save as default shipping address
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -965,6 +1006,7 @@ export default function CheckoutPage() {
                     </div>
                   ) : deliveryTimes.length > 0 ? (
                     <Select
+                      value={watch("delivery_time")}
                       onValueChange={(value) =>
                         setValue("delivery_time", value)
                       }

@@ -467,30 +467,30 @@ export default function OrderDetailPage({ id }: { id: string }) {
                           {hasDiscount ? (
                             <div>
                               <span className="text-gray-500 line-through text-sm mr-2">
-                                Rs {unitPrice} each
+                                {currencyFormatter(unitPrice)} each
                               </span>
                               <span className="text-green-600 font-medium">
-                                Rs {salePrice} each
+                                {currencyFormatter(salePrice)} each
                               </span>
                               {discountPerItem > 0 && (
                                 <p className="text-xs text-green-600 mt-1">
-                                  Save Rs {discountPerItem * quantity}
+                                  Save {currencyFormatter(discountPerItem * quantity)}
                                 </p>
                               )}
                             </div>
                           ) : (
-                            <span className="font-medium">Rs {unitPrice} each</span>
+                            <span className="font-medium">{currencyFormatter(unitPrice)} each</span>
                           )}
                         </div>
                       </div>
                       <div className="mt-2">
                         {hasDiscount && (
                           <p className="text-sm text-gray-500 line-through">
-                            Rs {(unitPrice * quantity).toLocaleString()}
+                            {currencyFormatter(unitPrice * quantity)}
                           </p>
                         )}
                         <p className={`text-lg font-semibold ${hasDiscount ? 'text-green-600' : ''}`}>
-                          Subtotal: Rs {item.subtotal.toLocaleString()}
+                          Subtotal: {currencyFormatter(item.subtotal)}
                         </p>
                       </div>
                     </div>
@@ -543,9 +543,9 @@ export default function OrderDetailPage({ id }: { id: string }) {
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span>
-                    Rs {order.order_products.reduce((acc: number, product: OrderProductRead) => {
+                    {currencyFormatter(order.order_products.reduce((acc: number, product: OrderProductRead) => {
                       return acc + (product.unit_price * parseFloat(product.order_quantity));
-                    }, 0).toLocaleString()}
+                    }, 0))}
                   </span>
                 </div>
 
@@ -563,7 +563,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   return discountToShow > 0 ? (
                     <div className="flex justify-between">
                       <span>Discount:</span>
-                      <span className="text-green-600">-Rs {discountToShow.toLocaleString()}</span>
+                      <span className="text-green-600">-{currencyFormatter(discountToShow)}</span>
                     </div>
                   ) : null;
                 })()}
@@ -571,7 +571,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
                 {order.coupon_discount !== undefined && order.coupon_discount !== null && order.coupon_discount > 0 && (
                   <div className="flex justify-between">
                     <span>Coupon Discount:</span>
-                    <span className="text-green-600">-Rs {order.coupon_discount.toLocaleString()}</span>
+                    <span className="text-green-600">-{currencyFormatter(order.coupon_discount)}</span>
                   </div>
                 )}
 

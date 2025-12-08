@@ -15,6 +15,8 @@ import { useMemo } from "react";
 // Types
 import MainTable, { ColumnType } from "@/components/table/MainTable";
 import { CartItemType } from "@/utils/modelTypes";
+import { currencyFormatter } from "@/utils/helper";
+import { ProductFavorite } from "@/components/product/ProductFavorite";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -241,18 +243,18 @@ const CartPage = () => {
             {hasDiscount ? (
               <div className="flex flex-col items-center">
                 <span className="text-xs text-muted-foreground line-through">
-                  Rs {regularPrice.toLocaleString()}
+                  {currencyFormatter(regularPrice)}
                 </span>
                 <span className="font-medium text-green-600">
-                  Rs {unitPrice.toLocaleString()}
+                  {currencyFormatter(unitPrice)}
                 </span>
                 <span className="text-xs text-green-600">
-                  Save Rs {(regularPrice - unitPrice).toLocaleString()}
+                  Save {currencyFormatter(regularPrice - unitPrice)}
                 </span>
               </div>
             ) : (
               <div className="font-medium">
-                Rs {unitPrice.toLocaleString()}
+                {currencyFormatter(unitPrice)}
               </div>
             )}
           </div>
@@ -264,24 +266,63 @@ const CartPage = () => {
       title: "Quantity",
       render: ({ row }) => {
         const maxStock = getAvailableStock(row);
+
+        const handleDecrease = () => {
+          if (row.quantity > 1) {
+            update(row.product.id, row.quantity - 1);
+          }
+        };
+
+        const handleIncrease = () => {
+          if (row.quantity < maxStock) {
+            update(row.product.id, row.quantity + 1);
+          }
+        };
+
+        const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const newQuantity = parseInt(e.target.value, 10);
+          if (isNaN(newQuantity) || newQuantity < 1) {
+            return;
+          }
+          if (newQuantity <= maxStock) {
+            update(row.product.id, newQuantity);
+          } else {
+            update(row.product.id, maxStock);
+          }
+        };
+
         return (
-          <div className="flex flex-col items-center">
-            <input
-              type="number"
-              min={1}
-              max={maxStock}
-              value={row.quantity}
-              onChange={(e) => {
-                const newQuantity = parseInt(e.target.value, 10);
-                if (newQuantity > 0 && newQuantity <= maxStock) {
-                  update(row.product.id, newQuantity);
-                } else if (newQuantity > maxStock) {
-                  update(row.product.id, maxStock);
-                }
-              }}
-              className="w-16 border rounded px-2 py-1 text-center bg-background"
-            />
-            <span className="text-xs text-muted-foreground mt-1">
+          <div className="flex flex-col items-center gap-2">
+            {/* Modern Quantity Control */}
+            <div className="flex items-center border border-border rounded-lg overflow-hidden bg-background">
+              <button
+                onClick={handleDecrease}
+                disabled={row.quantity <= 1}
+                className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-lg"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={maxStock}
+                value={row.quantity}
+                onChange={handleInputChange}
+                className="w-14 text-center border-x border-border py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset font-medium"
+                aria-label="Quantity"
+              />
+              <button
+                onClick={handleIncrease}
+                disabled={row.quantity >= maxStock}
+                className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-lg"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+            {/* Stock Indicator */}
+            <span className="text-xs text-muted-foreground">
               Stock: {maxStock}
             </span>
           </div>
@@ -322,20 +363,34 @@ const CartPage = () => {
             {hasDiscount ? (
               <div className="flex flex-col items-center">
                 <span className="text-xs text-muted-foreground line-through">
-                  Rs {regularSubtotal.toLocaleString()}
+                  {currencyFormatter(regularSubtotal)}
                 </span>
                 <span className="font-medium text-green-600">
-                  Rs {subtotal.toLocaleString()}
+                  {currencyFormatter(subtotal)}
                 </span>
               </div>
             ) : (
               <div className="font-medium">
-                Rs {subtotal.toLocaleString()}
+                {currencyFormatter(subtotal)}
               </div>
             )}
           </div>
         );
       },
+    },
+    {
+      title: "Wishlist",
+      render: ({ row }) => (
+        <div className="flex justify-center">
+          <ProductFavorite
+            product={{
+              id: row.product.id,
+              variation_option_id: row.variation_option_id || null,
+            }}
+          />
+        </div>
+      ),
+      className: "text-center",
     },
     {
       title: "Remove",
@@ -406,7 +461,7 @@ const CartPage = () => {
               <div className="flex justify-between">
                 <span>Subtotal (Actual Price)</span>
                 <span className="font-medium">
-                  Rs {totalAmount.toLocaleString()}
+                  {currencyFormatter(totalAmount)}
                 </span>
               </div>
 
@@ -414,7 +469,7 @@ const CartPage = () => {
                 <div className="flex justify-between text-green-600">
                   <span>Product Discount</span>
                   <span className="font-semibold">
-                    -Rs {totalSavings.toLocaleString()}
+                    -{currencyFormatter(totalSavings)}
                   </span>
                 </div>
               )}
@@ -426,13 +481,13 @@ const CartPage = () => {
 
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
-                <span>Rs {finalTotal.toLocaleString()}</span>
+                <span>{currencyFormatter(finalTotal)}</span>
               </div>
 
               {totalSavings > 0 && (
                 <div className="bg-green-50 border border-green-200 p-3 rounded text-center">
                   <p className="text-sm text-green-700">
-                    🎉 You're saving <span className="font-bold">Rs {totalSavings.toLocaleString()}</span> on this order!
+                    🎉 You're saving <span className="font-bold">{currencyFormatter(totalSavings)}</span> on this order!
                   </p>
                 </div>
               )}

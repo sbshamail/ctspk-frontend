@@ -23,7 +23,8 @@ export const currencyFormatter = (
   if(!value) { return ; }
   if (typeof value == 'string'){value=Number(value);}
   const options: Intl.NumberFormatOptions = {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   };
 
   if (currency) {

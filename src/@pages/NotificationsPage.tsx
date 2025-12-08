@@ -23,6 +23,11 @@ const breadcrumbData = [
   { link: "/notifications", name: "Notifications" },
 ];
 
+// ✅ Utility function to safely render HTML content
+const createMarkup = (html: string) => {
+  return { __html: html };
+};
+
 export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -167,15 +172,14 @@ export default function NotificationsPage() {
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <p
+                          <div
                             className={`text-sm ${
                               !notification.is_read
                                 ? "font-semibold text-gray-900"
                                 : "text-gray-700"
                             }`}
-                          >
-                            {notification.message}
-                          </p>
+                            dangerouslySetInnerHTML={createMarkup(notification.message)}
+                          />
                           {!notification.is_read && (
                             <Badge variant="default" className="flex-shrink-0">
                               New

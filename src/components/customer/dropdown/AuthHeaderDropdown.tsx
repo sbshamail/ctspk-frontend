@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAppDispatch } from "@/lib/hooks";
 import { logoutUser } from "@/store/features/authSlice";
+import { clearCart } from "@/store/features/localCartSlice";
 import { AuthDataType } from "@/utils/modelTypes";
 import { LogOut, User, Bell } from "lucide-react";
 import Image from "next/image";
@@ -23,8 +24,9 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
   const router = useRouter();
   const { user } = auth || {};
   const handleLogout = () => {
-    clearSession(); // remove cookie
-    dispatch(logoutUser());
+    clearSession(); // remove cookie and localStorage cart
+    dispatch(clearCart()); // ✅ Clear Redux local cart state
+    dispatch(logoutUser()); // Clear auth state and trigger page refresh
     router.refresh();
   };
   return (
