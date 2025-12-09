@@ -12,33 +12,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          clean: false # DO NOT DELETE existing files (including env)
+          clean: false
 
-      - name: Load NVM and setup Node
+      - name: Install Dependencies
         run: |
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use default
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Setup Node modules cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile
 
       - name: Build Next.js
-        run: pnpm run build
-
-      - name: Restart PM2 service
         run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use default
+
+          pnpm run build
+
+      - name: Restart PM2
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use default
+
           pm2 restart next-app || pm2 start npm --name "next-app" -- start
