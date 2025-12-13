@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ZoomIn, ZoomOut, ShoppingCart, Store } from "lucide-react";
 import { currencyFormatter } from "@/utils/helper";
+import { toast } from "sonner";
 
 interface ProductDetailProps {
   product: {
@@ -126,7 +127,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   // Handle add to cart
   const handleAddToCart = async () => {
     if (product.product_type === "variable" && !selectedVariation) {
-      alert("Please select all options");
+      toast.error("Please select all options");
       return;
     }
 
@@ -137,10 +138,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
       price: displayPrice,
       sale_price: product.sale_price,
       image: {
-        original: product.image.original,
-        thumbnail: product.image.thumbnail,
+        original: product.image?.original || "",
+        thumbnail: product.image?.thumbnail || "",
       },
-      variation_options: product.variation_options.map((vo) => ({
+      variation_options: product.variation_options?.map((vo) => ({
         id: vo.id,
         title: vo.title,
         price: vo.price,
@@ -149,18 +150,18 @@ export function ProductDetail({ product }: ProductDetailProps) {
         quantity: vo.quantity,
         options: vo.options,
         image: {
-          original: vo.image.original,
-          thumbnail: vo.image.thumbnail,
+          original: vo.image?.original || product.image?.original || "",
+          thumbnail: vo.image?.thumbnail || product.image?.thumbnail || "",
         },
         sku: vo.sku,
         bar_code: undefined,
         is_active: vo.is_active,
-      })),
+      })) || [],
     };
 
     const productToAdd = {
       product: cartProduct,
-      shop_id: product.shop.id,
+      shop_id: product.shop?.id,
       quantity: quantity,
       variation_option_id: selectedVariation?.id || null,
     };
@@ -169,11 +170,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
     try {
       await add(productToAdd);
-      // Show success feedback
-      alert(`✓ ${product.name} added to cart!`);
+      // Toast is already shown by cart service
     } catch (error) {
       console.error("Failed to add to cart:", error);
-      alert("Failed to add to cart. Please try again.");
+      toast.error("Failed to add to cart. Please try again.");
     }
   };
 

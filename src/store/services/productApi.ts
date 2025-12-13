@@ -12,6 +12,7 @@ export type ProductQueryParams = {
   dateRange?: [string, string, string]; // e.g. ["created_at","01-01-2025","01-12-2025"]
   sort?: [string, "asc" | "desc"];
   level?: string; // "2" for level 2 categories (related products)
+  customEndpoint?: string; // custom API endpoint (e.g. "product/best-sellers")
 };
 
 export const productApi = createApi({
@@ -24,6 +25,18 @@ export const productApi = createApi({
       ProductQueryParams
     >({
       query: (params) => {
+        // ✅ Check if custom endpoint is provided
+        if (params.customEndpoint) {
+          const query = toQueryString({
+            ...params,
+            customEndpoint: undefined, // Remove customEndpoint from query string
+          });
+          return {
+            url: `/${params.customEndpoint}?${query}`,
+            method: "GET"
+          };
+        }
+
         // ✅ Check if this is a level 2 category (related products)
         if (params.level === "2" && params.columnFilters) {
           // Extract category ID from columnFilters [["category.id", 22]]
@@ -60,9 +73,10 @@ export const productApi = createApi({
           dateRange = null,
           sort = null,
           level = null, // ✅ Include level
+          customEndpoint = null, // ✅ Include customEndpoint
         } = queryArgs;
 
-        return `${endpointName}-${page}-${limit}-${searchTerm}-${columnFilters}-${numberRange}-${dateRange}-${sort}-${level}`;
+        return `${endpointName}-${page}-${limit}-${searchTerm}-${columnFilters}-${numberRange}-${dateRange}-${sort}-${level}-${customEndpoint}`;
       },
 
       merge: (currentCache, newItems, { arg }) => {
@@ -91,7 +105,8 @@ export const productApi = createApi({
           currentArg?.dateRange !== previousArg?.dateRange ||
           currentArg?.numberRange !== previousArg?.numberRange ||
           currentArg?.sort !== previousArg?.sort ||
-          currentArg?.level !== previousArg?.level // ✅ Include level
+          currentArg?.level !== previousArg?.level || // ✅ Include level
+          currentArg?.customEndpoint !== previousArg?.customEndpoint // ✅ Include customEndpoint
         );
       },
     }),

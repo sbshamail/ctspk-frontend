@@ -24,6 +24,11 @@ const page = async () => {
           numberRange={["price", 0, 1000]}
         />
         <ProductSlider autoplay={false} title="Latest Additions" />
+        <ProductSlider
+          autoplay={false}
+          title="Best Seller"
+          customEndpoint="product/best-sellers"
+        />
       </div>
     </div>
   );

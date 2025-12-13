@@ -104,32 +104,29 @@ export const ProductCartButton: FC<Props> = ({
   if (isInCart && !children) {
     return (
       <div onClick={(e) => e.preventDefault()}>
-        <div className="flex flex-col items-center gap-1">
-          {/* Plus button on top */}
-          <button
-            onClick={handleIncrease}
-            disabled={currentQuantity >= maxStock}
-            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Increase quantity"
-          >
-            <Plus className="w-3 h-3" />
-          </button>
-
-          {/* Cart icon with quantity in center */}
-          <div className="relative">
-            <ShoppingCart className="w-8 h-8 text-primary" />
-            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">
-              {currentQuantity}
-            </span>
-          </div>
-
-          {/* Minus button on bottom */}
+        <div className="flex items-center gap-1 bg-primary/10 rounded-full px-2 py-1 border border-primary/20">
+          {/* Minus button on left */}
           <button
             onClick={handleDecrease}
-            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors"
+            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors hover:scale-110 active:scale-95"
             title={currentQuantity === 1 ? "Remove from cart" : "Decrease quantity"}
           >
             <Minus className="w-3 h-3" />
+          </button>
+
+          {/* Quantity in center */}
+          <span className="min-w-[1.5rem] text-center text-sm font-semibold text-primary">
+            {currentQuantity}
+          </span>
+
+          {/* Plus button on right */}
+          <button
+            onClick={handleIncrease}
+            disabled={currentQuantity >= maxStock}
+            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors hover:scale-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+            title="Increase quantity"
+          >
+            <Plus className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -139,30 +136,21 @@ export const ProductCartButton: FC<Props> = ({
   // Default: Show add to cart button
   return (
     <div onClick={(e) => e.preventDefault()}>
-      <div className="relative">
-        <button
-          onClick={handleAddToCart}
-          className="relative inline-flex cursor-pointer items-center justify-center text-primary hover:text-primary/80"
-          title={needsVariationSelection ? "Select options" : "Add to cart"}
-        >
-          {children ? (
-            children
-          ) : (
-            <>
-              <ShoppingCart className="w-8 h-8" />
-              <Plus className="w-3 h-3 absolute top-1 right-0 bg-white rounded-full" />
-            </>
-          )}
-        </button>
-
-        {!children && cartQuantity && cartQuantity > 0 ? (
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-            <span className="px-1.5 py-0.5 bg-primary text-white rounded-full text-[0.7em] select-none">
-              {cartQuantity}
-            </span>
+      <button
+        onClick={handleAddToCart}
+        className="relative inline-flex cursor-pointer items-center justify-center text-primary hover:text-primary/80 transition-all hover:scale-110 active:scale-95 group"
+        title={needsVariationSelection ? "Select options" : "Add to cart"}
+      >
+        {children ? (
+          children
+        ) : (
+          <div className="relative">
+            <div className="p-1.5 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors border border-primary/20">
+              <Plus className="w-5 h-5" />
+            </div>
           </div>
-        ) : null}
-      </div>
+        )}
+      </button>
     </div>
   );
 };

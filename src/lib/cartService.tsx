@@ -1,3 +1,5 @@
+"use client";
+
 import {
   addItem,
   clearCart as clearLocal,
@@ -19,9 +21,54 @@ import { useDebounce } from "@/@core/hooks/useDebounce";
 import { fetchApi } from "@/action/fetchApi";
 import { RootState } from "@/store";
 import { CartItemType } from "@/utils/modelTypes";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import { useSelection } from "./useSelection";
+import { toast } from "sonner";
+import Image from "next/image";
+
+// Helper function to show cart toast with product details
+const showCartToast = (
+  product: any,
+  quantity: number,
+  action: "added" | "updated" | "removed"
+) => {
+  const actionText =
+    action === "added"
+      ? "Added to cart"
+      : action === "updated"
+      ? "Cart updated"
+      : "Removed from cart";
+
+  // Get the image URL - handle both string and object formats
+  const getImageUrl = () => {
+    if (!product.image) return "/placeholder.png";
+    if (typeof product.image === "string") return product.image;
+    return product.image.thumbnail || product.image.original || "/placeholder.png";
+  };
+
+  toast.success(
+    <div className="flex items-center gap-3">
+      <div className="relative w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+        <Image
+          src={getImageUrl()}
+          alt={product.name || "Product"}
+          fill
+          className="object-cover"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm truncate">{product.name}</p>
+        <p className="text-xs text-muted-foreground">
+          Quantity: {quantity}
+        </p>
+      </div>
+    </div>,
+    {
+      duration: 2000,
+    }
+  );
+};
 
 /**
  * Hook that automatically decides whether to use backend or local cart
@@ -164,10 +211,15 @@ export const useCartService = () => {
         })
       );
     }
+    // Show toast after adding
+    showCartToast(item.product, item.quantity, "added");
   };
 
 
   const update = async (id: number, qty: number) => {
+    // Find the product in cart for toast
+    const cartItem = cart.find((i) => i.product.id === id);
+
     if (isAuth) {
       // ✅ Optimistic update for instant UI feedback
       dispatch(
@@ -184,9 +236,17 @@ export const useCartService = () => {
     } else {
       dispatch(updateItem({ id, qty }));
     }
+
+    // Show toast after updating
+    if (cartItem) {
+      showCartToast(cartItem.product, qty, "updated");
+    }
   };
 
   const remove = async (id: number) => {
+    // Find the product in cart for toast before removing
+    const cartItem = cart.find((i) => i.product.id === id);
+
     if (isAuth) {
       // ✅ Optimistic update for instant UI feedback
       dispatch(
@@ -200,6 +260,11 @@ export const useCartService = () => {
       debouncedDelete(id);
     } else {
       dispatch(removeItem(id));
+    }
+
+    // Show toast after removing
+    if (cartItem) {
+      showCartToast(cartItem.product, 0, "removed");
     }
   };
   const removeSelected = async (ids: number[]) => {

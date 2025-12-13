@@ -46,6 +46,13 @@ export const currencyFormatter = (
     }
   }
 
+  // Replace currency symbols with Rs.
+  formattedValue = formattedValue
+    .replace(/PKR\s?/gi, "Rs. ")
+    .replace(/₨\s?/g, "Rs. ")
+    .replace(/\$\s?/g, "Rs. ")
+    .replace(/Rs\.?\s*Rs\./g, "Rs."); // Remove duplicate Rs.
+
   return formattedValue;
 };
 

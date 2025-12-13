@@ -2,8 +2,8 @@
 
 import { Screen } from "@/@core/layout";
 import HeartIcon from "@/components/icons/HeartIcon";
-import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
+import { MiniCart } from "@/components/customer/cart/MiniCart";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -342,12 +342,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
                 >
                   <HeartIcon />
                 </Link>
-                <Link
-                  href="/cart"
-                  className="p-2 hover:bg-accent/50 rounded-md transition-colors"
-                >
-                  <ShoppingCartIcon />
-                </Link>
+                <MiniCart />
               </div>
             </div>
 

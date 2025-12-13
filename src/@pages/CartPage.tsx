@@ -459,7 +459,7 @@ const CartPage = () => {
               </div>
 
               <div className="flex justify-between">
-                <span>Subtotal (Actual Price)</span>
+                <span>Actual Price</span>
                 <span className="font-medium">
                   {currencyFormatter(totalAmount)}
                 </span>
@@ -467,7 +467,7 @@ const CartPage = () => {
 
               {totalSavings > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Product Discount</span>
+                  <span>Discount</span>
                   <span className="font-semibold">
                     -{currencyFormatter(totalSavings)}
                   </span>

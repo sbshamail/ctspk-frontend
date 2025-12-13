@@ -446,13 +446,16 @@ export default function CheckoutPage() {
 
     const couponAmount = parseFloat(appliedCoupon.amount) || 0;
 
-    if (appliedCoupon.type === "fixed") {
+    // Handle free_shipping type: add shipping cost to discount
+    if (appliedCoupon.type === "free_shipping") {
+      return shippingCost; // Discount equals shipping cost
+    } else if (appliedCoupon.type === "fixed") {
       return Math.min(couponAmount, discountableAmount);
     } else if (appliedCoupon.type === "percentage") {
       return (discountableAmount * couponAmount) / 100;
     }
     return 0;
-  }, [appliedCoupon, subtotal, productDiscount]);
+  }, [appliedCoupon, subtotal, productDiscount, shippingCost]);
 
   // Calculate tax amount
   // ✅ IMPORTANT: Tax is calculated AFTER coupon discount
@@ -576,6 +579,16 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Format delivery_time as: "Day Month Year + Dropdown Value"
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const formattedDate = tomorrow.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const formattedDeliveryTime = `${formattedDate} - ${values.delivery_time}`;
+
     const orderData = {
       shipping_address: shipToDifferentAddress
         ? {
@@ -621,8 +634,8 @@ export default function CheckoutPage() {
       coupon_id: appliedCoupon?.id || null,
       customer_contact: values.phone,
       customer_id: user?.id || null,
-      // 🔴 NEW: Add delivery time to order data
-      delivery_time: values.delivery_time,
+      // 🔴 NEW: Add delivery time with formatted date
+      delivery_time: formattedDeliveryTime,
     };
 
     console.log("Submitting order data:", orderData);
@@ -1000,6 +1013,39 @@ export default function CheckoutPage() {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Delivery Time *</h3>
                 <div className="space-y-2">
+                  {/* Show estimated delivery date */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium text-green-900">
+                          Estimated Delivery:{" "}
+                          {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   {isLoadingDeliveryTimes ? (
                     <div className="text-center py-4">
                       <p>Loading delivery times...</p>
@@ -1237,6 +1283,11 @@ export default function CheckoutPage() {
                     {appliedCoupon.type === "percentage" && (
                       <div>Discount: {appliedCoupon.amount}%</div>
                     )}
+                    {appliedCoupon.type === "free_shipping" && (
+                      <div>
+                        Benefit: Free Shipping (Save {currencyFormatter(shippingCost)})
+                      </div>
+                    )}
                     {appliedCoupon.minimum_cart_amount > 0 && (
                       <div
                         className={`text-xs mt-1 ${
@@ -1267,20 +1318,20 @@ export default function CheckoutPage() {
               {/* Order Summary Breakdown */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span>Subtotal</span>
+                  <span>Actual Price</span>
                   <span>{currencyFormatter(subtotal)}</span>
                 </div>
 
                 {productDiscount > 0 && (
                   <div className="flex items-center justify-between text-green-600">
-                    <span>Product Discount</span>
+                    <span>Discount</span>
                     <span>-{currencyFormatter(productDiscount)}</span>
                   </div>
                 )}
 
                 {appliedCoupon && couponDiscount > 0 && (
                   <div className="flex items-center justify-between text-green-600">
-                    <span>Coupon Discount ({appliedCoupon.code})</span>
+                    <span>Coupon ({appliedCoupon.code})</span>
                     <span>-{currencyFormatter(couponDiscount)}</span>
                   </div>
                 )}
@@ -1310,7 +1361,23 @@ export default function CheckoutPage() {
                 {shippingCost > 0 && (
                   <div className="flex items-center justify-between">
                     <span>Shipping</span>
-                    <span>{currencyFormatter(shippingCost)}</span>
+                    <span
+                      className={
+                        appliedCoupon?.type === "free_shipping"
+                          ? "line-through text-gray-400"
+                          : ""
+                      }
+                    >
+                      {currencyFormatter(shippingCost)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Show free shipping message when coupon type is free_shipping */}
+                {appliedCoupon?.type === "free_shipping" && shippingCost > 0 && (
+                  <div className="flex items-center justify-between text-green-600">
+                    <span>Free Shipping Applied</span>
+                    <span>-{currencyFormatter(shippingCost)}</span>
                   </div>
                 )}
               </div>

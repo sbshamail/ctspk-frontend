@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OrderInvoice } from "@/components/invoice/OrderInvoice";
 import { currencyFormatter } from "@/utils/helper";
+import { useSearchParams } from "next/navigation";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -127,15 +128,23 @@ interface OrderTrackingResponse {
 }
 
 const TrackOrderPage = () => {
-  const [trackingNumber, setTrackingNumber] = useState("");
+  const searchParams = useSearchParams();
+  const trackingFromUrl = searchParams.get("tracking");
+
+  const [trackingNumber, setTrackingNumber] = useState(trackingFromUrl || "");
   const [orderData, setOrderData] = useState<OrderTrackingResponse["data"] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const trackOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!trackingNumber.trim()) {
+  // Auto-fetch order if tracking number is in URL
+  useEffect(() => {
+    if (trackingFromUrl && !orderData) {
+      fetchOrder(trackingFromUrl);
+    }
+  }, [trackingFromUrl]);
+
+  const fetchOrder = async (tracking: string) => {
+    if (!tracking.trim()) {
       setError("Please enter a tracking number");
       return;
     }
@@ -145,7 +154,7 @@ const TrackOrderPage = () => {
     setOrderData(null);
 
     try {
-      const response = await fetch(`https://api.ctspk.com/api/order/tracking/${trackingNumber.trim()}`);
+      const response = await fetch(`https://api.ctspk.com/api/order/tracking/${tracking.trim()}`);
       const data: OrderTrackingResponse = await response.json();
 
       if (data.success === 1) {
@@ -159,6 +168,11 @@ const TrackOrderPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const trackOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchOrder(trackingNumber);
   };
 
   const getOrderStatusInfo = (status: string) => {
@@ -344,6 +358,13 @@ const TrackOrderPage = () => {
                     <span className="font-medium text-gray-900">Payment: </span>
                     <span className="text-gray-600">{getPaymentStatusInfo(orderData.payment_status).label}</span>
                   </div>
+                  {orderData.payment_gateway && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                      <span className="font-medium text-gray-900">Payment Method: </span>
+                      <span className="text-gray-600 capitalize">{orderData.payment_gateway.replace(/_/g, " ")}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                     <span className="font-medium text-gray-900">Delivery: </span>

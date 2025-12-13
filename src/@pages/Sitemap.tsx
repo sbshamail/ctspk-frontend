@@ -42,12 +42,12 @@ const SitemapPage = () => {
       title: "Products & Shopping",
       icon: "???",
       pages: [
-        { name: "All Products", path: "/products", description: "Browse our complete catalog" },
-        { name: "New Arrivals", path: "/products/new", description: "Latest products" },
-        { name: "Best Sellers", path: "/products/bestsellers", description: "Most popular items" },
-        { name: "Sale & Deals", path: "/products/sale", description: "Special offers and discounts" },
-        { name: "Categories", path: "/categories", description: "Shop by category" },
-        { name: "Brands", path: "/brands", description: "Shop by brand" },
+        { name: "All Products", path: "/product", description: "Browse our complete catalog" },
+        { name: "New Arrivals", path: "/new-arrivals", description: "Latest products" },
+        { name: "Best Sellers", path: "/best-sellers", description: "Most popular items" },
+        { name: "Sale & Deals", path: "/sales", description: "Special offers and discounts" },
+        { name: "Limited Edition", path: "/limited-edition", description: "Shop by low stock" },
+        { name: "Trending Now", path: "/trending-now", description: "Shop by most sales product" },
       ]
     },
     {
@@ -55,11 +55,11 @@ const SitemapPage = () => {
       title: "Account & Orders",
       icon: "??",
       pages: [
-        { name: "Login", path: "/login", description: "Sign in to your account" },
-        { name: "Register", path: "/register", description: "Create a new account" },
-        { name: "My Account", path: "/account", description: "Manage your account" },
-        { name: "Order History", path: "/account/orders", description: "View your past orders" },
-        { name: "Wishlist", path: "/account/wishlist", description: "Your saved items" },
+        { name: "My Profiles", path: "/profiles", description: "Sign in to your account" },
+        { name: "Notification", path: "/notifications", description: "Create a new account" },
+        { name: "Cart", path: "/cart", description: "Manage your account" },
+        { name: "Order History", path: "/my-orders", description: "View your past orders" },
+        { name: "Wishlist", path: "/wishlist", description: "Your saved items" },
         { name: "Address Book", path: "/account/addresses", description: "Manage your addresses" },
         { name: "Payment Methods", path: "/account/payments", description: "Manage your payment options" },
       ]
@@ -71,71 +71,70 @@ const SitemapPage = () => {
       pages: [
         { name: "Customer Support", path: "/support", description: "Get help and support" },
         { name: "FAQ", path: "/faq", description: "Frequently asked questions" },
-        { name: "Shipping Information", path: "/shipping", description: "Delivery options and times" },
-        { name: "Return Policy", path: "/return-policy", description: "Our return and refund policy" },
-        { name: "Size Guide", path: "/size-guide", description: "Product sizing information" },
+        { name: "Privacy Policy", path: "/privacy", description: "Delivery options and times" },
+        { name: "Return Policy", path: "/returns", description: "Our return and refund policy" },
+        { name: "Sitemap", path: "/sitemap", description: "All site Data" },
         { name: "Track Order", path: "/track-order", description: "Track your package" },
-        { name: "Repair Services", path: "/repairs", description: "Product repair information" },
+        { name: "Terms & Condition", path: "/terms", description: "Term and Condition" },
       ]
     },
-    {
-      id: "company",
-      title: "Company Information",
-      icon: "??",
-      pages: [
-        { name: "Our Story", path: "/our-story", description: "Company history and mission" },
-        { name: "Meet the Team", path: "/team", description: "Our leadership and staff" },
-        { name: "Careers", path: "/careers", description: "Job opportunities" },
-        { name: "Press Kit", path: "/press", description: "Media resources" },
-        { name: "Affiliate Program", path: "/affiliate", description: "Join our affiliate program" },
-        { name: "Wholesale", path: "/wholesale", description: "Bulk purchasing options" },
-      ]
-    },
-    {
-      id: "legal",
-      title: "Legal & Policies",
-      icon: "??",
-      pages: [
-        { name: "Privacy Policy", path: "/privacy", description: "How we protect your data" },
-        { name: "Terms of Service", path: "/terms", description: "Website terms and conditions" },
-        { name: "Cookie Policy", path: "/cookies", description: "Our use of cookies" },
-        { name: "Accessibility Statement", path: "/accessibility", description: "Our commitment to accessibility" },
-        { name: "Legal Notice", path: "/legal", description: "Legal information and disclosures" },
-        { name: "Code of Conduct", path: "/conduct", description: "Community guidelines" },
-      ]
-    },
-    {
-      id: "resources",
-      title: "Resources & Guides",
-      icon: "??",
-      pages: [
-        { name: "Blog", path: "/blog", description: "Latest articles and news" },
-        { name: "Buying Guides", path: "/guides", description: "Helpful shopping guides" },
-        { name: "Product Reviews", path: "/reviews", description: "Customer reviews and ratings" },
-        { name: "Video Tutorials", path: "/tutorials", description: "How-to videos and guides" },
-        { name: "Inspiration Gallery", path: "/gallery", description: "Creative ideas and inspiration" },
-        { name: "Community Forum", path: "/forum", description: "Join our community discussions" },
-      ]
-    }
+    // {
+    //   id: "company",
+    //   title: "Company Information",
+    //   icon: "??",
+    //   pages: [
+    //     { name: "Our Story", path: "/our-story", description: "Company history and mission" },
+    //     { name: "Meet the Team", path: "/team", description: "Our leadership and staff" },
+    //     { name: "Careers", path: "/careers", description: "Job opportunities" },
+    //     { name: "Press Kit", path: "/press", description: "Media resources" },
+    //     { name: "Affiliate Program", path: "/affiliate", description: "Join our affiliate program" },
+    //     { name: "Wholesale", path: "/wholesale", description: "Bulk purchasing options" },
+    //   ]
+    // },
+    // {
+    //   id: "legal",
+    //   title: "Legal & Policies",
+    //   icon: "??",
+    //   pages: [
+    //     { name: "Privacy Policy", path: "/privacy", description: "How we protect your data" },
+    //     { name: "Terms of Service", path: "/terms", description: "Website terms and conditions" },
+    //     { name: "Cookie Policy", path: "/cookies", description: "Our use of cookies" },
+    //     { name: "Accessibility Statement", path: "/accessibility", description: "Our commitment to accessibility" },
+    //     { name: "Legal Notice", path: "/legal", description: "Legal information and disclosures" },
+    //     { name: "Code of Conduct", path: "/conduct", description: "Community guidelines" },
+    //   ]
+    // },
+    // {
+    //   id: "resources",
+    //   title: "Resources & Guides",
+    //   icon: "??",
+    //   pages: [
+    //     { name: "Blog", path: "/blog", description: "Latest articles and news" },
+    //     { name: "Buying Guides", path: "/guides", description: "Helpful shopping guides" },
+    //     { name: "Product Reviews", path: "/reviews", description: "Customer reviews and ratings" },
+    //     { name: "Video Tutorials", path: "/tutorials", description: "How-to videos and guides" },
+    //     { name: "Inspiration Gallery", path: "/gallery", description: "Creative ideas and inspiration" },
+    //     { name: "Community Forum", path: "/forum", description: "Join our community discussions" },
+    //   ]
+    // }
   ];
 
   const quickLinks = [
-    { name: "Shop All Products", path: "/products", category: "Shopping" },
+    { name: "Shop All Products", path: "/product", category: "Shopping" },
     { name: "Contact Support", path: "/support", category: "Help" },
     { name: "Track Your Order", path: "/track-order", category: "Orders" },
-    { name: "Size Guide", path: "/size-guide", category: "Help" },
-    { name: "Latest Deals", path: "/products/sale", category: "Shopping" },
+    { name: "Contact Us", path: "/contact", category: "Help" },
+    { name: "Latest Deals", path: "/sales", category: "Shopping" },
     { name: "Create Account", path: "/register", category: "Account" },
-    { name: "Shipping Info", path: "/shipping", category: "Help" },
-    { name: "Return Policy", path: "/return-policy", category: "Legal" },
+    { name: "FAQ", path: "/faq", category: "Help" },
+    { name: "Return Policy", path: "/return", category: "Legal" },
   ];
 
   const popularPages = [
-    { name: "New Arrivals", path: "/products/new", visits: "15K" },
-    { name: "Summer Collection", path: "/collection/summer", visits: "12K" },
+    { name: "New Arrivals", path: "/new-arrivals", visits: "15K" },
+    { name: "Best Sellers", path: "/best-sellers", visits: "12K" },
     { name: "Customer Reviews", path: "/reviews", visits: "10K" },
-    { name: "Size Guide", path: "/size-guide", visits: "9K" },
-    { name: "Shipping Information", path: "/shipping", visits: "8K" },
+    { name: "Privacy Policy", path: "/privacy", visits: "8K" },
     { name: "FAQ", path: "/faq", visits: "7K" },
   ];
 

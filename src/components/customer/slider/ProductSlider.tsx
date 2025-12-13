@@ -34,12 +34,14 @@ const ProductSlider = ({
   columnFilters,
   numberRange,
   autoplay = true,
+  customEndpoint,
 }: ProductCarouselProps) => {
   const { data, error, isLoading } = useGetProductsQuery({
     page,
     limit,
     columnFilters,
     numberRange,
+    customEndpoint,
   });
   const products = data?.data;
   const plugin = React.useRef<any | null>(

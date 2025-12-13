@@ -383,11 +383,17 @@ const WishlistItemCard = ({
 
     setIsAddingToCart(true);
     try {
+      // Add to cart
       await onAddToCart({
         product: item.product,
         shop_id: item.product.shop_id,
         quantity: 1,
       });
+      // Remove from wishlist after successfully adding to cart
+      onRemove(item.id);
+      toast.success("Item moved to cart!");
+    } catch (error) {
+      toast.error("Failed to add item to cart");
     } finally {
       setIsAddingToCart(false);
     }

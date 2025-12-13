@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parse } from "date-fns";
+import Link from "next/link";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -183,7 +184,18 @@ export default function OrdersPage() {
       className: "w-[60px] text-center",
     },
 
-    { title: "Tracking #", accessor: "tracking_number" },
+    {
+      title: "Tracking #",
+      accessor: "tracking_number",
+      render: ({ cell }) => (
+        <Link
+          href={`/track-order?tracking=${cell}`}
+          className="text-primary hover:underline font-medium"
+        >
+          {cell}
+        </Link>
+      ),
+    },
     { title: "Customer", accessor: "customer_name" },
     { title: "Contact", accessor: "customer_contact" },
     {
