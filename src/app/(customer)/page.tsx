@@ -20,7 +20,7 @@ const page = async () => {
         />
         <ProductSlider
           autoplay={false}
-          title="Gher Tak Trends (under 1000/- Rs)"
+          title="Gher Tak Trends (under 1000/- Rs.)"
           numberRange={["price", 0, 1000]}
         />
         <ProductSlider autoplay={false} title="Latest Additions" />

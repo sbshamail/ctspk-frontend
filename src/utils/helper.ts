@@ -51,6 +51,7 @@ export const currencyFormatter = (
     .replace(/PKR\s?/gi, "Rs. ")
     .replace(/₨\s?/g, "Rs. ")
     .replace(/\$\s?/g, "Rs. ")
+    .replace(/Rs\s/g, "Rs. ") // Replace Rs with Rs.
     .replace(/Rs\.?\s*Rs\./g, "Rs."); // Remove duplicate Rs.
 
   return formattedValue;
