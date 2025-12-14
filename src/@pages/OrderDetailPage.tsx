@@ -424,7 +424,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
             <div className="space-y-6">
               {order.order_products.map((item: OrderProductRead, index: number) => {
                 // Calculate pricing
-                const quantity = parseFloat(item.order_quantity);
+                const quantity = parseInt(item.order_quantity, 10);
                 const unitPrice = item.unit_price; // Regular price
                 const salePrice = item.sale_price || 0; // Discounted price
                 const hasDiscount = salePrice > 0 && salePrice < unitPrice;
@@ -461,7 +461,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
                       <div className="mt-2">
                         <div className="flex items-center gap-2">
                           <span className="text-sm">Quantity:</span>
-                          <span className="font-medium">{item.order_quantity}</span>
+                          <span className="font-medium">{parseInt(item.order_quantity, 10)}</span>
                         </div>
                         <div className="mt-1">
                           {hasDiscount ? (
@@ -544,7 +544,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   <span>Subtotal:</span>
                   <span>
                     {currencyFormatter(order.order_products.reduce((acc: number, product: OrderProductRead) => {
-                      return acc + (product.unit_price * parseFloat(product.order_quantity));
+                      return acc + (product.unit_price * parseInt(product.order_quantity, 10));
                     }, 0))}
                   </span>
                 </div>
@@ -553,7 +553,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   const productDiscount = order.order_products.reduce((acc: number, product: OrderProductRead) => {
                     const salePrice = product.sale_price || 0;
                     if (salePrice > 0 && salePrice < product.unit_price) {
-                      return acc + ((product.unit_price - salePrice) * parseFloat(product.order_quantity));
+                      return acc + ((product.unit_price - salePrice) * parseInt(product.order_quantity, 10));
                     }
                     return acc;
                   }, 0);

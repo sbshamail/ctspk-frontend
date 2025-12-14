@@ -455,7 +455,7 @@ export default function OrderSuccessPage() {
                   // unit_price = regular/original price
                   // sale_price = discounted price (what customer pays)
                   // item_discount = unit_price - sale_price (per item)
-                  const quantity = parseFloat(product.order_quantity);
+                  const quantity = parseInt(product.order_quantity, 10);
                   const unitPrice = product.unit_price; // Regular price
                   const salePrice = product.sale_price || 0; // Discounted price
                   const hasDiscount = salePrice > 0 && salePrice < unitPrice;
@@ -499,7 +499,7 @@ export default function OrderSuccessPage() {
                             <span className="text-gray-600">Rs. {unitPrice} each</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">Quantity: {product.order_quantity}</p>
+                        <p className="text-sm text-gray-600 mt-1">Quantity: {parseInt(product.order_quantity, 10)}</p>
                       </div>
                       <div className="text-right">
                         {hasDiscount && (
@@ -575,7 +575,7 @@ export default function OrderSuccessPage() {
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">
                     {currencyFormatter(orderData.order_products.reduce((acc: number, product: any) => {
-                      return acc + (product.unit_price * parseFloat(product.order_quantity));
+                      return acc + (product.unit_price * parseInt(product.order_quantity, 10));
                     }, 0))}
                   </span>
                 </div>
@@ -585,7 +585,7 @@ export default function OrderSuccessPage() {
                   const productDiscount = orderData.order_products.reduce((acc: number, product: any) => {
                     const salePrice = product.sale_price || 0;
                     if (salePrice > 0 && salePrice < product.unit_price) {
-                      return acc + ((product.unit_price - salePrice) * parseFloat(product.order_quantity));
+                      return acc + ((product.unit_price - salePrice) * parseInt(product.order_quantity, 10));
                     }
                     return acc;
                   }, 0);

@@ -31,7 +31,7 @@ export function OrderInvoice({ orderData, formatCurrency, formatDate }: InvoiceP
   // sale_price = discounted price (what customer pays)
   const calculateSubtotal = () => {
     return orderData.order_products.reduce((acc: number, product: any) => {
-      return acc + (product.unit_price * parseFloat(product.order_quantity));
+      return acc + (product.unit_price * parseInt(product.order_quantity, 10));
     }, 0);
   };
 
@@ -39,7 +39,7 @@ export function OrderInvoice({ orderData, formatCurrency, formatDate }: InvoiceP
     return orderData.order_products.reduce((acc: number, product: any) => {
       const salePrice = product.sale_price || 0;
       if (salePrice > 0 && salePrice < product.unit_price) {
-        return acc + ((product.unit_price - salePrice) * parseFloat(product.order_quantity));
+        return acc + ((product.unit_price - salePrice) * parseInt(product.order_quantity, 10));
       }
       return acc;
     }, 0);
@@ -133,7 +133,7 @@ export function OrderInvoice({ orderData, formatCurrency, formatDate }: InvoiceP
             </thead>
             <tbody>
               {orderData.order_products.map((product: any, index: number) => {
-                const quantity = parseFloat(product.order_quantity);
+                const quantity = parseInt(product.order_quantity, 10);
                 const unitPrice = product.unit_price; // Regular price
                 const salePrice = product.sale_price || 0; // Discounted price
                 const hasDiscount = salePrice > 0 && salePrice < unitPrice;

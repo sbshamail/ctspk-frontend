@@ -52,7 +52,7 @@ export const getRegularPrice = (product: OrderProduct): number => {
 export const calculateOrderSubtotal = (products: OrderProduct[]): number => {
   return products.reduce((acc, product) => {
     const regularPrice = getRegularPrice(product);
-    const quantity = parseFloat(product.order_quantity);
+    const quantity = parseInt(product.order_quantity, 10);
     return acc + (regularPrice * quantity);
   }, 0);
 };
