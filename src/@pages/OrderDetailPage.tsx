@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import {
   useGetOrderQuery
@@ -64,10 +65,9 @@ export default function OrderDetailPage({ id }: { id: string }) {
 
   const order: OrderReadNested = data?.data;
 
-  // Check if order can be cancelled (until fullfillment_id is null)
+  // Check if order can be cancelled (until order status is not completed, cancelled, or refunded)
   const canCancelOrder = () => {
-    return order.fullfillment_id === null && 
-           order.order_status !== OrderStatusEnum.CANCELLED &&
+    return order.order_status !== OrderStatusEnum.CANCELLED &&
            order.order_status !== OrderStatusEnum.COMPLETED &&
            order.order_status !== OrderStatusEnum.REFUNDED;
   };
@@ -735,47 +735,86 @@ interface CancelOrderDialogProps {
   onSubmit: () => void;
 }
 
-function CancelOrderDialog({ 
-  isOpen, 
-  onClose, 
-  cancelReason, 
-  onReasonChange, 
-  notifyCustomer, 
+const CANCEL_REASONS = [
+  "Changed mind or no longer needed",
+  "Long delivery or pickup time vs expectations",
+  "Missed delivery/pickup window",
+  "Duplicate orders placed accidentally",
+  "Pricing & Cost Concerns",
+  "Quality & Freshness Concerns (Pre-Delivery)",
+  "Address or Availability Mistakes",
+  "Others"
+];
+
+function CancelOrderDialog({
+  isOpen,
+  onClose,
+  cancelReason,
+  onReasonChange,
+  notifyCustomer,
   onNotifyChange,
-  onSubmit 
+  onSubmit
 }: CancelOrderDialogProps) {
+  const [selectedReason, setSelectedReason] = useState("");
+
+  const handleReasonSelect = (value: string) => {
+    setSelectedReason(value);
+    if (value !== "Others") {
+      onReasonChange(value);
+    } else {
+      onReasonChange("");
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Cancel Order</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <h4 className="font-medium text-yellow-800 mb-2">Important Notice</h4>
             <p className="text-sm text-yellow-700">
-              Are you sure you want to cancel this order? This action cannot be undone. 
+              Are you sure you want to cancel this order? This action cannot be undone.
               If the order has already been processed, you may need to contact customer support.
             </p>
           </div>
-          
+
           <div className="space-y-3">
-            <Label htmlFor="cancel-reason" className="block text-lg font-medium">
+            <Label htmlFor="cancel-reason-select" className="block text-lg font-medium">
               Reason for Cancellation *
             </Label>
-            <Textarea
-              id="cancel-reason"
-              value={cancelReason}
-              onChange={(e) => onReasonChange(e.target.value)}
-              className="w-full min-h-[120px] text-lg p-4"
-              placeholder="Please provide a detailed reason for cancelling this order. This helps us improve our services."
-              required
-            />
-            <p className="text-sm text-muted-foreground">
-              Default reason: "my order is not deliver yet. so i don't want to get this product any more"
-            </p>
+            <Select value={selectedReason} onValueChange={handleReasonSelect}>
+              <SelectTrigger className="w-full text-lg p-4">
+                <SelectValue placeholder="Select a reason for cancellation" />
+              </SelectTrigger>
+              <SelectContent>
+                {CANCEL_REASONS.map((reason) => (
+                  <SelectItem key={reason} value={reason}>
+                    {reason}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {selectedReason === "Others" && (
+            <div className="space-y-3">
+              <Label htmlFor="cancel-reason-text" className="block text-lg font-medium">
+                Please specify your reason
+              </Label>
+              <Textarea
+                id="cancel-reason-text"
+                value={cancelReason}
+                onChange={(e) => onReasonChange(e.target.value)}
+                className="w-full min-h-[120px] text-lg p-4"
+                placeholder="Please provide a detailed reason for cancelling this order. This helps us improve our services."
+                required
+              />
+            </div>
+          )}
           
           <div className="flex items-center space-x-3">
             <Checkbox
