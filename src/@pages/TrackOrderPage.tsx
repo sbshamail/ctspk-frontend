@@ -15,7 +15,13 @@ const breadcrumbData = [
   { link: "/", name: "Home" },
   { link: "/track-order", name: "Track Order" },
 ];
-
+const getApiUrl = (endpoint: string) => {
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+  const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+  const formattedEndpoint = endpoint.replace(/^\//, '');
+  return `${formattedBaseUrl}/${formattedEndpoint}`;
+};
 interface OrderTrackingResponse {
   success: number;
   detail: string;
@@ -154,7 +160,7 @@ const TrackOrderPage = () => {
     setOrderData(null);
 
     try {
-      const response = await fetch(`https://api.ctspk.com/api/order/tracking/${tracking.trim()}`);
+      const response = await fetch(getApiUrl(`/order/tracking/${tracking.trim()}`));
       const data: OrderTrackingResponse = await response.json();
 
       if (data.success === 1) {

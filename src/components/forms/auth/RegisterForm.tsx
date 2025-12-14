@@ -14,6 +14,13 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+const getApiUrl = (endpoint: string) => {
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+  const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+  const formattedEndpoint = endpoint.replace(/^\//, '');
+  return `${formattedBaseUrl}/${formattedEndpoint}`;
+};
 interface Props {
   close: () => void;
   setSiginModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,7 +41,7 @@ export function RegisterForm({ close, setSiginModal }: Props) {
   const onSubmit = async (values: RegisterSchemaType) => {
     setServerError(null);
     try {
-      const response = await fetch('https://api.ctspk.com/register', {
+      const response = await fetch(getApiUrl('/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

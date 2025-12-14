@@ -106,7 +106,7 @@ export function getLogoUrl(): string | null {
 
 // Helper function to get site title
 export function getSiteTitle(): string {
-  return getSetting("siteTitle") || "CTSPK";
+  return getSetting("siteTitle") || "GHERTAK";
 }
 
 // Helper function to get site subtitle/tagline

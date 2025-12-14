@@ -3,7 +3,13 @@
 // // lib/wishlistService.ts
 // import { getSession } from "@/action/auth";
 // import { useEffect, useState } from "react";
-
+// const getApiUrl = (endpoint: string) => {
+// const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+//   // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+//   const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+//   const formattedEndpoint = endpoint.replace(/^\//, '');
+//   return `${formattedBaseUrl}/${formattedEndpoint}`;
+// };
 // export interface WishlistItem {
 //   id: number;
 //   product_id: number;
@@ -45,7 +51,7 @@
 //         throw new Error("No access token found");
 //       }
 
-//       const response = await fetch("https://api.ctspk.com/wishlist/add", {
+//       const response = await fetch(getApiUrl("/wishlist/add",) {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -82,7 +88,7 @@
 //         throw new Error("No access token found");
 //       }
 
-//       const response = await fetch("https://api.ctspk.com/wishlist/remove", {
+//       const response = await fetch(getApiUrl("/wishlist/remove"), {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -124,7 +130,7 @@
 //       }
 
 //       const response = await fetch(
-//         "https://api.ctspk.com/wishlist/my-wishlist?page=1&skip=0&limit=100",
+//         getApiUrl("/wishlist/my-wishlist?page=1&skip=0&limit=100"),
 //         {
 //           headers: {
 //             Authorization: `Bearer ${accessToken}`,

@@ -93,7 +93,7 @@ const shippingClass = getShippingClass();
 const logoUrl = getLogoUrl();
 
 // Get site title
-const title = getSiteTitle(); // Falls back to "CTSPK" if not found
+const title = getSiteTitle(); // Falls back to "GHERTAK" if not found
 
 // Get site subtitle/tagline
 const tagline = getSiteSubtitle();
@@ -215,7 +215,7 @@ Expected structure from `/settings?language=en`:
 3. **Fallbacks:**
    - All functions include fallback values
    - If logo is not available, site title is displayed as text
-   - Default site title is "CTSPK" if not found in settings
+   - Default site title is "GHERTAK" if not found in settings
 
 4. **Performance:**
    - Settings are fetched once on app load

@@ -41,23 +41,23 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
 
   return {
-    title: settings?.siteTitle || "CTSPK",
-    description: settings?.metaDescription || "Welcome to CTSPK",
+    title: settings?.siteTitle || "GHERTAK",
+    description: settings?.metaDescription || "Welcome to GHERTAK",
     keywords: settings?.metaKeywords || "",
     icons: {
       icon: "/favicon.ico",
     },
     openGraph: {
-      title: settings?.ogTitle || settings?.siteTitle || "CTSPK",
-      description: settings?.ogDescription || settings?.metaDescription || "Welcome to CTSPK",
+      title: settings?.ogTitle || settings?.siteTitle || "GHERTAK",
+      description: settings?.ogDescription || settings?.metaDescription || "Welcome to GHERTAK",
       images: settings?.logo?.original ? [settings.logo.original] : [],
       url: settings?.canonicalUrl || "",
     },
     twitter: {
       card: (settings?.twitterCardType as any) || "summary_large_image",
       site: settings?.twitterHandle || "",
-      title: settings?.ogTitle || settings?.siteTitle || "CTSPK",
-      description: settings?.ogDescription || settings?.metaDescription || "Welcome to CTSPK",
+      title: settings?.ogTitle || settings?.siteTitle || "GHERTAK",
+      description: settings?.ogDescription || settings?.metaDescription || "Welcome to GHERTAK",
       images: settings?.logo?.original ? [settings.logo.original] : [],
     },
     alternates: {

@@ -86,8 +86,8 @@ export function OrderInvoice({ orderData, formatCurrency, formatDate }: InvoiceP
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">INVOICE</h1>
-                <p className="text-gray-600 mt-2">CTSPK - Your Shopping Destination</p>
-                <p className="text-sm text-gray-500">www.ctspk.com</p>
+                <p className="text-gray-600 mt-2"> - Your Shopping Destination</p>
+                <p className="text-sm text-gray-500">www..com</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Invoice #</p>
@@ -256,7 +256,7 @@ export function OrderInvoice({ orderData, formatCurrency, formatDate }: InvoiceP
           {/* Footer */}
           <div className="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-600">
             <p>Thank you for your business!</p>
-            <p className="mt-2">For questions, contact us at support@ctspk.com</p>
+            <p className="mt-2">For questions, contact us at support@ghertak.com</p>
           </div>
         </div>
       </div>
