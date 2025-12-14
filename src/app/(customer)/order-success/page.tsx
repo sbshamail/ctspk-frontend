@@ -10,7 +10,13 @@ import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import Link from "next/link";
 import { OrderInvoice } from "@/components/invoice/OrderInvoice";
 import { currencyFormatter } from "@/utils/helper";
-
+const getApiUrl = (endpoint: string) => {
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  // Remove trailing slash from baseUrl and leading slash from endpoint if needed
+  const formattedBaseUrl = baseUrl.replace(/\/$/, '');
+  const formattedEndpoint = endpoint.replace(/^\//, '');
+  return `${formattedBaseUrl}/${formattedEndpoint}`;
+};
 interface OrderTrackingResponse {
   success: number;
   detail: string;
@@ -141,7 +147,7 @@ export default function OrderSuccessPage() {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://api.ctspk.com/api/order/tracking/${trackingNumber}`);
+      const response = await fetch(getApiUrl(`/order/tracking/${trackingNumber}`));
       const data: OrderTrackingResponse = await response.json();
 
       if (data.success === 1) {
@@ -478,19 +484,19 @@ export default function OrderSuccessPage() {
                           {hasDiscount ? (
                             <div>
                               <span className="text-gray-500 line-through mr-2">
-                                Rs {unitPrice} each
+                                Rs. {unitPrice} each
                               </span>
                               <span className="text-green-600 font-medium">
-                                Rs {salePrice} each
+                                Rs. {salePrice} each
                               </span>
                               {discountPerItem > 0 && (
                                 <p className="text-xs text-green-600">
-                                  Save Rs {discountPerItem * quantity}
+                                  Save Rs. {discountPerItem * quantity}
                                 </p>
                               )}
                             </div>
                           ) : (
-                            <span className="text-gray-600">Rs {unitPrice} each</span>
+                            <span className="text-gray-600">Rs. {unitPrice} each</span>
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mt-1">Quantity: {product.order_quantity}</p>
