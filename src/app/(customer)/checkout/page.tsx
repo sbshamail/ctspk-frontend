@@ -621,7 +621,7 @@ export default function CheckoutPage() {
         country: billingAddress.country,
         is_default: billingIsDefault,
       },
-      payment_method: selectedPayment,
+      payment_gateway: selectedPayment,
       cart: cart?.map((item) => ({
         id: item.id,
         quantity: item.quantity,
