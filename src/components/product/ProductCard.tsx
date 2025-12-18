@@ -15,6 +15,7 @@ interface Props {
   shop: { id: number; name: string };
   image: string;
   rating?: number;
+  review_count?: number;
   price: number;
   quantity: number;
   sale_price?: number;
@@ -120,7 +121,13 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
               <div className="w-full flex items-center justify-between ">
                 <div className="w-full flex flex-col mt-2 space-y-2">
                   <div>
-                    <StarRating averageRating={rating} disabled />
+                    <StarRating
+                      averageRating={rating}
+                      disabled
+                      reviewCount={props.review_count}
+                      showReviewCount={true}
+                      size="sm"
+                    />
                   </div>
                   <div className="w-full flex justify-between">
                     {isVariableProduct && hasVariations ? (

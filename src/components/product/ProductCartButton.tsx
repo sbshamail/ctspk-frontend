@@ -1,9 +1,10 @@
 "use client";
 
 import { useCart } from "@/context/cartContext";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { FC } from "react";
+import { QuantitySelector } from "@/components/ui/QuantitySelector";
 interface Props {
   handlePostCart?: () => void;
   cartQuantity?: number;
@@ -104,31 +105,24 @@ export const ProductCartButton: FC<Props> = ({
   if (isInCart && !children) {
     return (
       <div onClick={(e) => e.preventDefault()}>
-        <div className="flex items-center gap-1 bg-primary/10 rounded-full px-2 py-1 border border-primary/20">
-          {/* Minus button on left */}
-          <button
-            onClick={handleDecrease}
-            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors hover:scale-110 active:scale-95"
-            title={currentQuantity === 1 ? "Remove from cart" : "Decrease quantity"}
-          >
-            <Minus className="w-3 h-3" />
-          </button>
-
-          {/* Quantity in center */}
-          <span className="min-w-[1.5rem] text-center text-sm font-semibold text-primary">
-            {currentQuantity}
-          </span>
-
-          {/* Plus button on right */}
-          <button
-            onClick={handleIncrease}
-            disabled={currentQuantity >= maxStock}
-            className="p-1 rounded-full bg-primary text-white hover:bg-primary/80 transition-colors hover:scale-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
-            title="Increase quantity"
-          >
-            <Plus className="w-3 h-3" />
-          </button>
-        </div>
+        <QuantitySelector
+          quantity={currentQuantity}
+          onIncrease={() => {
+            if (currentQuantity < maxStock) {
+              update(product.id, currentQuantity + 1);
+            }
+          }}
+          onDecrease={() => {
+            if (currentQuantity > 1) {
+              update(product.id, currentQuantity - 1);
+            } else if (currentQuantity === 1) {
+              remove(product.id);
+            }
+          }}
+          maxQuantity={maxStock}
+          minQuantity={0}
+          size="sm"
+        />
       </div>
     );
   }

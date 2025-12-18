@@ -56,6 +56,11 @@ export default function OrdersPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [notifyCustomer, setNotifyCustomer] = useState(true);
 
+  // Return dialog states
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [selectedReturnOrder, setSelectedReturnOrder] = useState<OrderReadNested | null>(null);
+  const [returnReason, setReturnReason] = useState("");
+
   // Build dateRange for API (fromDate/toDate are in yyyy-MM-dd format from InputDateField)
   const dateRange = useMemo(() => {
     if (fromDate && toDate) {
@@ -133,7 +138,9 @@ export default function OrdersPage() {
   };
 
   // Handle order return
-  const handleReturnOrder = async (orderId: number) => {
+  const handleReturnOrder = async () => {
+    if (!selectedReturnOrder) return;
+
     try {
       const accessToken = getAccessToken();
       if (!accessToken) {
@@ -148,15 +155,18 @@ export default function OrdersPage() {
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
-          order_id: orderId,
+          order_id: selectedReturnOrder.id,
           return_type: "full_order",
-          reason: "Customer requested return",
+          reason: returnReason || "Customer requested return",
           items: []
         }),
       });
-      
+
       if (response.ok) {
         toast.success("Return request created successfully");
+        setShowReturnDialog(false);
+        setSelectedReturnOrder(null);
+        setReturnReason("");
         refetch(); // Refresh the orders list
       } else {
         const errorData = await response.json().catch(() => null);
@@ -166,6 +176,12 @@ export default function OrdersPage() {
       console.error("Return error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to create return request");
     }
+  };
+
+  // Open return dialog
+  const openReturnDialog = (order: OrderReadNested) => {
+    setSelectedReturnOrder(order);
+    setShowReturnDialog(true);
   };
 
   // Open cancel dialog
@@ -265,9 +281,7 @@ export default function OrdersPage() {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm("Are you sure you want to return this order?")) {
-                  handleReturnOrder(row.id);
-                }
+                openReturnDialog(row);
               }}
             >
               Return
@@ -335,6 +349,20 @@ export default function OrdersPage() {
         notifyCustomer={notifyCustomer}
         onNotifyChange={setNotifyCustomer}
         onSubmit={() => selectedOrder && handleCancelOrder(selectedOrder.id)}
+      />
+
+      {/* Return Order Dialog */}
+      <ReturnOrderDialog
+        isOpen={showReturnDialog}
+        onClose={() => {
+          setShowReturnDialog(false);
+          setSelectedReturnOrder(null);
+          setReturnReason("");
+        }}
+        order={selectedReturnOrder}
+        returnReason={returnReason}
+        onReasonChange={setReturnReason}
+        onSubmit={handleReturnOrder}
       />
     </Screen>
   );
@@ -490,5 +518,92 @@ function OrderTableSkeleton() {
           <Skeleton key={i} className="h-10 w-full rounded-md" />
         ))}
     </div>
+  );
+}
+
+// Return Order Dialog Component
+interface ReturnOrderDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  order: OrderReadNested | null;
+  returnReason: string;
+  onReasonChange: (reason: string) => void;
+  onSubmit: () => void;
+}
+
+function ReturnOrderDialog({
+  isOpen,
+  onClose,
+  order,
+  returnReason,
+  onReasonChange,
+  onSubmit
+}: ReturnOrderDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Return Entire Order</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {order && (
+            <div className="border rounded-lg p-4 bg-gray-50">
+              <h4 className="font-medium mb-2">Order Details</h4>
+              <p><strong>Tracking #:</strong> {order.tracking_number}</p>
+              <p><strong>Customer:</strong> {order.customer_name}</p>
+              <p><strong>Total:</strong> {order.total} PKR</p>
+              <p><strong>Status:</strong> {order.order_status}</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <Label htmlFor="return-reason" className="block text-lg font-medium">
+              Reason for Return *
+            </Label>
+            <Textarea
+              id="return-reason"
+              value={returnReason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              className="w-full min-h-[120px] text-lg p-4"
+              placeholder="Please provide a detailed explanation for why you are returning this order. This helps us improve our products and services."
+              required
+            />
+            <p className="text-sm text-muted-foreground">
+              Please be specific about the reason for your return. Common reasons include: wrong size, damaged item, not as described, changed mind, etc.
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-800 mb-2">Return Policy</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Returns are accepted within 30 days of delivery</li>
+              <li>• Items must be in original condition with tags attached</li>
+              <li>• Refunds will be processed to your original payment method</li>
+              <li>• Return shipping may be free depending on the reason</li>
+            </ul>
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="px-6 py-2 text-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={onSubmit}
+              disabled={!returnReason.trim()}
+              className="px-6 py-2 text-lg"
+            >
+              Submit Return Request
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

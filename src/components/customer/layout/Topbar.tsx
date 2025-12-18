@@ -25,7 +25,7 @@ export default function Topbar() {
   return (
     <>
       <div className="hidden lg:block  bg-background text-foreground">
-        <div className=" mx-auto px-4">
+        <div className=" mx-auto px-0">
           <div className="flex justify-between items-center py-2 text-sm">
             {/* Left: Info links */}
             <div className="">

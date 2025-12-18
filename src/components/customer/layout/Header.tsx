@@ -22,9 +22,9 @@ export const MainHeader = ({ y = 0 }: { y?: number }) => {
         <div
           className={`transition-all duration-300 ${
             y > 0 ? "-mt-14" : "mt-0"
-          } py-4`}
+          } py-1`}
         >
-          <div className="w-full   sm:px-6 ">
+          <div className="w-full   sm:px-0 ">
             <div className=" flex items-center justify-between">
               {/* Logo */}
               <MainLogo />

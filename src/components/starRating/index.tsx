@@ -27,6 +27,9 @@ type StarRatingProps = {
   rating?: number;
   averageRating?: number;
   disabled?: boolean;
+  reviewCount?: number;
+  showReviewCount?: boolean;
+  size?: "sm" | "md" | "lg";
 };
 
 const StarRating: React.FC<StarRatingProps> = ({
@@ -35,6 +38,9 @@ const StarRating: React.FC<StarRatingProps> = ({
   rating = 0,
   averageRating = 0,
   disabled = false,
+  reviewCount,
+  showReviewCount = false,
+  size = "md",
 }) => {
   const [hoverRating, setHoverRating] = useState(rating);
   const [currentRating, setCurrentRating] = useState(rating);
@@ -60,18 +66,33 @@ const StarRating: React.FC<StarRatingProps> = ({
     }
   };
 
-  const renderStars = (rating: number, totalStars = 5) =>
+  const sizeClasses = {
+    sm: "w-3 h-3",
+    md: "w-4 h-4",
+    lg: "w-5 h-5",
+  };
+
+  const textSizeClasses = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
+  };
+
+  const renderStars = (ratingValue: number, totalStars = 5) =>
     Array.from({ length: totalStars }, (_, i) => {
-      const Icon = getStarIcon(rating, i + 1);
-      return <Icon key={i} className="w-5 h-5 text-yellow-500" />;
+      const Icon = getStarIcon(ratingValue, i + 1);
+      return <Icon key={i} className={`${sizeClasses[size]} text-yellow-500`} />;
     });
 
+  const displayRating = averageRating || hoverRating || currentRating;
+
   return (
-    <div>
-      {averageRating ? (
-        <div className="flex">{renderStars(averageRating)}</div>
-      ) : (
-        <div className="flex">{renderStars(hoverRating || currentRating)}</div>
+    <div className="flex items-center gap-1">
+      <div className="flex">{renderStars(displayRating, totalStars)}</div>
+      {showReviewCount && reviewCount !== undefined && (
+        <span className={`text-muted-foreground ${textSizeClasses[size]}`}>
+          ({reviewCount})
+        </span>
       )}
     </div>
   );

@@ -2,7 +2,8 @@
 
 import { useCart } from "@/context/cartContext";
 import { currencyFormatter } from "@/utils/helper";
-import { Minus, Plus, Trash2, ShoppingBag, X } from "lucide-react";
+import { Trash2, ShoppingBag, X } from "lucide-react";
+import { QuantitySelector } from "@/components/ui/QuantitySelector";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -148,29 +149,17 @@ export function MiniCart() {
 
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-3 mt-2">
-                          <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
-                            <button
-                              onClick={() =>
-                                handleDecrease(item.product.id, item.quantity)
-                              }
-                              className="p-0.5 rounded-full hover:bg-background transition-colors"
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="min-w-[1.5rem] text-center text-sm font-medium">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() =>
-                                handleIncrease(item.product.id, item.quantity)
-                              }
-                              className="p-0.5 rounded-full hover:bg-background transition-colors"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
+                          <QuantitySelector
+                            quantity={item.quantity}
+                            onIncrease={() =>
+                              handleIncrease(item.product.id, item.quantity)
+                            }
+                            onDecrease={() =>
+                              handleDecrease(item.product.id, item.quantity)
+                            }
+                            minQuantity={0}
+                            size="sm"
+                          />
 
                           {/* Remove Button */}
                           <button

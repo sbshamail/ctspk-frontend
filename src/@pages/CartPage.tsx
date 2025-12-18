@@ -17,6 +17,7 @@ import MainTable, { ColumnType } from "@/components/table/MainTable";
 import { CartItemType } from "@/utils/modelTypes";
 import { currencyFormatter } from "@/utils/helper";
 import { ProductFavorite } from "@/components/product/ProductFavorite";
+import { QuantitySelector } from "@/components/ui/QuantitySelector";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -279,52 +280,18 @@ const CartPage = () => {
           }
         };
 
-        const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          const newQuantity = parseInt(e.target.value, 10);
-          if (isNaN(newQuantity) || newQuantity < 1) {
-            return;
-          }
-          if (newQuantity <= maxStock) {
-            update(row.product.id, newQuantity);
-          } else {
-            update(row.product.id, maxStock);
-          }
-        };
-
         return (
-          <div className="flex flex-col items-center gap-2">
-            {/* Modern Quantity Control */}
-            <div className="flex items-center border border-border rounded-lg overflow-hidden bg-background">
-              <button
-                onClick={handleDecrease}
-                disabled={row.quantity <= 1}
-                className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-lg"
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <input
-                type="number"
-                min={1}
-                max={maxStock}
-                value={row.quantity}
-                onChange={handleInputChange}
-                className="w-14 text-center border-x border-border py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset font-medium"
-                aria-label="Quantity"
-              />
-              <button
-                onClick={handleIncrease}
-                disabled={row.quantity >= maxStock}
-                className="px-3 py-2 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-lg"
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
-            {/* Stock Indicator */}
-            <span className="text-xs text-muted-foreground">
-              Stock: {maxStock}
-            </span>
+          <div className="flex justify-center">
+            <QuantitySelector
+              quantity={row.quantity}
+              onIncrease={handleIncrease}
+              onDecrease={handleDecrease}
+              maxQuantity={maxStock}
+              minQuantity={1}
+              size="md"
+              showStock={true}
+              stockCount={maxStock}
+            />
           </div>
         );
       },

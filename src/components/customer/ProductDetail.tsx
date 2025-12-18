@@ -4,9 +4,38 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/cartContext";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { ZoomIn, ZoomOut, ShoppingCart, Store } from "lucide-react";
+import { ZoomIn, ZoomOut, ShoppingCart, Store, Star, User, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { currencyFormatter } from "@/utils/helper";
+import { QuantitySelector } from "@/components/ui/QuantitySelector";
+import StarRating from "@/components/starRating";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Review interface
+interface ReviewUser {
+  id: number;
+  name: string;
+  avatar?: {
+    id: number;
+    original: string;
+    thumbnail: string | null;
+  };
+}
+
+interface ProductReview {
+  id: number;
+  order_id: number;
+  user_id: number;
+  shop_id: number;
+  product_id: number;
+  variation_option_id: number | null;
+  comment: string;
+  rating: number;
+  photos: Array<{ original: string; thumbnail?: string }> | null;
+  created_at: string;
+  updated_at: string | null;
+  user: ReviewUser;
+}
 
 interface ProductDetailProps {
   product: {
@@ -18,6 +47,8 @@ interface ProductDetailProps {
     max_price: number;
     min_price: number;
     quantity: number;
+    rating?: number;
+    review_count?: number;
     product_type: "simple" | "variable";
     image: {
       original: string;
@@ -65,6 +96,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
+
+  // Reviews state
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const REVIEWS_LIMIT = 10;
 
   const { add } = useCart();
 
@@ -184,6 +222,39 @@ export function ProductDetail({ product }: ProductDetailProps) {
     }
   }, [selectedVariation]);
 
+  // Fetch product reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setIsLoadingReviews(true);
+        const skip = (reviewsPage - 1) * REVIEWS_LIMIT;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const response = await fetch(
+          `${apiUrl}/review/product/${product.id}?page=${reviewsPage}&skip=${skip}&limit=${REVIEWS_LIMIT}`
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setReviews(result.data);
+            setHasMoreReviews(result.data.length === REVIEWS_LIMIT);
+          } else {
+            setReviews([]);
+          }
+        } else {
+          setReviews([]);
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        setReviews([]);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    };
+
+    fetchReviews();
+  }, [product.id, reviewsPage]);
+
   // Handle mouse move for zoom
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isZoomed) return;
@@ -272,6 +343,17 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
 
+            {/* Rating and Review Count */}
+            <div className="mt-2">
+              <StarRating
+                averageRating={product.rating || 0}
+                disabled
+                reviewCount={product.review_count}
+                showReviewCount={true}
+                size="md"
+              />
+            </div>
+
             {/* Shop Name */}
             {product.shop?.name && (
               <div className="flex items-center gap-2 mt-3">
@@ -344,24 +426,15 @@ export function ProductDetail({ product }: ProductDetailProps) {
           {/* Quantity Selector */}
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-900">Quantity</h3>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                disabled={quantity <= 1}
-                className="w-10 h-10 border rounded-lg flex items-center justify-center disabled:opacity-50"
-              >
-                -
-              </button>
-              <span className="w-16 text-center border rounded-lg py-2">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity((prev) => prev + 1)}
-                disabled={quantity >= displayQuantity}
-                className="w-10 h-10 border rounded-lg flex items-center justify-center disabled:opacity-50"
-              >
-                +
-              </button>
+            <div className="flex items-center gap-4">
+              <QuantitySelector
+                quantity={quantity}
+                onIncrease={() => setQuantity((prev) => Math.min(displayQuantity, prev + 1))}
+                onDecrease={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                maxQuantity={displayQuantity}
+                minQuantity={1}
+                size="lg"
+              />
               <span className="text-sm text-gray-500">
                 {displayQuantity} available
               </span>
@@ -408,6 +481,191 @@ export function ProductDetail({ product }: ProductDetailProps) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-16 border-t pt-12">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
+            {reviews.length > 0 && (
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                {reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'}
+              </span>
+            )}
+          </div>
+
+          {/* Average Rating */}
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+                  return (
+                    <Star
+                      key={star}
+                      className={`w-5 h-5 ${
+                        star <= avgRating
+                          ? "text-yellow-400 fill-yellow-400"
+                          : star - 0.5 <= avgRating
+                          ? "text-yellow-400 fill-yellow-400/50"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+              <span className="text-lg font-semibold text-gray-700">
+                {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Reviews Loading State */}
+        {isLoadingReviews ? (
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : reviews.length > 0 ? (
+          <div className="space-y-6">
+            {reviews.map((review) => (
+              <div
+                key={review.id}
+                className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-300"
+              >
+                <div className="flex items-start gap-4">
+                  {/* User Avatar */}
+                  <div className="flex-shrink-0">
+                    {review.user.avatar?.original ? (
+                      <Image
+                        src={review.user.avatar.original}
+                        alt={review.user.name}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border-2 border-primary/20">
+                        <User className="w-6 h-6 text-primary" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Review Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Header */}
+                    <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+                      <h4 className="font-semibold text-gray-900">{review.user.name}</h4>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(review.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Star Rating */}
+                    <div className="flex items-center gap-1 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= review.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                      <span className="ml-2 text-sm font-medium text-gray-600">
+                        {review.rating}/5
+                      </span>
+                    </div>
+
+                    {/* Comment */}
+                    {review.comment && (
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        {review.comment}
+                      </p>
+                    )}
+
+                    {/* Review Photos */}
+                    {review.photos && review.photos.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {review.photos.map((photo, index) => (
+                          <div
+                            key={index}
+                            className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                          >
+                            <Image
+                              src={photo.thumbnail || photo.original}
+                              alt={`Review photo ${index + 1}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Pagination */}
+            {(reviewsPage > 1 || hasMoreReviews) && (
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReviewsPage(prev => Math.max(1, prev - 1))}
+                  disabled={reviewsPage === 1}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600 font-medium">
+                  Page {reviewsPage}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReviewsPage(prev => prev + 1)}
+                  disabled={!hasMoreReviews}
+                  className="flex items-center gap-2"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* No Reviews State */
+          <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <Star className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">No Reviews Yet</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Be the first to review this product! Share your experience with other customers.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

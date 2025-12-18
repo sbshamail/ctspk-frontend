@@ -58,6 +58,16 @@ export default function OrderDetailPage({ id }: { id: string }) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [notifyCustomer, setNotifyCustomer] = useState(true);
+  const [showViewReviewDialog, setShowViewReviewDialog] = useState(false);
+  const [viewReviewData, setViewReviewData] = useState<any>(null);
+  const [isLoadingReview, setIsLoadingReview] = useState(false);
+  const [viewReviewProduct, setViewReviewProduct] = useState<OrderProductRead | null>(null);
+
+  // View Return states
+  const [showViewReturnDialog, setShowViewReturnDialog] = useState(false);
+  const [viewReturnData, setViewReturnData] = useState<any>(null);
+  const [isLoadingReturnView, setIsLoadingReturnView] = useState(false);
+  const [viewReturnProduct, setViewReturnProduct] = useState<OrderProductRead | null>(null);
 
   if (isLoading) return <OrderSkeleton />;
   if (error)
@@ -200,7 +210,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
         },
         body: JSON.stringify(reviewData),
       });
-      
+
       if (response.ok) {
         toast.success("Review submitted successfully");
         setShowReviewForm(false);
@@ -213,6 +223,88 @@ export default function OrderDetailPage({ id }: { id: string }) {
     } catch (error) {
       console.error("Review error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to submit review");
+    }
+  };
+
+  // Handle viewing existing return
+  const handleViewReturn = async (returnRequestId: number, product: OrderProductRead) => {
+    try {
+      setIsLoadingReturnView(true);
+      setViewReturnProduct(product);
+      setShowViewReturnDialog(true);
+
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await fetch(getApiUrl(`returns/${returnRequestId}`), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setViewReturnData(result.data);
+        } else {
+          throw new Error(result.detail || 'Failed to fetch return details');
+        }
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || 'Failed to fetch return details');
+      }
+    } catch (error) {
+      console.error("View return error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to fetch return details");
+      setShowViewReturnDialog(false);
+    } finally {
+      setIsLoadingReturnView(false);
+    }
+  };
+
+  // Handle viewing existing review
+  const handleViewReview = async (reviewId: number, product: OrderProductRead) => {
+    try {
+      setIsLoadingReview(true);
+      setViewReviewProduct(product);
+      setShowViewReviewDialog(true);
+
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await fetch(getApiUrl(`/review/read/${reviewId}`), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setViewReviewData(result.data);
+        } else {
+          throw new Error(result.detail || 'Failed to fetch review');
+        }
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || 'Failed to fetch review');
+      }
+    } catch (error) {
+      console.error("View review error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to fetch review");
+      setShowViewReviewDialog(false);
+    } finally {
+      setIsLoadingReview(false);
     }
   };
 
@@ -497,33 +589,56 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {/* Review Product Button */}
-                    {canReviewProduct(item) && (
+                    {/* View Review Button - Show if review already exists */}
+                    {item.review_id && item.review_id > 0 ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setSelectedProduct(item);
-                          setShowReviewForm(true);
-                        }}
+                        className="text-green-600 border-green-600 hover:bg-green-50"
+                        onClick={() => handleViewReview(item.review_id!, item)}
                       >
-                        Review
+                        View Review
                       </Button>
+                    ) : (
+                      /* Review Product Button - Show if no review and can review */
+                      canReviewProduct(item) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProduct(item);
+                            setShowReviewForm(true);
+                          }}
+                        >
+                          Add Review
+                        </Button>
+                      )
                     )}
-                    
-                    {/* Return Single Product Button */}
-                    {canReturnOrder() && (
+
+                    {/* Return Single Product Button or View Return */}
+                    {item.is_returned && item.return_request_id ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setReturnType("single_product");
-                          setReturnProductId(item.id);
-                          setShowReturnDialog(true);
-                        }}
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                        onClick={() => handleViewReturn(item.return_request_id!, item)}
                       >
-                        Return Item
+                        View Return
                       </Button>
+                    ) : (
+                      canReturnOrder() && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setReturnType("single_product");
+                            setReturnProductId(item.id);
+                            setShowReturnDialog(true);
+                          }}
+                        >
+                          Return Item
+                        </Button>
+                      )
                     )}
                   </div>
                 </div>
@@ -594,6 +709,23 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   <span>Total:</span>
                   <span>{currencyFormatter(order.paid_total || order.total)}</span>
                 </div>
+
+                {/* Return Entire Order Button */}
+                {canReturnOrder() && (
+                  <div className="pt-4">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setReturnType("full_order");
+                        setReturnProductId(null);
+                        setShowReturnDialog(true);
+                      }}
+                    >
+                      Return Entire Order
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -719,6 +851,32 @@ export default function OrderDetailPage({ id }: { id: string }) {
         onReasonChange={setReturnReason}
         onSubmit={handleReturnOrder}
         product={returnProductId ? order.order_products.find(op => op.id === returnProductId) : null}
+      />
+
+      {/* View Review Dialog */}
+      <ViewReviewDialog
+        isOpen={showViewReviewDialog}
+        onClose={() => {
+          setShowViewReviewDialog(false);
+          setViewReviewData(null);
+          setViewReviewProduct(null);
+        }}
+        reviewData={viewReviewData}
+        product={viewReviewProduct}
+        isLoading={isLoadingReview}
+      />
+
+      {/* View Return Dialog */}
+      <ViewReturnDialog
+        isOpen={showViewReturnDialog}
+        onClose={() => {
+          setShowViewReturnDialog(false);
+          setViewReturnData(null);
+          setViewReturnProduct(null);
+        }}
+        returnData={viewReturnData}
+        product={viewReturnProduct}
+        isLoading={isLoadingReturnView}
       />
     </Screen>
   );
@@ -864,6 +1022,85 @@ interface ReviewFormDialogProps {
 function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: ReviewFormDialogProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [photos, setPhotos] = useState<Array<{ id: number; original: string; thumbnail: string }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Handle image upload to media/create API
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+
+      // Add all files to FormData with attribute name 'files'
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const response = await fetch(getApiUrl('/media/create?thumbnail=true'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        // Handle response - if single image use data[0], if multiple add all to photos
+        if (result.data) {
+          const uploadedImages = Array.isArray(result.data)
+            ? result.data.map((img: any) => ({
+                id: img.id,
+                original: img.original || img.url,
+                thumbnail: img.thumbnail || img.original || img.url
+              }))
+            : [{
+                id: result.data.id,
+                original: result.data.original || result.data.url,
+                thumbnail: result.data.thumbnail || result.data.original || result.data.url
+              }];
+
+          // Add uploaded images to photos array (multi-dimensional array support)
+          setPhotos(prev => [...prev, ...uploadedImages]);
+          toast.success(`${uploadedImages.length} image(s) uploaded successfully`);
+        }
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to upload images');
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to upload images");
+    } finally {
+      setIsUploading(false);
+      // Reset the input so same file can be selected again
+      e.target.value = '';
+    }
+  };
+
+  // Remove uploaded image from photos array
+  const handleRemoveImage = (indexToRemove: number) => {
+    setPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Reset form when dialog closes
+  const handleClose = () => {
+    setRating(0);
+    setComment("");
+    setPhotos([]);
+    onClose();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -876,7 +1113,13 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
       rating,
       comment,
       variation_option_id: product.variation_option_id,
+      photos: photos, // Multi-dimensional array of uploaded images
     });
+
+    // Reset form after submission
+    setRating(0);
+    setComment("");
+    setPhotos([]);
   };
 
   // ✅ Get correct image for variable products
@@ -903,7 +1146,7 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
   if (!product) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Review Product</DialogTitle>
@@ -932,7 +1175,7 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
               )}
             </div>
           </div>
-          
+
           <div className="space-y-3">
             <Label className="block text-lg font-medium">Rating *</Label>
             <div className="flex space-x-3">
@@ -942,8 +1185,8 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
                   type="button"
                   onClick={() => setRating(star)}
                   className={`text-4xl transition-all duration-200 ${
-                    star <= rating 
-                      ? "text-yellow-500 scale-110" 
+                    star <= rating
+                      ? "text-yellow-500 scale-110"
                       : "text-gray-300 hover:text-yellow-400 hover:scale-105"
                   }`}
                 >
@@ -955,7 +1198,7 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
               {rating === 0 ? "Select a rating" : `You rated this product ${rating} star${rating > 1 ? 's' : ''}`}
             </p>
           </div>
-          
+
           <div className="space-y-3">
             <Label htmlFor="comment" className="block text-lg font-medium">
               Your Review
@@ -971,19 +1214,84 @@ function ReviewFormDialog({ product, orderId, isOpen, onSubmit, onClose }: Revie
               Your review helps other customers make better decisions.
             </p>
           </div>
-          
+
+          {/* Product Image Upload Section */}
+          <div className="space-y-3">
+            <Label className="block text-lg font-medium">
+              Upload Product Images
+            </Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              Share photos of the product you received. You can upload multiple images at once or one by one.
+            </p>
+
+            {/* Upload Input */}
+            <div className="flex items-center gap-3">
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                disabled={isUploading}
+                className="flex-1"
+                id="review-images"
+              />
+              {isUploading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  Uploading...
+                </div>
+              )}
+            </div>
+
+            {/* Image Preview Grid */}
+            {photos.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium mb-2">
+                  Uploaded Images ({photos.length})
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {photos.map((photo, index) => (
+                    <div key={photo.id || index} className="relative group">
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                        <Image
+                          src={photo.thumbnail || photo.original}
+                          alt={`Uploaded image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.png";
+                          }}
+                        />
+                      </div>
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Remove image"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end space-x-4 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
               className="px-6 py-2 text-lg"
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={rating === 0}
+            <Button
+              type="submit"
+              disabled={rating === 0 || isUploading}
               className="px-6 py-2 text-lg"
             >
               Submit Review
@@ -1124,6 +1432,417 @@ function ReturnDialog({
             </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// View Review Dialog Component
+interface ViewReviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  reviewData: any;
+  product: OrderProductRead | null;
+  isLoading: boolean;
+}
+
+function ViewReviewDialog({
+  isOpen,
+  onClose,
+  reviewData,
+  product,
+  isLoading
+}: ViewReviewDialogProps) {
+  // Get correct image for variable products
+  const getViewProductImage = () => {
+    const variationImage = product?.variation_snapshot?.image?.original ||
+                          product?.variation_snapshot?.image?.thumbnail ||
+                          product?.variation_data?.image?.original ||
+                          product?.variation_data?.image?.thumbnail;
+    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+  };
+
+  // Get variation text
+  const getViewVariationText = () => {
+    if (product?.variation_snapshot?.title) return product.variation_snapshot.title;
+    if (product?.variation_snapshot?.options) {
+      return Object.entries(product.variation_snapshot.options)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    if (product?.variation_data?.title) return product.variation_data.title;
+    return null;
+  };
+
+  // Format date helper
+  const formatReviewDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Render star rating
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex space-x-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            className={`text-2xl ${
+              star <= rating ? "text-yellow-500" : "text-gray-300"
+            }`}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Your Review</DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-4 py-6">
+            <div className="flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-center text-muted-foreground">Loading review...</p>
+          </div>
+        ) : reviewData ? (
+          <div className="space-y-6">
+            {/* Product Info */}
+            {product && (
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                <div className="relative w-16 h-16 rounded overflow-hidden border bg-white">
+                  <Image
+                    src={getViewProductImage()}
+                    alt={product.product_snapshot?.name || "Product image"}
+                    width={64}
+                    height={64}
+                    className="object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.png";
+                    }}
+                  />
+                </div>
+                <div>
+                  <p className="font-medium text-lg">{product.product_snapshot?.name}</p>
+                  {getViewVariationText() && (
+                    <p className="text-sm text-primary font-medium">
+                      {getViewVariationText()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Rating */}
+            <div className="space-y-2">
+              <Label className="block text-lg font-medium">Rating</Label>
+              <div className="flex items-center gap-3">
+                {renderStars(reviewData.rating)}
+                <span className="text-lg font-medium text-muted-foreground">
+                  ({reviewData.rating}/5)
+                </span>
+              </div>
+            </div>
+
+            {/* Comment */}
+            {reviewData.comment && (
+              <div className="space-y-2">
+                <Label className="block text-lg font-medium">Your Comment</Label>
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <p className="text-gray-700 whitespace-pre-wrap">{reviewData.comment}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Photos */}
+            {reviewData.photos && Object.keys(reviewData.photos).length > 0 && (
+              <div className="space-y-2">
+                <Label className="block text-lg font-medium">Photos</Label>
+                <div className="grid grid-cols-4 gap-3">
+                  {Array.isArray(reviewData.photos) ? (
+                    reviewData.photos.map((photo: any, index: number) => (
+                      <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                        <Image
+                          src={photo.thumbnail || photo.original || photo}
+                          alt={`Review photo ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.png";
+                          }}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    Object.values(reviewData.photos).map((photo: any, index: number) => (
+                      <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                        <Image
+                          src={typeof photo === 'string' ? photo : photo?.thumbnail || photo?.original}
+                          alt={`Review photo ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.png";
+                          }}
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Review Date */}
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Reviewed on {formatReviewDate(reviewData.created_at)}
+              </p>
+              {reviewData.updated_at && (
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {formatReviewDate(reviewData.updated_at)}
+                </p>
+              )}
+            </div>
+
+            {/* Close Button */}
+            <div className="flex justify-end pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="px-6 py-2 text-lg"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="py-6 text-center text-muted-foreground">
+            No review data available.
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// View Return Dialog Component
+interface ViewReturnDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  returnData: any;
+  product: OrderProductRead | null;
+  isLoading: boolean;
+}
+
+function ViewReturnDialog({
+  isOpen,
+  onClose,
+  returnData,
+  product,
+  isLoading
+}: ViewReturnDialogProps) {
+  // Get correct image for variable products
+  const getViewProductImage = () => {
+    const variationImage = product?.variation_snapshot?.image?.original ||
+                          product?.variation_snapshot?.image?.thumbnail ||
+                          product?.variation_data?.image?.original ||
+                          product?.variation_data?.image?.thumbnail;
+    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+  };
+
+  // Get variation text
+  const getViewVariationText = () => {
+    if (product?.variation_snapshot?.title) return product.variation_snapshot.title;
+    if (product?.variation_snapshot?.options) {
+      return Object.entries(product.variation_snapshot.options)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(", ");
+    }
+    if (product?.variation_data?.title) return product.variation_data.title;
+    return null;
+  };
+
+  // Format date helper
+  const formatReturnDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Get status badge color
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "rejected":
+        return "destructive";
+      case "processed":
+        return "default";
+      default:
+        return "outline";
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">Return Request Details</DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-4 py-6">
+            <div className="flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-center text-muted-foreground">Loading return details...</p>
+          </div>
+        ) : returnData ? (
+          <div className="space-y-6">
+            {/* Product Info */}
+            {product && (
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
+                <div className="relative w-16 h-16 rounded overflow-hidden border bg-white">
+                  <Image
+                    src={getViewProductImage()}
+                    alt={product.product_snapshot?.name || "Product image"}
+                    width={64}
+                    height={64}
+                    className="object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.png";
+                    }}
+                  />
+                </div>
+                <div>
+                  <p className="font-medium text-lg">{product.product_snapshot?.name}</p>
+                  {getViewVariationText() && (
+                    <p className="text-sm text-primary font-medium">
+                      {getViewVariationText()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Return Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium text-muted-foreground">Return Status</Label>
+                <Badge variant={getStatusBadgeVariant(returnData.status)} className="capitalize">
+                  {returnData.status}
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium text-muted-foreground">Refund Status</Label>
+                <Badge variant={getStatusBadgeVariant(returnData.refund_status)} className="capitalize">
+                  {returnData.refund_status}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Return Type */}
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium text-muted-foreground">Return Type</Label>
+              <p className="font-medium capitalize">{returnData.return_type?.replace(/_/g, " ")}</p>
+            </div>
+
+            {/* Reason */}
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium text-muted-foreground">Reason</Label>
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="text-gray-700 whitespace-pre-wrap">{returnData.reason}</p>
+              </div>
+            </div>
+
+            {/* Refund Amount */}
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium text-muted-foreground">Refund Amount</Label>
+              <p className="text-2xl font-bold text-green-600">
+                {currencyFormatter(parseFloat(returnData.refund_amount))}
+              </p>
+            </div>
+
+            {/* Transfer Eligible Date */}
+            {returnData.transfer_eligible_at && (
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium text-muted-foreground">Transfer Eligible At</Label>
+                <p className="font-medium">{formatReturnDate(returnData.transfer_eligible_at)}</p>
+              </div>
+            )}
+
+            {/* Admin Notes */}
+            {returnData.admin_notes && (
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium text-muted-foreground">Admin Notes</Label>
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <p className="text-blue-700">{returnData.admin_notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Rejected Reason */}
+            {returnData.rejected_reason && (
+              <div className="space-y-2">
+                <Label className="block text-sm font-medium text-muted-foreground">Rejected Reason</Label>
+                <div className="p-4 border rounded-lg bg-red-50">
+                  <p className="text-red-700">{returnData.rejected_reason}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Return Request Date */}
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Return requested on {formatReturnDate(returnData.created_at)}
+              </p>
+              {returnData.updated_at && (
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {formatReturnDate(returnData.updated_at)}
+                </p>
+              )}
+            </div>
+
+            {/* Close Button */}
+            <div className="flex justify-end pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="px-6 py-2 text-lg"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="py-6 text-center text-muted-foreground">
+            No return data available.
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -12,7 +12,7 @@ export const Screen = ({
     <div>
       <div
         className={cn(
-          "mx-auto 3xl:max-w-[1600px] 2xl:max-w-[1400px] max-w-6xl px-2",
+          "mx-auto 3xl:max-w-[1600px] 2xl:max-w-[1400px] max-w-6xl px-0",
           className
         )}
       >

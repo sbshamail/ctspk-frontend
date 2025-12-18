@@ -8,6 +8,7 @@ import { ReactNode } from "react";
 import "./globals.css";
 import StoreProvider from "./StoreProvider";
 import { SettingsProvider } from "@/components/providers/SettingsProvider";
+import { SessionManager } from "@/components/providers/SessionManager";
 import { fetchApi } from "@/action/fetchApi";
 
 const geistSans = Geist({
@@ -89,10 +90,12 @@ export default async function RootLayout({
         >
           <SettingsProvider>
             <StoreProvider serverAuth={serverAuth}>
-              <CartProvider>
-                {children}
-                {modal}
-              </CartProvider>
+              <SessionManager>
+                <CartProvider>
+                  {children}
+                  {modal}
+                </CartProvider>
+              </SessionManager>
             </StoreProvider>
           </SettingsProvider>
           <Toaster />

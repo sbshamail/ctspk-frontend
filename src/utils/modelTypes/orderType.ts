@@ -61,6 +61,10 @@ export interface OrderProductRead extends TimeStampReadModel {
   shop_id?: number;
   shop_name?: string;
   shop_slug?: string;
+  review_id?: number;
+  is_returned?: boolean;
+  returned_quantity?: number;
+  return_request_id?: number | null;
 }
 
 // Fulfillment Officer Types

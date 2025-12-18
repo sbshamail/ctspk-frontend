@@ -13,11 +13,11 @@ export const MainLogo = ({ className }: MainLogoProps) => {
         <Image
           alt="logo"
           src="/assets/imgs/theme/logo.svg"
-          height={100}
-          width={100}
+          height={36}
+          width={60}
         />
       </Link>
-      <span className="text-xs text-gray-400 uppercase tracking-wide">we make it easy, always!</span>
+      <span className="text-[0.5rem] text-gray-400 uppercase tracking-wide">we make it easy, always!</span>
     </div>
   );
 };

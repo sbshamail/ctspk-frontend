@@ -200,7 +200,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
       {/* Main Navigation Bar */}
       <Screen>
         <nav className="w-full bg-background">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto px-4 sm:px-6 lg:px-0">
             <div
               className="flex items-center justify-between h-16"
               ref={navRef}
@@ -220,7 +220,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
               )}
 
               {/* Menu Items - Reordered: Brands, Categories, New Arrival, Sales, Limited Edition */}
-              <div className="flex items-center space-x-1 flex-1 overflow-hidden px-4">
+              <div className="flex items-center space-x-1 flex-1 overflow-hidden px-0">
                 {/* Brands Dropdown - FIRST */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

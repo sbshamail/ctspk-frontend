@@ -11,7 +11,7 @@ import { useAppDispatch } from "@/lib/hooks";
 import { logoutUser } from "@/store/features/authSlice";
 import { clearCart } from "@/store/features/localCartSlice";
 import { AuthDataType } from "@/utils/modelTypes";
-import { LogOut, User, Bell } from "lucide-react";
+import { LogOut, User, Bell, Store, Heart, ShoppingBag, RotateCcw, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -57,39 +57,40 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/my-orders" className="cursor-pointer">
+            <ShoppingBag className="mr-2 h-4 w-4" />
             My Orders
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/wishlist">Wishlist</Link>
+          <Link href="/wishlist" className="cursor-pointer">
+            <Heart className="mr-2 h-4 w-4" />
+            Wishlist
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/profiles" className="cursor-pointer">
-            Profiles
+            <User className="mr-2 h-4 w-4" />
+            Profile
           </Link>
         </DropdownMenuItem>
-
-        {/* <DropdownMenuItem asChild>
-          <Link href="/my-coupons" className="cursor-pointer">
-            My Coupons
+        <DropdownMenuItem asChild>
+          <Link href="/my-returns" className="cursor-pointer">
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Return & Refund
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/wallet" className="cursor-pointer">
+            <Wallet className="mr-2 h-4 w-4" />
+            Wallet
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/become-seller" className="cursor-pointer">
+            <Store className="mr-2 h-4 w-4" />
             Become a Seller
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/payments" className="cursor-pointer">
-            Payments
-          </Link>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem asChild>
-          <Link href="/return-refund" className="cursor-pointer">
-            Return & Refund Policy
-          </Link>
-        </DropdownMenuItem>*/}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => handleLogout()}
