@@ -1,0 +1,222 @@
+{
+  "success": 1,
+  "detail": "Product Found",
+  "data": {
+    "created_at": "2025-10-18T14:28:20.585303",
+    "updated_at": null,
+    "id": 257,
+    "name": "Calza Slippers",
+    "description": "Slippers",
+    "slug": "calza-slippers",
+    "price": "570.00",
+    "sale_price": null,
+    "max_price": "570.00",
+    "min_price": "570.00",
+    "purchase_price": null,
+    "weight": null,
+    "image": {
+      "id": 167,
+      "size_mb": 0,
+      "filename": "Picture12.webp",
+      "original": "https://api.ctspk.com/media/9/Picture12.webp",
+      "extension": ".webp",
+      "thumbnail": "https://api.ctspk.com/media/9/Picture12_thumb.webp",
+      "media_type": "image"
+    },
+    "gallery": null,
+    "is_active": true,
+    "is_feature": false,
+    "quantity": 223,
+    "status": "publish",
+    "product_type": "variable",
+    "category": {
+      "id": 30,
+      "name": "Slippers",
+      "slug": "slippers",
+      "root_id": 6,
+      "parent_id": 28
+    },
+    "shop": {
+      "id": 3,
+      "name": "D.Watson Cash & Carry"
+    },
+    "manufacturer_id": null,
+    "unit": "",
+    "dimension_unit": "",
+    "sku": "Slippers-001",
+    "height": null,
+    "width": null,
+    "length": null,
+    "warranty": "",
+    "meta_title": "",
+    "meta_description": "",
+    "return_policy": "",
+    "shipping_info": "",
+    "tags": [],
+    "bar_code": "",
+    "attributes": [
+      {
+        "id": 6,
+        "name": "Size",
+        "values": [
+          {
+            "id": 7,
+            "value": "Small",
+            "meta": "S"
+          },
+          {
+            "id": 8,
+            "value": "Medium",
+            "meta": "M"
+          },
+          {
+            "id": 9,
+            "value": "Large",
+            "meta": "L"
+          },
+          {
+            "id": 10,
+            "value": "Extra Large",
+            "meta": "XL"
+          },
+          {
+            "id": 11,
+            "value": "Double Extra Large",
+            "meta": "XXL"
+          }
+        ],
+        "selected_values": [
+          7,
+          8
+        ],
+        "is_visible": true,
+        "is_variation": true
+      },
+      {
+        "id": 5,
+        "name": "color",
+        "values": [
+          {
+            "id": 5,
+            "value": "Red",
+            "meta": "#FF0000"
+          },
+          {
+            "id": 6,
+            "value": "Green",
+            "meta": "#008000"
+          }
+        ],
+        "selected_values": [
+          5,
+          6
+        ],
+        "is_visible": true,
+        "is_variation": true
+      }
+    ],
+    "variation_options": [
+      {
+        "id": 5,
+        "title": "Size: Medium - color: Red",
+        "price": "570.0",
+        "sale_price": null,
+        "purchase_price": "400.00",
+        "quantity": 40,
+        "options": {
+          "Size": "Medium",
+          "color": "Red"
+        },
+        "image": {
+          "id": 167,
+          "size_mb": 0,
+          "filename": "Picture12.webp",
+          "original": "https://api.ctspk.com/media/9/Picture12.webp",
+          "extension": ".webp",
+          "thumbnail": "https://api.ctspk.com/media/9/Picture12_thumb.webp",
+          "media_type": "image"
+        },
+        "sku": "VAR-4",
+        "bar_code": "BC-1760797597734-4",
+        "is_active": true
+      },
+      {
+        "id": 6,
+        "title": "Size: Medium - color: Green",
+        "price": "570.0",
+        "sale_price": null,
+        "purchase_price": "399.98",
+        "quantity": 54,
+        "options": {
+          "Size": "Medium",
+          "color": "Green"
+        },
+        "image": {
+          "id": 168,
+          "size_mb": 0.01,
+          "filename": "Picture11.webp",
+          "original": "https://api.ctspk.com/media/9/Picture11.webp",
+          "extension": ".webp",
+          "thumbnail": "https://api.ctspk.com/media/9/Picture11_thumb.webp",
+          "media_type": "image"
+        },
+        "sku": "VAR-5",
+        "bar_code": "BC-1760797597734-5",
+        "is_active": true
+      },
+      {
+        "id": 3,
+        "title": "Size: Small - color: Red",
+        "price": "570.0",
+        "sale_price": null,
+        "purchase_price": "4000.00",
+        "quantity": 118,
+        "options": {
+          "Size": "Small",
+          "color": "Red"
+        },
+        "image": {
+          "id": 167,
+          "size_mb": 0,
+          "filename": "Picture12.webp",
+          "original": "https://api.ctspk.com/media/9/Picture12.webp",
+          "extension": ".webp",
+          "thumbnail": "https://api.ctspk.com/media/9/Picture12_thumb.webp",
+          "media_type": "image"
+        },
+        "sku": "VAR-2",
+        "bar_code": "BC-1760797597734-2",
+        "is_active": true
+      },
+      {
+        "id": 4,
+        "title": "Size: Small - color: Green",
+        "price": "570.0",
+        "sale_price": null,
+        "purchase_price": "400.00",
+        "quantity": 11,
+        "options": {
+          "Size": "Small",
+          "color": "Green"
+        },
+        "image": {
+          "id": 168,
+          "size_mb": 0.01,
+          "filename": "Picture11.webp",
+          "original": "https://api.ctspk.com/media/9/Picture11.webp",
+          "extension": ".webp",
+          "thumbnail": "https://api.ctspk.com/media/9/Picture11_thumb.webp",
+          "media_type": "image"
+        },
+        "sku": "VAR-3",
+        "bar_code": "BC-1760797597734-3",
+        "is_active": true
+      }
+    ],
+    "total_purchased_quantity": 0,
+    "total_sold_quantity": 17,
+    "current_stock_value": null,
+    "total_quantity": 223,
+    "variations_count": 4
+  }
+}

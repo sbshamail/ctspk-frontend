@@ -31,20 +31,20 @@ export function MiniCart() {
   // Calculate total (same as subtotal for mini cart, full calculation on checkout)
   const total = subtotal;
 
-  const handleIncrease = (productId: number, currentQty: number) => {
-    update(productId, currentQty + 1);
+  const handleIncrease = (productId: number, currentQty: number, variation_option_id?: number | null) => {
+    update(productId, currentQty + 1, variation_option_id);
   };
 
-  const handleDecrease = (productId: number, currentQty: number) => {
+  const handleDecrease = (productId: number, currentQty: number, variation_option_id?: number | null) => {
     if (currentQty > 1) {
-      update(productId, currentQty - 1);
+      update(productId, currentQty - 1, variation_option_id);
     } else {
-      remove(productId);
+      remove(productId, variation_option_id);
     }
   };
 
-  const handleRemove = (productId: number) => {
-    remove(productId);
+  const handleRemove = (productId: number, variation_option_id?: number | null) => {
+    remove(productId, variation_option_id);
   };
 
   const cartCount = cart?.length || 0;
@@ -97,17 +97,33 @@ export function MiniCart() {
               <div className="overflow-y-auto max-h-[350px] px-4 py-3">
                 <div className="space-y-3">
                 {cart.map((item) => {
-                  const price = item.product.sale_price || item.product.price;
+                  // For variable products, get variation-specific data
+                  const selectedVariation = item.variation_option_id
+                    ? item.product.variation_options?.find(
+                        (v: any) => v.id === item.variation_option_id
+                      )
+                    : null;
+
+                  // Use variation price if available, otherwise product price
+                  const price = selectedVariation
+                    ? parseFloat(selectedVariation.sale_price || selectedVariation.price)
+                    : (item.product.sale_price || item.product.price);
+
+                  // Use variation image if available
+                  const variationImage = selectedVariation?.image;
+                  const productImage = item.product.image;
                   const imageUrl =
-                    typeof item.product.image === "string"
-                      ? item.product.image
-                      : item.product.image?.thumbnail ||
-                        item.product.image?.original ||
-                        "/placeholder.png";
+                    variationImage?.thumbnail ||
+                    variationImage?.original ||
+                    (typeof productImage === "string"
+                      ? productImage
+                      : productImage?.thumbnail ||
+                        productImage?.original ||
+                        "/placeholder.png");
 
                   return (
                     <div
-                      key={item.product.id}
+                      key={`${item.product.id}-${item.variation_option_id || 0}`}
                       className="flex gap-3 p-2 rounded-lg border bg-card hover:shadow-sm transition-shadow"
                     >
                       {/* Product Image */}
@@ -152,10 +168,10 @@ export function MiniCart() {
                           <QuantitySelector
                             quantity={item.quantity}
                             onIncrease={() =>
-                              handleIncrease(item.product.id, item.quantity)
+                              handleIncrease(item.product.id, item.quantity, item.variation_option_id)
                             }
                             onDecrease={() =>
-                              handleDecrease(item.product.id, item.quantity)
+                              handleDecrease(item.product.id, item.quantity, item.variation_option_id)
                             }
                             minQuantity={0}
                             size="sm"
@@ -163,7 +179,7 @@ export function MiniCart() {
 
                           {/* Remove Button */}
                           <button
-                            onClick={() => handleRemove(item.product.id)}
+                            onClick={() => handleRemove(item.product.id, item.variation_option_id)}
                             className="p-1 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                             aria-label="Remove item"
                           >

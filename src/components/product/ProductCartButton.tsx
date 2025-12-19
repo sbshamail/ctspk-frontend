@@ -85,7 +85,7 @@ export const ProductCartButton: FC<Props> = ({
     e.stopPropagation();
 
     if (currentQuantity < maxStock) {
-      update(product.id, currentQuantity + 1);
+      update(product.id, currentQuantity + 1, cartItem?.variation_option_id);
     }
   };
 
@@ -94,10 +94,10 @@ export const ProductCartButton: FC<Props> = ({
     e.stopPropagation();
 
     if (currentQuantity > 1) {
-      update(product.id, currentQuantity - 1);
+      update(product.id, currentQuantity - 1, cartItem?.variation_option_id);
     } else if (currentQuantity === 1) {
       // Remove from cart if quantity is 1
-      remove(product.id);
+      remove(product.id, cartItem?.variation_option_id);
     }
   };
 
@@ -109,14 +109,14 @@ export const ProductCartButton: FC<Props> = ({
           quantity={currentQuantity}
           onIncrease={() => {
             if (currentQuantity < maxStock) {
-              update(product.id, currentQuantity + 1);
+              update(product.id, currentQuantity + 1, cartItem?.variation_option_id);
             }
           }}
           onDecrease={() => {
             if (currentQuantity > 1) {
-              update(product.id, currentQuantity - 1);
+              update(product.id, currentQuantity - 1, cartItem?.variation_option_id);
             } else if (currentQuantity === 1) {
-              remove(product.id);
+              remove(product.id, cartItem?.variation_option_id);
             }
           }}
           maxQuantity={maxStock}

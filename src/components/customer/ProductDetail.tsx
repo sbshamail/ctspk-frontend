@@ -104,7 +104,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const REVIEWS_LIMIT = 10;
 
-  const { add } = useCart();
+  const { add, cart, update } = useCart();
 
   // Get all gallery images including main image
   const allImages = useMemo(() => {
@@ -126,6 +126,26 @@ export function ProductDetail({ product }: ProductDetailProps) {
     });
   }, [selectedAttributes, product.variation_options, product.product_type]);
 
+  // Check if product is already in cart
+  const cartItem = useMemo(() => {
+    return cart.find((item) => {
+      const productMatch = item.product.id === product.id;
+      if (product.product_type === "variable") {
+        // For variable products, only match if we have a selected variation
+        // and it matches the cart item's variation
+        if (!selectedVariation) {
+          return false; // No variation selected, so can't match
+        }
+        return productMatch && item.variation_option_id === selectedVariation.id;
+      }
+      // For simple products, just match by product ID
+      return productMatch;
+    });
+  }, [cart, product.id, product.product_type, selectedVariation]);
+
+  const isInCart = !!cartItem;
+  const cartQuantity = cartItem?.quantity || 0;
+
   // Get current display price and quantity
   const displayPrice = useMemo(() => {
     if (product.product_type === "variable" && selectedVariation) {
@@ -137,8 +157,16 @@ export function ProductDetail({ product }: ProductDetailProps) {
   }, [product, selectedVariation]);
 
   const displayQuantity = useMemo(() => {
-    if (product.product_type === "variable" && selectedVariation) {
-      return selectedVariation.quantity;
+    if (product.product_type === "variable") {
+      if (selectedVariation) {
+        return selectedVariation.quantity;
+      }
+      // When no variation selected, use max quantity from all variations
+      const maxVariationQty = Math.max(
+        ...product.variation_options.map((v) => v.quantity),
+        1
+      );
+      return maxVariationQty;
     }
     return product.quantity;
   }, [product, selectedVariation]);
@@ -169,16 +197,24 @@ export function ProductDetail({ product }: ProductDetailProps) {
       return;
     }
 
+    // Get the correct image - use variation image if available
+    const variationImage = selectedVariation?.image;
+    const cartImage = {
+      original: variationImage?.original || product.image?.original || "",
+      thumbnail: variationImage?.thumbnail || product.image?.thumbnail || "",
+    };
+
+    // Get correct price from variation
+    const variationPrice = selectedVariation ? parseFloat(selectedVariation.price) : displayPrice;
+    const variationSalePrice = selectedVariation?.sale_price ? parseFloat(selectedVariation.sale_price) : null;
+
     // Create a cart-compatible product object
     const cartProduct = {
       id: product.id,
       name: product.name,
-      price: displayPrice,
-      sale_price: product.sale_price,
-      image: {
-        original: product.image?.original || "",
-        thumbnail: product.image?.thumbnail || "",
-      },
+      price: variationPrice,
+      sale_price: variationSalePrice,
+      image: cartImage,
       variation_options: product.variation_options?.map((vo) => ({
         id: vo.id,
         title: vo.title,
@@ -200,7 +236,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     const productToAdd = {
       product: cartProduct,
       shop_id: product.shop?.id,
-      quantity: quantity,
+      quantity: 1, // Always add 1 initially
       variation_option_id: selectedVariation?.id || null,
     };
 
@@ -423,50 +459,62 @@ export function ProductDetail({ product }: ProductDetailProps) {
               </div>
             ))}
 
-          {/* Quantity Selector */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">Quantity</h3>
-            <div className="flex items-center gap-4">
-              <QuantitySelector
-                quantity={quantity}
-                onIncrease={() => setQuantity((prev) => Math.min(displayQuantity, prev + 1))}
-                onDecrease={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                maxQuantity={displayQuantity}
-                minQuantity={1}
-                size="lg"
-              />
-              <span className="text-sm text-gray-500">
-                {displayQuantity} available
-              </span>
-            </div>
-          </div>
-
           {/* Stock Status */}
           <div
             className={`text-sm font-medium ${
               displayQuantity > 0 ? "text-green-600" : "text-red-600"
             }`}
           >
-            {displayQuantity > 0 ? "In Stock" : "Out of Stock"}
+            {displayQuantity > 0 ? `In Stock (${displayQuantity} available)` : "Out of Stock"}
           </div>
 
-          {/* Add to Cart Button */}
-          <Button
-            onClick={handleAddToCart}
-            disabled={
-              displayQuantity === 0 ||
-              (product.product_type === "variable" && !selectedVariation)
-            }
-            className="w-full bg-primary hover:bg-primary/90 text-white py-6 px-6 rounded-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
-            size="lg"
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            {product.product_type === "variable" && !selectedVariation
-              ? "Select Options First"
-              : displayQuantity === 0
-              ? "Out of Stock"
-              : "Add to Cart"}
-          </Button>
+          {/* Show +/- Quantity Selector only when item is in cart */}
+          {isInCart ? (
+            <div className="space-y-3">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-700 font-medium mb-3">
+                  ✓ In your cart
+                </p>
+                <div className="flex items-center gap-4">
+                  <QuantitySelector
+                    quantity={cartQuantity}
+                    onIncrease={() => {
+                      const newQty = Math.min(displayQuantity, cartQuantity + 1);
+                      update(product.id, newQty, cartItem?.variation_option_id);
+                    }}
+                    onDecrease={() => {
+                      const newQty = Math.max(1, cartQuantity - 1);
+                      update(product.id, newQty, cartItem?.variation_option_id);
+                    }}
+                    maxQuantity={displayQuantity}
+                    minQuantity={1}
+                    size="lg"
+                  />
+                  <span className="text-sm text-gray-500">
+                    in cart
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Add to Cart Button - only show when not in cart */
+            <Button
+              onClick={handleAddToCart}
+              disabled={
+                displayQuantity === 0 ||
+                (product.product_type === "variable" && !selectedVariation)
+              }
+              className="w-full bg-primary hover:bg-primary/90 text-white py-6 px-6 rounded-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              size="lg"
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              {product.product_type === "variable" && !selectedVariation
+                ? "Select Options First"
+                : displayQuantity === 0
+                ? "Out of Stock"
+                : "Add to Cart"}
+            </Button>
+          )}
 
           {/* Selected Variation Info */}
           {selectedVariation && (

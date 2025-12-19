@@ -47,7 +47,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
 
   const handleDecrease = () => {
     if (quantity > 1) {
-      update(product.id, quantity - 1);
+      update(product.id, quantity - 1, existingItem?.variation_option_id);
     }
   };
 
@@ -61,7 +61,7 @@ const SingleProductAddToCart = ({ product }: Props) => {
           product: createCartProduct(),
         });
       } else {
-        update(product.id, quantity + 1);
+        update(product.id, quantity + 1, existingItem?.variation_option_id);
       }
     }
   };

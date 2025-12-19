@@ -143,10 +143,16 @@ export const useCartService = () => {
       refetchCart();
     }
   };
-  const syncCartUpdate = async (id: number | string, qty: number) => {
+  const syncCartUpdate = async (id: number | string, qty: number, variation_option_id?: number | null) => {
     try {
+      // Build URL with variation_option_id as query param if present
+      let url = `cart/update/${id}`;
+      if (variation_option_id && variation_option_id > 0) {
+        url += `?variation_option_id=${variation_option_id}`;
+      }
+
       const res = await fetchApi({
-        url: `cart/update/${id}`,
+        url,
         method: "PUT",
         data: { quantity: qty },
       });
@@ -161,10 +167,22 @@ export const useCartService = () => {
       refetchCart();
     }
   };
-  const syncCartDelete = async (id: number | string) => {
+  const syncCartDelete = async (id: number | string, variation_option_id?: number | null) => {
     try {
+      // Build URL with variation_option_id as query param if present
+      let url = `cart/delete/${id}`;
+      if (variation_option_id && variation_option_id > 0) {
+        url += `?variation_option_id=${variation_option_id}`;
+      }
+
+      console.log("🗑️ Cart Delete API:", {
+        url,
+        product_id: id,
+        variation_option_id,
+      });
+
       const res = await fetchApi({
-        url: `cart/delete/${id}`,
+        url,
         method: "DELETE",
       });
 
@@ -182,10 +200,11 @@ export const useCartService = () => {
   const debouncedAdd = useDebounce(
     syncCartCreate,
     1000,
-    (product_id, shop_id, quantity, variation_option_id) => product_id
+    (product_id, shop_id, quantity, variation_option_id) =>
+      `${product_id}-${variation_option_id || 0}`
   );
-  const debouncedUpdate = useDebounce(syncCartUpdate, 1000, (id, qty) => id);
-  const debouncedDelete = useDebounce(syncCartDelete, 1000, (id) => id);
+  const debouncedUpdate = useDebounce(syncCartUpdate, 1000, (id, qty, variation_option_id) => `${id}-${variation_option_id || 0}`);
+  const debouncedDelete = useDebounce(syncCartDelete, 1000, (id, variation_option_id) => id);
   // ##########################################
 
   // #######################
@@ -216,25 +235,33 @@ export const useCartService = () => {
   };
 
 
-  const update = async (id: number, qty: number) => {
+  const update = async (id: number, qty: number, variation_option_id?: number | null) => {
     // Find the product in cart for toast
-    const cartItem = cart.find((i) => i.product.id === id);
+    const cartItem = cart.find((i) =>
+      i.product.id === id &&
+      (variation_option_id ? i.variation_option_id === variation_option_id : true)
+    );
+
+    console.log("🔄 Cart Update:", { id, qty, variation_option_id, cartItem });
 
     if (isAuth) {
       // ✅ Optimistic update for instant UI feedback
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
-          const idx = draft.findIndex((i: CartItemType) => i.product.id === id);
+          const idx = draft.findIndex((i: CartItemType) =>
+            i.product.id === id &&
+            (variation_option_id ? i.variation_option_id === variation_option_id : true)
+          );
           if (idx >= 0) {
             draft[idx] = { ...draft[idx], quantity: qty };
           }
         })
       );
       // ✅ Debounced backend call + refetch
-      debouncedUpdate(id, qty);
+      debouncedUpdate(id, qty, variation_option_id);
     } else {
-      dispatch(updateItem({ id, qty }));
+      dispatch(updateItem({ id, qty, variation_option_id }));
     }
 
     // Show toast after updating
@@ -243,23 +270,29 @@ export const useCartService = () => {
     }
   };
 
-  const remove = async (id: number) => {
+  const remove = async (id: number, variation_option_id?: number | null) => {
     // Find the product in cart for toast before removing
-    const cartItem = cart.find((i) => i.product.id === id);
+    const cartItem = cart.find((i) =>
+      i.product.id === id &&
+      (variation_option_id ? i.variation_option_id === variation_option_id : true)
+    );
 
     if (isAuth) {
       // ✅ Optimistic update for instant UI feedback
       dispatch(
         cartApi.util.updateQueryData("getCart", undefined, (draft) => {
           if (!Array.isArray(draft)) return;
-          const idx = draft.findIndex((i: CartItemType) => i.product.id === id);
+          const idx = draft.findIndex((i: CartItemType) =>
+            i.product.id === id &&
+            (variation_option_id ? i.variation_option_id === variation_option_id : true)
+          );
           if (idx >= 0) draft.splice(idx, 1);
         })
       );
-      // ✅ Debounced backend call + refetch
-      debouncedDelete(id);
+      // ✅ Debounced backend call + refetch (include variation_option_id if > 0)
+      debouncedDelete(id, variation_option_id);
     } else {
-      dispatch(removeItem(id));
+      dispatch(removeItem({ id, variation_option_id }));
     }
 
     // Show toast after removing

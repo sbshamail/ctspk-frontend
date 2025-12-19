@@ -8,8 +8,8 @@ export interface CartServiceType {
   add: (
     item: CartItemType & { variation_option_id?: number | null }
   ) => Promise<void>;
-  update: (id: number, qty: number) => Promise<void>;
-  remove: (id: number) => Promise<void>;
+  update: (id: number, qty: number, variation_option_id?: number | null) => Promise<void>;
+  remove: (id: number, variation_option_id?: number | null) => Promise<void>;
   removeSelected: (ids: number[]) => Promise<void>;
   clear: () => Promise<void>;
   isAuth: boolean;

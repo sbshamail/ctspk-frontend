@@ -1,0 +1,45 @@
+I've updated the DashboardLayout to use the new permission format. Here's a summary of the changes:
+
+  1. Updated Menu Permissions (DashboardLayout.js)
+
+  All menu items now use the new resource:operation format:
+  - dashboard:view - Dashboard access
+  - vendor:view - Brands/Manufacturers page
+  - category:view - Categories page
+  - product:view - Products page
+  - order:view - Orders page
+  - role:view - Roles page
+  - etc.
+
+  2. Enhanced Permission Checking
+
+  The hasPermission function now supports:
+  - Exact match: product:view matches product:view
+  - Super admin: system:* grants full access
+  - Resource wildcard: product:* grants all operations on products
+  - Module wildcard: catalog:* grants access to vendor, category, banner, attribute
+  - Legacy support: Old permissions like user-create still work
+  - View fallback: If user has any permission on a resource, they can view it
+
+  3. Created Permission Utility (src/lib/permissions.js)
+
+  A reusable library with:
+  - hasPermission(user, permission) - Check single permission
+  - canPerform(user, resource, action) - Check action on resource
+  - hasPermissions(user, permissions, mode) - Check multiple permissions
+  - isSuperAdmin(user) - Check if user is super admin
+  - filterByPermission(user, items) - Filter items by permission
+  - PERMISSIONS constant - All permission keys for easy reference
+
+  Usage Example:
+  import { hasPermission, canPerform, PERMISSIONS } from '@/lib/permissions';
+
+  // Check if user can delete products
+  if (canPerform(user, 'product', 'delete')) {
+    // Show delete button
+  }
+
+  // Or using constants
+  if (hasPermission(user, PERMISSIONS.ORDER_APPROVE)) {
+    // Show approve button
+  }

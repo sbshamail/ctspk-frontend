@@ -78,17 +78,22 @@ export const cartApi = createApi({
 
     // ---------- REMOVE ONE ----------
     removeCart: builder.mutation({
-      query: (product_id) => ({
+      query: ({ product_id, variation_option_id }: { product_id: number; variation_option_id?: number | null }) => ({
         url: `/delete/${product_id}`,
         method: "DELETE",
+        ...(variation_option_id && variation_option_id > 0 && {
+          body: { variation_option_id },
+        }),
       }),
       invalidatesTags: ["Cart"], // ✅ refetch safety
-      async onQueryStarted(product_id, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ product_id, variation_option_id }, { dispatch, queryFulfilled }) {
         const patch = dispatch(
           cartApi.util.updateQueryData("getCart", undefined, (draft) => {
             if (!Array.isArray(draft)) return;
             const idx = draft.findIndex(
-              (i: CartItemType) => i.product.id === product_id
+              (i: CartItemType) =>
+                i.product.id === product_id &&
+                (variation_option_id ? i.variation_option_id === variation_option_id : true)
             );
             if (idx >= 0) draft.splice(idx, 1);
           })

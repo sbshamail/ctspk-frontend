@@ -270,13 +270,13 @@ const CartPage = () => {
 
         const handleDecrease = () => {
           if (row.quantity > 1) {
-            update(row.product.id, row.quantity - 1);
+            update(row.product.id, row.quantity - 1, row.variation_option_id);
           }
         };
 
         const handleIncrease = () => {
           if (row.quantity < maxStock) {
-            update(row.product.id, row.quantity + 1);
+            update(row.product.id, row.quantity + 1, row.variation_option_id);
           }
         };
 
@@ -364,7 +364,7 @@ const CartPage = () => {
       render: ({ row }) => (
         <div className="flex justify-center">
           <button
-            onClick={() => remove(row.product.id)}
+            onClick={() => remove(row.product.id, row.variation_option_id)}
             className="text-muted-foreground hover:text-destructive"
             title="Remove item"
           >
