@@ -127,14 +127,20 @@ export default function MyReturnsPage() {
     {
       title: "Order ID",
       accessor: "order_id",
-      render: ({ cell }) => (
-        <Link
-          href={`/order/${cell}`}
-          className="text-primary hover:underline font-medium"
-        >
-          #{cell}
-        </Link>
-      ),
+      render: ({ cell, row }) => {
+        const year = new Date(row.created_at).getFullYear();
+        const lastTwoDigits = String(year).slice(-2);
+        const paddedOrderId = String(cell).padStart(8, "0");
+        const formattedId = `GT${lastTwoDigits}${paddedOrderId}`;
+        return (
+          <Link
+            href={`/order/${cell}`}
+            className="text-primary hover:underline font-medium"
+          >
+            {formattedId}
+          </Link>
+        );
+      },
     },
     {
       title: "Return Type",

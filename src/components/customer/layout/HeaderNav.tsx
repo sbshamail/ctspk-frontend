@@ -24,9 +24,10 @@ import { useRouter } from "next/navigation";
 
 interface HeaderNavProps {
   y: number;
+  mounted?: boolean;
 }
 
-export function HeaderNav({ y }: HeaderNavProps) {
+export function HeaderNav({ y, mounted = false }: HeaderNavProps) {
   const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError } = useGetCategoriesQuery();
   const { data: brandsData, isLoading: brandsLoading, isError: brandsError } = useGetBrandsQuery(undefined, {
     skip: typeof window === 'undefined',
@@ -206,7 +207,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
               ref={navRef}
             >
               {/* Left Side: Logo (only visible when scrolled) and Search Icon */}
-              {y > 100 && (
+              {mounted && y > 100 && (
                 <div className="flex items-center space-x-4">
                   <MainLogo />
                   <button
@@ -347,7 +348,7 @@ export function HeaderNav({ y }: HeaderNavProps) {
             </div>
 
             {/* Sticky Search Bar (appears when scrolled and search icon is clicked) */}
-            {y > 100 && showSearch && (
+            {mounted && y > 100 && showSearch && (
               <div className="pb-4 pt-2 animate-in slide-in-from-top duration-300">
                 <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
                   <div className="relative flex items-center">

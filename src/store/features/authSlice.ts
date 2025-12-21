@@ -43,7 +43,7 @@ const authSlice = createSlice({
       state.data = null;
       state.isError = null;
       clearSession();
-      window.location.reload(); // refresh
+      window.location.href = "/"; // redirect to home
     },
 
     // ✅ Error handler

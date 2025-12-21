@@ -199,7 +199,24 @@ export default function OrdersPage() {
       },
       className: "w-[60px] text-center",
     },
-
+    {
+      title: "Order ID",
+      accessor: "id",
+      render: ({ cell, row }) => {
+        const year = row?.created_at ? new Date(row.created_at).getFullYear() : new Date().getFullYear();
+        const lastTwoDigits = String(year).slice(-2);
+        const paddedOrderId = String(cell).padStart(8, "0");
+        const formattedId = `GT${lastTwoDigits}${paddedOrderId}`;
+        return (
+          <Link
+            href={`/order/${cell}`}
+            className="text-primary hover:underline font-medium"
+          >
+            {formattedId}
+          </Link>
+        );
+      },
+    },
     {
       title: "Tracking #",
       accessor: "tracking_number",

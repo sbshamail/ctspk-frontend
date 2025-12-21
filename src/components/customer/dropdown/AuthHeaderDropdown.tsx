@@ -27,7 +27,7 @@ const AuthHeaderDropdown = ({ auth }: AuthHeaderDropdownProps) => {
     clearSession(); // remove cookie and localStorage cart
     dispatch(clearCart()); // ✅ Clear Redux local cart state
     dispatch(logoutUser()); // Clear auth state and trigger page refresh
-    router.refresh();
+    router.push("/");
   };
   return (
     <DropdownMenu>

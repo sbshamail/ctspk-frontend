@@ -9,19 +9,20 @@ import LayoutSkeleton from "@/components/loaders/LayoutSkeleton";
 import { MainLogo } from "@/components/logo/MainLogo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import MainSearchbar from "../searchbar/MainSearchbar";
 import { HeaderNav } from "./HeaderNav";
 import Topbar from "./Topbar";
 // Types
 
-export const MainHeader = ({ y = 0 }: { y?: number }) => {
+export const MainHeader = ({ y = 0, mounted = false }: { y?: number; mounted?: boolean }) => {
+  const isScrolled = mounted && y > 0;
   return (
     <div className="w-full">
       <Screen>
         <div
           className={`transition-all duration-300 ${
-            y > 0 ? "-mt-14" : "mt-0"
+            isScrolled ? "-mt-14" : "mt-0"
           } py-1`}
         >
           <div className="w-full   sm:px-0 ">
@@ -56,14 +57,13 @@ export const MainHeader = ({ y = 0 }: { y?: number }) => {
 interface IHeader {}
 const Header = ({}: IHeader) => {
   const { y } = useWindowScroll();
+  const [mounted, setMounted] = useState(false);
 
-  // const navigationItems = [
-  //   { name: "Home", href: "/", active: true },
-  //   { name: "Shop", href: "/shop" },
-  //   { name: "Blog", href: "/blog" },
-  //   { name: "Contact", href: "/contact" },
-  //   { name: "About Us", href: "/about" },
-  // ];
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isScrolled = mounted && y > 0;
 
   return (
     <>
@@ -71,7 +71,7 @@ const Header = ({}: IHeader) => {
         {/* Top Bar */}
         <div
           className={` w-full transition-all duration-300 ${
-            y > 0
+            isScrolled
               ? "w-10 -translate-y-24 opacity-0 h-0"
               : "translate-y-0 opacity-100"
           }`}
@@ -82,13 +82,13 @@ const Header = ({}: IHeader) => {
           <Separator className="bg-border/80" />
 
           {/* Main Header */}
-          <MainHeader y={y} />
+          <MainHeader y={y} mounted={mounted} />
         </div>
         {/* Navigation */}
 
         <div className={`transition-all duration-500 `}>
           <Screen>
-            <HeaderNav y={y} />
+            <HeaderNav y={y} mounted={mounted} />
           </Screen>
         </div>
         <Separator className="bg-border/80" />
