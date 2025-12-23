@@ -18,6 +18,12 @@ export interface SiteSettings {
   };
   taxClass?: any;
   shippingClass?: any;
+  // New settings for site-wide features
+  deliveryTime?: string;
+  paymentGateway?: any;
+  IsRatting?: boolean;
+  IsReview?: boolean;
+  homePagePopup?: any;
   [key: string]: any;
 }
 
@@ -112,4 +118,35 @@ export function getSiteTitle(): string {
 // Helper function to get site subtitle/tagline
 export function getSiteSubtitle(): string {
   return getSetting("siteSubtitle") || "";
+}
+
+// Helper function to check if ratings should be shown
+// Returns true only if IsRatting is explicitly set to true
+export function isRatingEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  const isRatting = getSetting("IsRatting");
+  return isRatting === true;
+}
+
+// Helper function to check if reviews should be shown
+// Returns true only if IsReview is explicitly set to true
+export function isReviewEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  const isReview = getSetting("IsReview");
+  return isReview === true;
+}
+
+// Helper function to get delivery time
+export function getDeliveryTime(): string | null {
+  return getSetting("deliveryTime") || null;
+}
+
+// Helper function to get payment gateway info
+export function getPaymentGateway(): any {
+  return getSetting("paymentGateway") || null;
+}
+
+// Helper function to get home page popup info
+export function getHomePagePopup(): any {
+  return getSetting("homePagePopup") || null;
 }

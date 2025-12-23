@@ -10,6 +10,7 @@ import { QuantitySelector } from "@/components/ui/QuantitySelector";
 import StarRating from "@/components/starRating";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isRatingEnabled, isReviewEnabled } from "@/lib/useSettings";
 
 // Review interface
 interface ReviewUser {
@@ -103,6 +104,16 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const REVIEWS_LIMIT = 10;
+
+  // Settings state for ratings and reviews visibility
+  const [showRatings, setShowRatings] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+
+  // Check settings on mount
+  useEffect(() => {
+    setShowRatings(isRatingEnabled());
+    setShowReviews(isReviewEnabled());
+  }, []);
 
   const { add, cart, update } = useCart();
 
@@ -379,16 +390,18 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
 
-            {/* Rating and Review Count */}
-            <div className="mt-2">
-              <StarRating
-                averageRating={product.rating || 0}
-                disabled
-                reviewCount={product.review_count}
-                showReviewCount={true}
-                size="md"
-              />
-            </div>
+            {/* Rating and Review Count - Only show if ratings are enabled */}
+            {showRatings && (
+              <div className="mt-2">
+                <StarRating
+                  averageRating={product.rating || 0}
+                  disabled
+                  reviewCount={product.review_count}
+                  showReviewCount={true}
+                  size="md"
+                />
+              </div>
+            )}
 
             {/* Shop Name */}
             {product.shop?.name && (
@@ -531,7 +544,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
         </div>
       </div>
 
-      {/* Reviews Section */}
+      {/* Reviews Section - Only show if reviews are enabled */}
+      {showReviews && (
       <div className="mt-16 border-t pt-12">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -544,7 +558,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Average Rating */}
-          {reviews.length > 0 && (
+          {showRatings && reviews.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex">
                 {[1, 2, 3, 4, 5].map((star) => {
@@ -626,7 +640,8 @@ export function ProductDetail({ product }: ProductDetailProps) {
                       </div>
                     </div>
 
-                    {/* Star Rating */}
+                    {/* Star Rating - Only show if ratings are enabled */}
+                    {showRatings && (
                     <div className="flex items-center gap-1 mb-3">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
@@ -642,6 +657,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                         {review.rating}/5
                       </span>
                     </div>
+                    )}
 
                     {/* Comment */}
                     {review.comment && (
@@ -715,6 +731,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

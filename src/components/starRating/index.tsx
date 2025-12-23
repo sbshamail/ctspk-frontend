@@ -6,7 +6,8 @@ import {
   StarQuarter,
   StarThreeQuarter,
 } from "@/components/icons/StarIcons";
-import { useState } from "react";
+import { isRatingEnabled } from "@/lib/useSettings";
+import { useState, useEffect } from "react";
 
 const getStarIcon = (rating: number, index: number) => {
   const full = index;
@@ -44,6 +45,17 @@ const StarRating: React.FC<StarRatingProps> = ({
 }) => {
   const [hoverRating, setHoverRating] = useState(rating);
   const [currentRating, setCurrentRating] = useState(rating);
+  const [showRating, setShowRating] = useState(false);
+
+  // Check if ratings are enabled from settings
+  useEffect(() => {
+    setShowRating(isRatingEnabled());
+  }, []);
+
+  // If ratings are disabled in settings, don't render anything
+  if (!showRating) {
+    return null;
+  }
 
   const handleMouseEnter = (index: number) => {
     if (!disabled) {

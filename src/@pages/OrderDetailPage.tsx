@@ -18,10 +18,11 @@ import {
   useGetOrderQuery
 } from "@/store/services/orderApi";
 import { Screen } from "@/@core/layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OrderReadNested, OrderStatusEnum, OrderProductRead, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
 import { OrderInvoice } from "@/components/invoice/OrderInvoice";
+import { isRatingEnabled, isReviewEnabled } from "@/lib/useSettings";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -68,6 +69,16 @@ export default function OrderDetailPage({ id }: { id: string }) {
   const [viewReturnData, setViewReturnData] = useState<any>(null);
   const [isLoadingReturnView, setIsLoadingReturnView] = useState(false);
   const [viewReturnProduct, setViewReturnProduct] = useState<OrderProductRead | null>(null);
+
+  // Settings state for ratings and reviews visibility
+  const [showRatings, setShowRatings] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+
+  // Check settings on mount
+  useEffect(() => {
+    setShowRatings(isRatingEnabled());
+    setShowReviews(isReviewEnabled());
+  }, []);
 
   if (isLoading) return <OrderSkeleton />;
   if (error)
@@ -589,8 +600,8 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {/* View Review Button - Show if review already exists */}
-                    {item.review_id && item.review_id > 0 ? (
+                    {/* View Review Button - Show if review already exists and reviews are enabled */}
+                    {showReviews && item.review_id && item.review_id > 0 ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -600,8 +611,8 @@ export default function OrderDetailPage({ id }: { id: string }) {
                         View Review
                       </Button>
                     ) : (
-                      /* Review Product Button - Show if no review and can review */
-                      canReviewProduct(item) && (
+                      /* Review Product Button - Show if no review, can review, and reviews are enabled */
+                      showReviews && canReviewProduct(item) && (
                         <Button
                           variant="outline"
                           size="sm"

@@ -22,9 +22,13 @@ export const currencyFormatter = (
   // @ts-ignore
   if(!value) { return ; }
   if (typeof value == 'string'){value=Number(value);}
+
+  // Round to whole number - no decimal places
+  const wholeValue = Math.round(value);
+
   const options: Intl.NumberFormatOptions = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   };
 
   if (currency) {
@@ -35,10 +39,10 @@ export const currencyFormatter = (
   const numberFormatter = new Intl.NumberFormat(format, options);
 
   // We format the absolute value of the provided number to handle both positive and negative values.
-  let formattedValue = numberFormatter.format(Math.abs(value));
+  let formattedValue = numberFormatter.format(Math.abs(wholeValue));
 
   // If the value is negative, adjust the formatting
-  if (value < 0) {
+  if (wholeValue < 0) {
     if (currency) {
       formattedValue = formattedValue.replace(/^(\D+)/, "$1-");
     } else {
