@@ -22,6 +22,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Star } from "lucide-react";
 import { isReviewEnabled } from "@/lib/useSettings";
+import { formatOrderId, getOrderStatusLabel } from "@/utils/helper";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -158,7 +159,7 @@ export default function OrdersPage() {
   };
 
   // Handle order return
-  const handleReturnOrder = async () => {
+  const handleReturnOrder = async (photos: Array<{ id: number; original: string; thumbnail: string }>) => {
     if (!selectedReturnOrder) return;
 
     try {
@@ -178,6 +179,7 @@ export default function OrdersPage() {
           order_id: selectedReturnOrder.id,
           return_type: "full_order",
           reason: returnReason || "Customer requested return",
+          photos: photos,
           items: []
         }),
       });
@@ -220,34 +222,33 @@ export default function OrdersPage() {
       className: "w-[60px] text-center",
     },
     {
-      title: "Order ID",
+      title: "Order Info",
       accessor: "id",
       render: ({ cell, row }) => {
-        const year = row?.created_at ? new Date(row.created_at).getFullYear() : new Date().getFullYear();
-        const lastTwoDigits = String(year).slice(-2);
-        const paddedOrderId = String(cell).padStart(8, "0");
-        const formattedId = `GT${lastTwoDigits}${paddedOrderId}`;
+        const formattedId = formatOrderId(cell, row.created_at);
         return (
-          <Link
-            href={`/order/${cell}`}
-            className="text-primary hover:underline font-medium"
-          >
-            {formattedId}
-          </Link>
+          <div className="space-y-1">
+            <div>
+              <span className="text-xs text-muted-foreground">Order #</span>
+              <Link
+                href={`/order/${cell}`}
+                className="block text-primary hover:underline font-medium text-sm"
+              >
+                {formattedId}
+              </Link>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Tracking #</span>
+              <Link
+                href={`/track-order?tracking=${row.tracking_number}`}
+                className="block text-primary hover:underline font-medium text-xs"
+              >
+                {row.tracking_number}
+              </Link>
+            </div>
+          </div>
         );
       },
-    },
-    {
-      title: "Tracking #",
-      accessor: "tracking_number",
-      render: ({ cell }) => (
-        <Link
-          href={`/track-order?tracking=${cell}`}
-          className="text-primary hover:underline font-medium"
-        >
-          {cell}
-        </Link>
-      ),
     },
     { title: "Customer", accessor: "customer_name" },
     { title: "Contact", accessor: "customer_contact" },
@@ -263,9 +264,9 @@ export default function OrdersPage() {
       render: ({ cell }) => (
         <Badge
           variant="outline"
-          className="capitalize text-xs font-medium px-2 py-0.5"
+          className="text-xs font-medium px-2 py-0.5"
         >
-          {cell?.replace(/-/g, " ") || "Unknown"}
+          {getOrderStatusLabel(cell)}
         </Badge>
       ),
     },
@@ -593,7 +594,7 @@ interface ReturnOrderDialogProps {
   order: OrderReadNested | null;
   returnReason: string;
   onReasonChange: (reason: string) => void;
-  onSubmit: () => void;
+  onSubmit: (photos: Array<{ id: number; original: string; thumbnail: string }>) => void;
 }
 
 function ReturnOrderDialog({
@@ -604,6 +605,79 @@ function ReturnOrderDialog({
   onReasonChange,
   onSubmit
 }: ReturnOrderDialogProps) {
+  const [photos, setPhotos] = useState<Array<{ id: number; original: string; thumbnail: string }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Reset photos when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setPhotos([]);
+    }
+  }, [isOpen]);
+
+  // Handle single image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+
+      const response = await fetch(getApiUrl('/media/create?thumbnail=true'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data) {
+          const uploadedImage = Array.isArray(result.data)
+            ? {
+                id: result.data[0].id,
+                original: result.data[0].original || result.data[0].url,
+                thumbnail: result.data[0].thumbnail || result.data[0].original || result.data[0].url
+              }
+            : {
+                id: result.data.id,
+                original: result.data.original || result.data.url,
+                thumbnail: result.data.thumbnail || result.data.original || result.data.url
+              };
+
+          setPhotos(prev => [...prev, uploadedImage]);
+          toast.success("Image uploaded successfully");
+        }
+      } else {
+        throw new Error('Failed to upload image');
+      }
+    } catch (error) {
+      toast.error("Failed to upload image");
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  // Remove uploaded image
+  const handleRemoveImage = (indexToRemove: number) => {
+    setPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleSubmit = () => {
+    onSubmit(photos);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -615,10 +689,11 @@ function ReturnOrderDialog({
           {order && (
             <div className="border rounded-lg p-4 bg-gray-50">
               <h4 className="font-medium mb-2">Order Details</h4>
+              <p><strong>Order #:</strong> {formatOrderId(order.id, order.created_at)}</p>
               <p><strong>Tracking #:</strong> {order.tracking_number}</p>
               <p><strong>Customer:</strong> {order.customer_name}</p>
-              <p><strong>Total:</strong> {order.total} PKR</p>
-              <p><strong>Status:</strong> {order.order_status}</p>
+              <p><strong>Total:</strong> Rs. {Math.round(order.total || 0)}</p>
+              <p><strong>Status:</strong> {getOrderStatusLabel(order.order_status)}</p>
             </div>
           )}
 
@@ -637,6 +712,61 @@ function ReturnOrderDialog({
             <p className="text-sm text-muted-foreground">
               Please be specific about the reason for your return. Common reasons include: wrong size, damaged item, not as described, changed mind, etc.
             </p>
+          </div>
+
+          {/* Image Upload Section */}
+          <div className="space-y-3">
+            <Label className="block text-lg font-medium">
+              Upload Photos (Optional)
+            </Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              Upload photos one by one to support your return request
+            </p>
+            <div className="flex items-center gap-3">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+                className="flex-1"
+              />
+              {isUploading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  Uploading...
+                </div>
+              )}
+            </div>
+
+            {/* Image Preview */}
+            {photos.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium mb-2">
+                  Uploaded Images ({photos.length})
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {photos.map((photo, index) => (
+                    <div key={photo.id || index} className="relative group">
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                        <Image
+                          src={photo.thumbnail || photo.original}
+                          alt={`Return image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -660,8 +790,8 @@ function ReturnOrderDialog({
             </Button>
             <Button
               type="button"
-              onClick={onSubmit}
-              disabled={!returnReason.trim()}
+              onClick={handleSubmit}
+              disabled={!returnReason.trim() || isUploading}
               className="px-6 py-2 text-lg"
             >
               Submit Return Request
@@ -827,7 +957,7 @@ function OrderReviewDialog({
         photos: photos,
       };
 
-      const response = await fetch(getApiUrl('/order-review/order'), {
+      const response = await fetch(getApiUrl('/order-review/create'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -982,7 +1112,7 @@ function OrderReviewDialog({
         ) : (
           // Show review form
           <div className="space-y-6">
-            {/* Rating */}
+            {/* Rating - Always shown for order reviews */}
             <div className="space-y-3">
               <Label className="block text-lg font-medium">Rating *</Label>
               {renderStars(rating, true)}

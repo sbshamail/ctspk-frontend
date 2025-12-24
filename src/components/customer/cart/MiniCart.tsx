@@ -2,7 +2,7 @@
 
 import { useCart } from "@/context/cartContext";
 import { currencyFormatter } from "@/utils/helper";
-import { Trash2, ShoppingBag, X } from "lucide-react";
+import { Trash2, ShoppingBag, X, Heart } from "lucide-react";
 import { QuantitySelector } from "@/components/ui/QuantitySelector";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,10 +15,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import { useMemo, useState } from "react";
+import { useAddToWishlistMutation } from "@/store/services/wishlistAPi";
+import { toast } from "sonner";
 
 export function MiniCart() {
   const { cart, update, remove } = useCart();
   const [open, setOpen] = useState(false);
+  const [addToWishlist] = useAddToWishlistMutation();
 
   // Calculate subtotal
   const subtotal = useMemo(() => {
@@ -47,6 +50,22 @@ export function MiniCart() {
     remove(productId, variation_option_id);
   };
 
+  const handleAddToWishlist = async (productId: number, productName: string, variation_option_id?: number | null) => {
+    try {
+      await addToWishlist({
+        product_id: productId,
+        variation_option_id: variation_option_id || null,
+      }).unwrap();
+      toast.success(`${productName} added to wishlist`);
+    } catch (error: any) {
+      if (error?.status === 401) {
+        toast.error("Please login to add to wishlist");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
+    }
+  };
+
   const cartCount = cart?.length || 0;
 
   return (
@@ -61,7 +80,7 @@ export function MiniCart() {
         className="w-[90vw] sm:w-[450px] p-0"
         sideOffset={8}
       >
-        <div className="flex flex-col max-h-[600px]">
+        <div className="flex flex-col h-[min(80vh,600px)]">
           {/* Header */}
           <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -93,8 +112,29 @@ export function MiniCart() {
             </div>
           ) : (
             <>
-              {/* Cart Items - Scrollable */}
-              <div className="overflow-y-auto max-h-[350px] px-4 py-3">
+              {/* Cart Items - Scrollable with modern scrollbar */}
+              <div
+                className="flex-1 overflow-y-auto px-4 py-3 min-h-0"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'hsl(var(--muted-foreground) / 0.3) transparent',
+                }}
+              >
+                <style jsx>{`
+                  div::-webkit-scrollbar {
+                    width: 6px;
+                  }
+                  div::-webkit-scrollbar-track {
+                    background: transparent;
+                  }
+                  div::-webkit-scrollbar-thumb {
+                    background-color: hsl(var(--muted-foreground) / 0.3);
+                    border-radius: 3px;
+                  }
+                  div::-webkit-scrollbar-thumb:hover {
+                    background-color: hsl(var(--muted-foreground) / 0.5);
+                  }
+                `}</style>
                 <div className="space-y-3">
                 {cart.map((item) => {
                   // For variable products, get variation-specific data
@@ -164,7 +204,7 @@ export function MiniCart() {
                         </div>
 
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center gap-2 mt-2">
                           <QuantitySelector
                             quantity={item.quantity}
                             onIncrease={() =>
@@ -177,11 +217,22 @@ export function MiniCart() {
                             size="sm"
                           />
 
+                          {/* Add to Wishlist Button */}
+                          <button
+                            onClick={() => handleAddToWishlist(item.product.id, item.product.name, item.variation_option_id)}
+                            className="p-1.5 text-pink-500 hover:bg-pink-50 rounded-md transition-colors"
+                            aria-label="Add to wishlist"
+                            title="Add to Wishlist"
+                          >
+                            <Heart className="w-4 h-4" />
+                          </button>
+
                           {/* Remove Button */}
                           <button
                             onClick={() => handleRemove(item.product.id, item.variation_option_id)}
-                            className="p-1 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                             aria-label="Remove item"
+                            title="Remove from Cart"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

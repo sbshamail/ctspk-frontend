@@ -1,6 +1,6 @@
 "use client";
 
-import { currencyFormatter } from "@/utils/helper";
+import { currencyFormatter, formatOrderId, getOrderStatusLabel } from "@/utils/helper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
@@ -154,7 +154,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
   };
 
   // Handle order return
-  const handleReturnOrder = async () => {
+  const handleReturnOrder = async (photos: Array<{ id: number; original: string; thumbnail: string }>) => {
     try {
       const accessToken = getAccessToken();
       if (!accessToken) {
@@ -166,6 +166,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
         order_id: order.id,
         return_type: returnType,
         reason: returnReason || "Customer requested return",
+        photos: photos,
       };
 
       if (returnType === "single_product" && returnProductId) {
@@ -188,7 +189,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
         },
         body: JSON.stringify(returnData),
       });
-      
+
       if (response.ok) {
         toast.success("Return request created successfully");
         setShowReturnDialog(false);
@@ -373,8 +374,17 @@ export default function OrderDetailPage({ id }: { id: string }) {
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             <div>
-              <span className="text-2xl font-bold">Order #{order.tracking_number}</span>
-              <p className="text-sm text-muted-foreground mt-1">
+              <div className="space-y-1">
+                <div>
+                  <span className="text-xs text-muted-foreground">Order #</span>
+                  <span className="text-2xl font-bold block">{formatOrderId(order.id, order.created_at)}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Tracking #</span>
+                  <span className="text-sm font-medium block text-primary">{order.tracking_number}</span>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
                 Posted on {new Date(order.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'short',
@@ -411,8 +421,8 @@ export default function OrderDetailPage({ id }: { id: string }) {
                 </Button>
               )}
               
-              <Badge variant="outline" className="capitalize text-sm">
-                {order.order_status.replace("-", " ")}
+              <Badge variant="outline" className="text-sm">
+                {getOrderStatusLabel(order.order_status)}
               </Badge>
             </div>
           </CardTitle>
@@ -422,8 +432,8 @@ export default function OrderDetailPage({ id }: { id: string }) {
           <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border rounded-lg p-4 text-center">
               <h4 className="font-semibold text-sm text-muted-foreground">Order</h4>
-              <Badge className="capitalize mt-1">
-                {order.order_status.replace("-", " ")}
+              <Badge className="mt-1">
+                {getOrderStatusLabel(order.order_status)}
               </Badge>
             </div>
             <div className="border rounded-lg p-4 text-center">
@@ -1295,7 +1305,7 @@ interface ReturnDialogProps {
   returnType: "full_order" | "single_product";
   returnReason: string;
   onReasonChange: (reason: string) => void;
-  onSubmit: () => void;
+  onSubmit: (photos: Array<{ id: number; original: string; thumbnail: string }>) => void;
   product: OrderProductRead | any;
 }
 
@@ -1308,6 +1318,79 @@ function ReturnDialog({
   onSubmit,
   product
 }: ReturnDialogProps) {
+  const [photos, setPhotos] = useState<Array<{ id: number; original: string; thumbnail: string }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Reset photos when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setPhotos([]);
+    }
+  }, [isOpen]);
+
+  // Handle single image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+
+      const response = await fetch(getApiUrl('/media/create?thumbnail=true'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data) {
+          const uploadedImage = Array.isArray(result.data)
+            ? {
+                id: result.data[0].id,
+                original: result.data[0].original || result.data[0].url,
+                thumbnail: result.data[0].thumbnail || result.data[0].original || result.data[0].url
+              }
+            : {
+                id: result.data.id,
+                original: result.data.original || result.data.url,
+                thumbnail: result.data.thumbnail || result.data.original || result.data.url
+              };
+
+          setPhotos(prev => [...prev, uploadedImage]);
+          toast.success("Image uploaded successfully");
+        }
+      } else {
+        throw new Error('Failed to upload image');
+      }
+    } catch (error) {
+      toast.error("Failed to upload image");
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  // Remove uploaded image
+  const handleRemoveImage = (indexToRemove: number) => {
+    setPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const handleSubmit = () => {
+    onSubmit(photos);
+  };
+
   // ✅ Get correct image for variable products
   const getReturnProductImage = () => {
     const variationImage = product?.variation_snapshot?.image?.original ||
@@ -1370,7 +1453,7 @@ function ReturnDialog({
               </div>
             </div>
           )}
-          
+
           <div className="space-y-3">
             <Label htmlFor="return-reason" className="block text-lg font-medium">
               Reason for Return *
@@ -1387,7 +1470,62 @@ function ReturnDialog({
               Please be specific about the reason for your return. Common reasons include: wrong size, damaged item, not as described, changed mind, etc.
             </p>
           </div>
-          
+
+          {/* Image Upload Section */}
+          <div className="space-y-3">
+            <Label className="block text-lg font-medium">
+              Upload Photos (Optional)
+            </Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              Upload photos one by one to support your return request
+            </p>
+            <div className="flex items-center gap-3">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+                className="flex-1"
+              />
+              {isUploading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  Uploading...
+                </div>
+              )}
+            </div>
+
+            {/* Image Preview */}
+            {photos.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium mb-2">
+                  Uploaded Images ({photos.length})
+                </p>
+                <div className="grid grid-cols-4 gap-3">
+                  {photos.map((photo, index) => (
+                    <div key={photo.id || index} className="relative group">
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                        <Image
+                          src={photo.thumbnail || photo.original}
+                          alt={`Return image ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-medium text-blue-800 mb-2">Return Policy</h4>
             <ul className="text-sm text-blue-700 space-y-1">
@@ -1397,20 +1535,20 @@ function ReturnDialog({
               <li>• Return shipping may be free depending on the reason</li>
             </ul>
           </div>
-          
+
           <div className="flex justify-end space-x-4 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               className="px-6 py-2 text-lg"
             >
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              onClick={onSubmit}
-              disabled={!returnReason.trim()}
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!returnReason.trim() || isUploading}
               className="px-6 py-2 text-lg"
             >
               Submit Return Request

@@ -14,6 +14,58 @@ export const capitalizeCamelSpace = (name: string) => {
   return capitalized.replace(/([A-Z])/g, " $1").trim();
 };
 
+// Format order ID as GTISB + YEAR + DATE + MONTH + ORDERID (8 digits with leading zeros)
+export const formatOrderId = (orderId: number | string | undefined | null, createdAt?: string | Date): string => {
+  // Convert orderId to a valid number, handling all edge cases
+  let id = 0;
+  if (orderId !== undefined && orderId !== null) {
+    const parsed = typeof orderId === 'string' ? parseInt(orderId, 10) : Number(orderId);
+    if (!isNaN(parsed) && isFinite(parsed)) {
+      id = Math.floor(Math.abs(parsed));
+    }
+  }
+
+  const date = createdAt ? new Date(createdAt) : new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  // Pad order ID to 8 digits with leading zeros (e.g., 1 -> 00000001)
+  const paddedOrderId = String(id).padStart(8, '0');
+
+  return `GTISB${year}${day}${month}${paddedOrderId}`;
+};
+
+// Get order status label from status code
+export const getOrderStatusLabel = (status: string | number): string => {
+  const statusMap: { [key: string]: string } = {
+    '1': 'Pending',
+    'pending': 'Pending',
+    '2': 'Processing',
+    'processing': 'Processing',
+    '3': 'Packed',
+    'packed': 'Packed',
+    '4': 'At Distribution Center',
+    'at-distribution-center': 'At Distribution Center',
+    'at_distribution_center': 'At Distribution Center',
+    '5': 'At Local Facility',
+    'at-local-facility': 'At Local Facility',
+    'at_local_facility': 'At Local Facility',
+    '6': 'Out for Delivery',
+    'out-for-delivery': 'Out for Delivery',
+    'out_for_delivery': 'Out for Delivery',
+    '7': 'Delivered',
+    'delivered': 'Delivered',
+    '8': 'Completed',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled',
+    'refunded': 'Refunded',
+  };
+
+  const key = String(status).toLowerCase();
+  return statusMap[key] || String(status).replace(/-|_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+};
+
 export const currencyFormatter = (
   value: number | string | undefined,
   currency: "PKR" | "SAR" | "EUR" | "JPY" | "USD" | "INR" | null = "PKR",

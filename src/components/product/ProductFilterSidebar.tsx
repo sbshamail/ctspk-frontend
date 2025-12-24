@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import CategoryFilter from "./CategoryFilter";
 import PriceFilter from "./PriceFilter";
 import RatingFilter from "./RatingFilter";
+import { isRatingEnabled } from "@/lib/useSettings";
 
 interface ProductFilterSidebarType {
   categoriesList: string[];
@@ -25,6 +26,12 @@ const ProductFilterSidebar = ({
   const [categories, setCategories] = useState<any>(categoriesList);
   const [lowPrice, setLowPrice] = useState(0);
   const [highPrice, setHighPrice] = useState(1000);
+  const [showRatings, setShowRatings] = useState(false);
+
+  // Check if ratings are enabled from settings
+  useEffect(() => {
+    setShowRatings(isRatingEnabled());
+  }, []);
 
   const handleCategories = (isChecked: boolean, item: any) => {
     setCategories((prev: any) => {
@@ -97,12 +104,14 @@ const ProductFilterSidebar = ({
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="rating">
-          <AccordionTrigger>Rating</AccordionTrigger>
-          <AccordionContent>
-            <RatingFilter />
-          </AccordionContent>
-        </AccordionItem>
+{showRatings && (
+          <AccordionItem value="rating">
+            <AccordionTrigger>Rating</AccordionTrigger>
+            <AccordionContent>
+              <RatingFilter />
+            </AccordionContent>
+          </AccordionItem>
+        )}
       </Accordion>
     </div>
   );
