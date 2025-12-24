@@ -129,11 +129,12 @@ export function isRatingEnabled(): boolean {
 }
 
 // Helper function to check if reviews should be shown
-// Returns true only if IsReview is explicitly set to true
+// Returns true only if IsReview or isProductReview is explicitly set to true
 export function isReviewEnabled(): boolean {
   if (typeof window === "undefined") return false;
   const isReview = getSetting("IsReview");
-  return isReview === true;
+  const isProductReview = getSetting("isProductReview");
+  return isReview === true || isProductReview === true;
 }
 
 // Helper function to get delivery time
@@ -149,4 +150,24 @@ export function getPaymentGateway(): any {
 // Helper function to get home page popup info
 export function getHomePagePopup(): any {
   return getSetting("homePagePopup") || null;
+}
+
+// Helper function to check if promo popup is enabled
+export function isPromoPopupEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  const isPromoPopUp = getSetting("isPromoPopUp");
+  return isPromoPopUp === true;
+}
+
+// Helper function to get promo popup data
+export function getPromoPopupData(): any {
+  if (typeof window === "undefined") return null;
+  return getSetting("promoPopup") || null;
+}
+
+// Helper function to check if product review is enabled (from isProductReview in settings)
+export function isProductReviewEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  const isProductReview = getSetting("isProductReview");
+  return isProductReview === true;
 }

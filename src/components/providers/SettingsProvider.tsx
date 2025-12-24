@@ -20,7 +20,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
         });
 
         if (response?.success === 1 && response.data) {
-          const settings = response.data;
+          // Settings are nested inside data.options
+          const settings = response.data.options || response.data;
 
           // Store the complete settings object in localStorage
           localStorage.setItem("siteSettings", JSON.stringify(settings));

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGetOrdersQuery } from "@/store/services/orderApi";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { OrderReadNested, OrderStatusEnum, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +18,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parse } from "date-fns";
 import Link from "next/link";
+import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { Star } from "lucide-react";
+import { isReviewEnabled } from "@/lib/useSettings";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -61,6 +65,11 @@ export default function OrdersPage() {
   const [selectedReturnOrder, setSelectedReturnOrder] = useState<OrderReadNested | null>(null);
   const [returnReason, setReturnReason] = useState("");
 
+  // Review dialog states
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [selectedReviewOrder, setSelectedReviewOrder] = useState<OrderReadNested | null>(null);
+  const [showReviews, setShowReviews] = useState(true);
+
   // Build dateRange for API (fromDate/toDate are in yyyy-MM-dd format from InputDateField)
   const dateRange = useMemo(() => {
     if (fromDate && toDate) {
@@ -95,6 +104,17 @@ export default function OrdersPage() {
     const completedStatuses = [OrderStatusEnum.COMPLETED, "delivered"];
     return completedStatuses.includes(order.order_status) &&
            order.payment_status !== PaymentStatusEnum.REVERSAL;
+  };
+
+  // Check if order can be reviewed (completed orders only)
+  const canReviewOrder = (order: OrderReadNested) => {
+    return order.order_status === OrderStatusEnum.COMPLETED;
+  };
+
+  // Open review dialog
+  const openReviewDialog = (order: OrderReadNested) => {
+    setSelectedReviewOrder(order);
+    setShowReviewDialog(true);
   };
 
   // Handle order cancellation
@@ -290,7 +310,7 @@ export default function OrdersPage() {
               Cancel
             </Button>
           )}
-          
+
           {/* Return Order Button */}
           {canReturnOrder(row) && (
             <Button
@@ -304,7 +324,22 @@ export default function OrdersPage() {
               Return
             </Button>
           )}
-          
+
+          {/* Review Order Button - Only show for completed orders */}
+          {showReviews && canReviewOrder(row) && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                openReviewDialog(row);
+              }}
+            >
+              Review
+            </Button>
+          )}
+
           <Button
             variant="outline"
             size="sm"
@@ -380,6 +415,19 @@ export default function OrdersPage() {
         returnReason={returnReason}
         onReasonChange={setReturnReason}
         onSubmit={handleReturnOrder}
+      />
+
+      {/* Order Review Dialog */}
+      <OrderReviewDialog
+        isOpen={showReviewDialog}
+        onClose={() => {
+          setShowReviewDialog(false);
+          setSelectedReviewOrder(null);
+        }}
+        order={selectedReviewOrder}
+        onSuccess={() => {
+          refetch();
+        }}
       />
     </Screen>
   );
@@ -620,6 +668,417 @@ function ReturnOrderDialog({
             </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Order Review Dialog Component
+interface OrderReviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  order: OrderReadNested | null;
+  onSuccess: () => void;
+}
+
+function OrderReviewDialog({
+  isOpen,
+  onClose,
+  order,
+  onSuccess
+}: OrderReviewDialogProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [existingReview, setExistingReview] = useState<any>(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [photos, setPhotos] = useState<Array<{ id: number; original: string; thumbnail: string }>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch existing review when dialog opens
+  useEffect(() => {
+    if (isOpen && order) {
+      fetchExistingReview();
+    } else {
+      // Reset states when dialog closes
+      setExistingReview(null);
+      setRating(0);
+      setComment("");
+      setPhotos([]);
+      setIsLoading(true);
+    }
+  }, [isOpen, order?.id]);
+
+  const fetchExistingReview = async () => {
+    if (!order) return;
+
+    try {
+      setIsLoading(true);
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(getApiUrl(`/order-review/create/${order.id}`), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setExistingReview(result.data);
+        } else {
+          setExistingReview(null);
+        }
+      } else {
+        // No review exists - that's fine
+        setExistingReview(null);
+      }
+    } catch (error) {
+      console.error("Error fetching review:", error);
+      setExistingReview(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const response = await fetch(getApiUrl('/media/create?thumbnail=true'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data) {
+          const uploadedImages = Array.isArray(result.data)
+            ? result.data.map((img: any) => ({
+                id: img.id,
+                original: img.original || img.url,
+                thumbnail: img.thumbnail || img.original || img.url
+              }))
+            : [{
+                id: result.data.id,
+                original: result.data.original || result.data.url,
+                thumbnail: result.data.thumbnail || result.data.original || result.data.url
+              }];
+
+          setPhotos(prev => [...prev, ...uploadedImages]);
+          toast.success(`${uploadedImages.length} image(s) uploaded successfully`);
+        }
+      } else {
+        throw new Error('Failed to upload images');
+      }
+    } catch (error) {
+      toast.error("Failed to upload images");
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  // Remove uploaded image
+  const handleRemoveImage = (indexToRemove: number) => {
+    setPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Submit review
+  const handleSubmitReview = async () => {
+    if (!order || rating === 0) return;
+
+    try {
+      setIsSubmitting(true);
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const reviewData = {
+        order_id: order.id,
+        rating,
+        comment,
+        photos: photos,
+      };
+
+      const response = await fetch(getApiUrl('/order-review/order'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(reviewData),
+      });
+
+      if (response.ok) {
+        toast.success("Review submitted successfully");
+        onSuccess();
+        onClose();
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || errorData?.detail || 'Failed to submit review');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Render star rating
+  const renderStars = (ratingValue: number, interactive: boolean = false) => {
+    return (
+      <div className="flex space-x-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            disabled={!interactive}
+            onClick={() => interactive && setRating(star)}
+            className={`transition-all duration-200 ${
+              interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+            }`}
+          >
+            <Star
+              className={`w-8 h-8 ${
+                star <= ratingValue
+                  ? "text-yellow-400 fill-yellow-400"
+                  : "text-gray-300"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (!order) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">
+            {existingReview ? 'Your Review' : 'Write a Review'}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Order Info */}
+        <div className="border rounded-lg p-4 bg-gray-50 mb-4">
+          <h4 className="font-medium mb-2">Order Details</h4>
+          <p><strong>Tracking #:</strong> {order.tracking_number}</p>
+          <p><strong>Total:</strong> Rs. {Math.round(order.total || 0)}</p>
+          <p><strong>Date:</strong> {formatDate(order.created_at)}</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </div>
+        ) : existingReview ? (
+          // Show existing review
+          <div className="space-y-6">
+            {/* Rating */}
+            <div className="space-y-2">
+              <Label className="block text-lg font-medium">Your Rating</Label>
+              <div className="flex items-center gap-3">
+                {renderStars(existingReview.rating)}
+                <span className="text-lg font-medium text-muted-foreground">
+                  ({existingReview.rating}/5)
+                </span>
+              </div>
+            </div>
+
+            {/* Comment */}
+            {existingReview.comment && (
+              <div className="space-y-2">
+                <Label className="block text-lg font-medium">Your Comment</Label>
+                <div className="p-4 border rounded-lg bg-white">
+                  <p className="text-gray-700 whitespace-pre-wrap">{existingReview.comment}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Photos */}
+            {existingReview.photos && existingReview.photos.length > 0 && (
+              <div className="space-y-2">
+                <Label className="block text-lg font-medium">Photos</Label>
+                <div className="grid grid-cols-4 gap-3">
+                  {existingReview.photos.map((photo: any, index: number) => (
+                    <div key={index} className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                      <Image
+                        src={photo.thumbnail || photo.original || photo}
+                        alt={`Review photo ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.png";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Review Date */}
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Reviewed on {formatDate(existingReview.created_at)}
+              </p>
+            </div>
+
+            {/* Close Button */}
+            <div className="flex justify-end pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="px-6 py-2 text-lg"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : (
+          // Show review form
+          <div className="space-y-6">
+            {/* Rating */}
+            <div className="space-y-3">
+              <Label className="block text-lg font-medium">Rating *</Label>
+              {renderStars(rating, true)}
+              <p className="text-sm text-muted-foreground">
+                {rating === 0 ? "Click to rate your experience" : `You rated ${rating} star${rating > 1 ? 's' : ''}`}
+              </p>
+            </div>
+
+            {/* Comment */}
+            <div className="space-y-3">
+              <Label htmlFor="review-comment" className="block text-lg font-medium">
+                Your Review
+              </Label>
+              <Textarea
+                id="review-comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full min-h-[120px] text-lg p-4"
+                placeholder="Share your experience with this order. What did you like? Any suggestions for improvement?"
+              />
+            </div>
+
+            {/* Image Upload */}
+            <div className="space-y-3">
+              <Label className="block text-lg font-medium">
+                Upload Photos (Optional)
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                  className="flex-1"
+                />
+                {isUploading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    Uploading...
+                  </div>
+                )}
+              </div>
+
+              {/* Image Preview */}
+              {photos.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">
+                    Uploaded Images ({photos.length})
+                  </p>
+                  <div className="grid grid-cols-4 gap-3">
+                    {photos.map((photo, index) => (
+                      <div key={photo.id || index} className="relative group">
+                        <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-gray-100">
+                          <Image
+                            src={photo.thumbnail || photo.original}
+                            alt={`Uploaded image ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Submit Buttons */}
+            <div className="flex justify-end space-x-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="px-6 py-2 text-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmitReview}
+                disabled={rating === 0 || isSubmitting || isUploading}
+                className="px-6 py-2 text-lg"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Review"}
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -600,32 +600,6 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {/* View Review Button - Show if review already exists and reviews are enabled */}
-                    {showReviews && item.review_id && item.review_id > 0 ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-green-600 border-green-600 hover:bg-green-50"
-                        onClick={() => handleViewReview(item.review_id!, item)}
-                      >
-                        View Review
-                      </Button>
-                    ) : (
-                      /* Review Product Button - Show if no review, can review, and reviews are enabled */
-                      showReviews && canReviewProduct(item) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedProduct(item);
-                            setShowReviewForm(true);
-                          }}
-                        >
-                          Add Review
-                        </Button>
-                      )
-                    )}
-
                     {/* Return Single Product Button or View Return */}
                     {item.is_returned && item.return_request_id ? (
                       <Button
