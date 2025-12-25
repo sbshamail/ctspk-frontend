@@ -129,13 +129,16 @@ const WishlistPage = () => {
 
   const getTotalPrice = () => {
     return wishlist.reduce((total, item) => {
-      const price = item.product.sale_price || item.product.price;
-      return total + price;
+      const price = Number(item.product?.sale_price) || Number(item.product?.price) || 0;
+      return total + (isNaN(price) ? 0 : price);
     }, 0);
   };
 
   const getOriginalTotal = () => {
-    return wishlist.reduce((total, item) => total + item.product.price, 0);
+    return wishlist.reduce((total, item) => {
+      const price = Number(item.product?.price) || 0;
+      return total + (isNaN(price) ? 0 : price);
+    }, 0);
   };
 
   const inStockItems = wishlist.filter((item) => item.product.in_stock);
@@ -345,7 +348,7 @@ const WishlistPage = () => {
                 </div>
 
                 {/* Recently Viewed */}
-                <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6">
+                <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6 hidden">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Recently Viewed
                   </h3>
@@ -399,9 +402,9 @@ const WishlistItemCard = ({
     }
   };
 
-  const price = item.product.sale_price || item.product.price;
+  const price = Number(item.product?.sale_price) || Number(item.product?.price) || 0;
   const hasSale =
-    item.product.sale_price && item.product.sale_price < item.product.price;
+    item.product?.sale_price && Number(item.product.sale_price) < Number(item.product.price);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">

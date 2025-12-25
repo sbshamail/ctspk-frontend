@@ -15,13 +15,40 @@ import {
 import { Separator } from "@/components/ui/separator";
 import ShoppingCartIcon from "@/components/icons/ShoppingCartIcon";
 import { useMemo, useState } from "react";
-import { useAddToWishlistMutation } from "@/store/services/wishlistAPi";
+import { useAddToWishlistMutation, useGetWishlistQuery, useRemoveFromWishlistMutation } from "@/store/services/wishlistAPi";
 import { toast } from "sonner";
+import { getAuth } from "@/action/auth";
 
 export function MiniCart() {
   const { cart, update, remove } = useCart();
   const [open, setOpen] = useState(false);
+  const { user } = getAuth();
   const [addToWishlist] = useAddToWishlistMutation();
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+
+  // Fetch wishlist only when user is logged in
+  const { data: wishlistData } = useGetWishlistQuery(undefined, {
+    skip: !user,
+  });
+  const wishlist = wishlistData?.data ?? [];
+
+  // Check if a product is in wishlist
+  const isInWishlist = (productId: number, variation_option_id?: number | null) => {
+    return wishlist.some(
+      (item: any) =>
+        item.product_id === productId &&
+        item.variation_option_id === (variation_option_id || null)
+    );
+  };
+
+  // Get wishlist item for removal
+  const getWishlistItem = (productId: number, variation_option_id?: number | null) => {
+    return wishlist.find(
+      (item: any) =>
+        item.product_id === productId &&
+        item.variation_option_id === (variation_option_id || null)
+    );
+  };
 
   // Calculate subtotal
   const subtotal = useMemo(() => {
@@ -50,18 +77,34 @@ export function MiniCart() {
     remove(productId, variation_option_id);
   };
 
-  const handleAddToWishlist = async (productId: number, productName: string, variation_option_id?: number | null) => {
+  const handleToggleWishlist = async (productId: number, productName: string, variation_option_id?: number | null) => {
+    if (!user) {
+      toast.error("Please login to use wishlist");
+      return;
+    }
+
     try {
-      await addToWishlist({
-        product_id: productId,
-        variation_option_id: variation_option_id || null,
-      }).unwrap();
-      toast.success(`${productName} added to wishlist`);
+      const inWishlist = isInWishlist(productId, variation_option_id);
+      if (inWishlist) {
+        // Remove from wishlist
+        const wishlistItem = getWishlistItem(productId, variation_option_id);
+        if (wishlistItem) {
+          await removeFromWishlist({ id: wishlistItem.id }).unwrap();
+          toast.success(`${productName} removed from wishlist`);
+        }
+      } else {
+        // Add to wishlist
+        await addToWishlist({
+          product_id: productId,
+          variation_option_id: variation_option_id || null,
+        }).unwrap();
+        toast.success(`${productName} added to wishlist`);
+      }
     } catch (error: any) {
       if (error?.status === 401) {
-        toast.error("Please login to add to wishlist");
+        toast.error("Please login to use wishlist");
       } else {
-        toast.error("Failed to add to wishlist");
+        toast.error("Failed to update wishlist");
       }
     }
   };
@@ -217,15 +260,27 @@ export function MiniCart() {
                             size="sm"
                           />
 
-                          {/* Add to Wishlist Button */}
-                          <button
-                            onClick={() => handleAddToWishlist(item.product.id, item.product.name, item.variation_option_id)}
-                            className="p-1.5 text-pink-500 hover:bg-pink-50 rounded-md transition-colors"
-                            aria-label="Add to wishlist"
-                            title="Add to Wishlist"
-                          >
-                            <Heart className="w-4 h-4" />
-                          </button>
+                          {/* Wishlist Button - only show if user is logged in */}
+                          {user && (
+                            <button
+                              onClick={() => handleToggleWishlist(item.product.id, item.product.name, item.variation_option_id)}
+                              className={`p-1.5 rounded-md transition-colors ${
+                                isInWishlist(item.product.id, item.variation_option_id)
+                                  ? "text-red-500 hover:bg-red-50"
+                                  : "text-gray-400 hover:text-red-500 hover:bg-pink-50"
+                              }`}
+                              aria-label={isInWishlist(item.product.id, item.variation_option_id) ? "Remove from wishlist" : "Add to wishlist"}
+                              title={isInWishlist(item.product.id, item.variation_option_id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  isInWishlist(item.product.id, item.variation_option_id)
+                                    ? "fill-red-500"
+                                    : ""
+                                }`}
+                              />
+                            </button>
+                          )}
 
                           {/* Remove Button */}
                           <button

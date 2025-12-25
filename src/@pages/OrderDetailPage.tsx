@@ -1,13 +1,14 @@
 "use client";
 
-import { currencyFormatter, formatOrderId, getOrderStatusLabel } from "@/utils/helper";
+import { currencyFormatter, getOrderStatusLabel } from "@/utils/helper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Star } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,16 @@ export default function OrderDetailPage({ id }: { id: string }) {
   const [viewReturnData, setViewReturnData] = useState<any>(null);
   const [isLoadingReturnView, setIsLoadingReturnView] = useState(false);
   const [viewReturnProduct, setViewReturnProduct] = useState<OrderProductRead | null>(null);
+
+  // Order Review states
+  const [showOrderReviewDialog, setShowOrderReviewDialog] = useState(false);
+  const [orderReviewData, setOrderReviewData] = useState<any>(null);
+  const [isLoadingOrderReview, setIsLoadingOrderReview] = useState(false);
+  const [orderReviewRating, setOrderReviewRating] = useState(0);
+  const [orderReviewComment, setOrderReviewComment] = useState("");
+  const [orderReviewPhotos, setOrderReviewPhotos] = useState<Array<{ id: number; original: string; thumbnail: string }>>([]);
+  const [isUploadingOrderReview, setIsUploadingOrderReview] = useState(false);
+  const [isSubmittingOrderReview, setIsSubmittingOrderReview] = useState(false);
 
   // Settings state for ratings and reviews visibility
   const [showRatings, setShowRatings] = useState(false);
@@ -320,6 +331,152 @@ export default function OrderDetailPage({ id }: { id: string }) {
     }
   };
 
+  // Handle opening order review dialog
+  const handleOpenOrderReview = async () => {
+    setShowOrderReviewDialog(true);
+
+    // Check if order already has a review
+    if (order.order_review_id && order.order_review_id > 0) {
+      // Fetch existing review
+      try {
+        setIsLoadingOrderReview(true);
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+          toast.error("Authentication required");
+          return;
+        }
+
+        const response = await fetch(getApiUrl(`/order-review/order/${order.id}`), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setOrderReviewData(result.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching order review:", error);
+      } finally {
+        setIsLoadingOrderReview(false);
+      }
+    } else {
+      // No existing review - show form
+      setOrderReviewData(null);
+      setIsLoadingOrderReview(false);
+    }
+  };
+
+  // Handle order review image upload
+  const handleOrderReviewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsUploadingOrderReview(true);
+
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const response = await fetch(getApiUrl('/media/create?thumbnail=true'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data) {
+          const uploadedImages = Array.isArray(result.data)
+            ? result.data.map((img: any) => ({
+                id: img.id,
+                original: img.original || img.url,
+                thumbnail: img.thumbnail || img.original || img.url
+              }))
+            : [{
+                id: result.data.id,
+                original: result.data.original || result.data.url,
+                thumbnail: result.data.thumbnail || result.data.original || result.data.url
+              }];
+
+          setOrderReviewPhotos(prev => [...prev, ...uploadedImages]);
+          toast.success(`${uploadedImages.length} image(s) uploaded successfully`);
+        }
+      } else {
+        throw new Error('Failed to upload images');
+      }
+    } catch (error) {
+      toast.error("Failed to upload images");
+    } finally {
+      setIsUploadingOrderReview(false);
+      e.target.value = '';
+    }
+  };
+
+  // Submit order review
+  const handleSubmitOrderReview = async () => {
+    if (orderReviewRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    try {
+      setIsSubmittingOrderReview(true);
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const reviewData = {
+        order_id: order.id,
+        rating: orderReviewRating,
+        comment: orderReviewComment,
+        photos: orderReviewPhotos,
+      };
+
+      const response = await fetch(getApiUrl('/order-review/create'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(reviewData),
+      });
+
+      if (response.ok) {
+        toast.success("Order review submitted successfully");
+        setShowOrderReviewDialog(false);
+        setOrderReviewRating(0);
+        setOrderReviewComment("");
+        setOrderReviewPhotos([]);
+        refetch();
+      } else {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || errorData?.detail || 'Failed to submit review');
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit review");
+    } finally {
+      setIsSubmittingOrderReview(false);
+    }
+  };
+
   // Helper function to get product image - prioritize variation image for variable products
   const getProductImage = (product: OrderProductRead) => {
     // ✅ First try variation image (for variable products)
@@ -377,11 +534,7 @@ export default function OrderDetailPage({ id }: { id: string }) {
               <div className="space-y-1">
                 <div>
                   <span className="text-xs text-muted-foreground">Order #</span>
-                  <span className="text-2xl font-bold block">{formatOrderId(order.id, order.created_at)}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">Tracking #</span>
-                  <span className="text-sm font-medium block text-primary">{order.tracking_number}</span>
+                  <span className="text-2xl font-bold block">{order.tracking_number}</span>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -420,7 +573,19 @@ export default function OrderDetailPage({ id }: { id: string }) {
                   Return Order
                 </Button>
               )}
-              
+
+              {/* Review Order Button - show for completed orders */}
+              {order.order_status === OrderStatusEnum.COMPLETED && showReviews && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                  onClick={handleOpenOrderReview}
+                >
+                  {order.order_review_id && order.order_review_id > 0 ? 'View Review' : 'Review Order'}
+                </Button>
+              )}
+
               <Badge variant="outline" className="text-sm">
                 {getOrderStatusLabel(order.order_status)}
               </Badge>
@@ -873,6 +1038,197 @@ export default function OrderDetailPage({ id }: { id: string }) {
         product={viewReturnProduct}
         isLoading={isLoadingReturnView}
       />
+
+      {/* Order Review Dialog */}
+      <Dialog open={showOrderReviewDialog} onOpenChange={setShowOrderReviewDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              {orderReviewData ? 'Order Review' : 'Review Your Order'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {isLoadingOrderReview ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="mt-4 text-muted-foreground">Loading review...</p>
+            </div>
+          ) : orderReviewData ? (
+            // View existing review
+            <div className="space-y-6">
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h4 className="font-medium mb-2">Order #{order.tracking_number}</h4>
+                <p className="text-sm text-gray-600">
+                  Reviewed on {new Date(orderReviewData.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </p>
+              </div>
+
+              {/* Rating */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Rating</label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-8 h-8 ${
+                        star <= (orderReviewData.rating || 0)
+                          ? "text-yellow-500 fill-yellow-500"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment */}
+              {orderReviewData.comment && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Review</label>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
+                    {orderReviewData.comment}
+                  </p>
+                </div>
+              )}
+
+              {/* Photos */}
+              {orderReviewData.photos && orderReviewData.photos.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Photos</label>
+                  <div className="flex flex-wrap gap-2">
+                    {orderReviewData.photos.map((photo: any, index: number) => (
+                      <div key={index} className="relative w-20 h-20 rounded overflow-hidden border">
+                        <Image
+                          src={photo.thumbnail || photo.original || photo}
+                          alt={`Review photo ${index + 1}`}
+                          width={80}
+                          height={80}
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowOrderReviewDialog(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            // Add new review form
+            <div className="space-y-6">
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h4 className="font-medium mb-2">Order #{order.tracking_number}</h4>
+                <p className="text-sm text-gray-600">
+                  Share your experience with this order
+                </p>
+              </div>
+
+              {/* Rating */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Rating *</label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setOrderReviewRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 cursor-pointer transition-colors ${
+                          star <= orderReviewRating
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-gray-300 hover:text-yellow-400"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Review (Optional)</label>
+                <Textarea
+                  value={orderReviewComment}
+                  onChange={(e) => setOrderReviewComment(e.target.value)}
+                  placeholder="Share your experience with this order..."
+                  rows={4}
+                />
+              </div>
+
+              {/* Photo Upload */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Photos (Optional)</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {orderReviewPhotos.map((photo, index) => (
+                    <div key={index} className="relative w-20 h-20 rounded overflow-hidden border">
+                      <Image
+                        src={photo.thumbnail || photo.original}
+                        alt={`Review photo ${index + 1}`}
+                        width={80}
+                        height={80}
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setOrderReviewPhotos(prev => prev.filter((_, i) => i !== index))}
+                        className="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs rounded-bl"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleOrderReviewImageUpload}
+                  className="hidden"
+                  id="order-review-photo-upload"
+                  disabled={isUploadingOrderReview}
+                />
+                <label
+                  htmlFor="order-review-photo-upload"
+                  className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                    isUploadingOrderReview ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {isUploadingOrderReview ? 'Uploading...' : 'Add Photos'}
+                </label>
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowOrderReviewDialog(false);
+                    setOrderReviewRating(0);
+                    setOrderReviewComment("");
+                    setOrderReviewPhotos([]);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitOrderReview}
+                  disabled={isSubmittingOrderReview || orderReviewRating === 0}
+                >
+                  {isSubmittingOrderReview ? 'Submitting...' : 'Submit Review'}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Screen>
   );
 }
@@ -1393,11 +1749,26 @@ function ReturnDialog({
 
   // ✅ Get correct image for variable products
   const getReturnProductImage = () => {
+    // Try variation image first
     const variationImage = product?.variation_snapshot?.image?.original ||
                           product?.variation_snapshot?.image?.thumbnail ||
                           product?.variation_data?.image?.original ||
                           product?.variation_data?.image?.thumbnail;
-    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+    if (variationImage) return variationImage;
+
+    // Try product snapshot image
+    const snapshotImage = product?.product_snapshot?.image?.original ||
+                         product?.product_snapshot?.image?.thumbnail ||
+                         (typeof product?.product_snapshot?.image === 'string' ? product?.product_snapshot?.image : null);
+    if (snapshotImage) return snapshotImage;
+
+    // Try product image
+    const productImage = product?.product?.image?.original ||
+                        product?.product?.image?.thumbnail ||
+                        (typeof product?.product?.image === 'string' ? product?.product?.image : null);
+    if (productImage) return productImage;
+
+    return "/placeholder.png";
   };
 
   // ✅ Get variation text
@@ -1578,11 +1949,26 @@ function ViewReviewDialog({
 }: ViewReviewDialogProps) {
   // Get correct image for variable products
   const getViewProductImage = () => {
+    // Try variation image first
     const variationImage = product?.variation_snapshot?.image?.original ||
                           product?.variation_snapshot?.image?.thumbnail ||
                           product?.variation_data?.image?.original ||
                           product?.variation_data?.image?.thumbnail;
-    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+    if (variationImage) return variationImage;
+
+    // Try product snapshot image
+    const snapshotImage = product?.product_snapshot?.image?.original ||
+                         product?.product_snapshot?.image?.thumbnail ||
+                         (typeof product?.product_snapshot?.image === 'string' ? product?.product_snapshot?.image : null);
+    if (snapshotImage) return snapshotImage;
+
+    // Try product image
+    const productImage = product?.product?.image?.original ||
+                        product?.product?.image?.thumbnail ||
+                        (typeof product?.product?.image === 'string' ? product?.product?.image : null);
+    if (productImage) return productImage;
+
+    return "/placeholder.png";
   };
 
   // Get variation text
@@ -1782,11 +2168,26 @@ function ViewReturnDialog({
 }: ViewReturnDialogProps) {
   // Get correct image for variable products
   const getViewProductImage = () => {
+    // Try variation image first
     const variationImage = product?.variation_snapshot?.image?.original ||
                           product?.variation_snapshot?.image?.thumbnail ||
                           product?.variation_data?.image?.original ||
                           product?.variation_data?.image?.thumbnail;
-    return variationImage || product?.product_snapshot?.image?.thumbnail || "/placeholder.png";
+    if (variationImage) return variationImage;
+
+    // Try product snapshot image
+    const snapshotImage = product?.product_snapshot?.image?.original ||
+                         product?.product_snapshot?.image?.thumbnail ||
+                         (typeof product?.product_snapshot?.image === 'string' ? product?.product_snapshot?.image : null);
+    if (snapshotImage) return snapshotImage;
+
+    // Try product image
+    const productImage = product?.product?.image?.original ||
+                        product?.product?.image?.thumbnail ||
+                        (typeof product?.product?.image === 'string' ? product?.product?.image : null);
+    if (productImage) return productImage;
+
+    return "/placeholder.png";
   };
 
   // Get variation text

@@ -67,13 +67,21 @@ export const getOrderStatusLabel = (status: string | number): string => {
 };
 
 export const currencyFormatter = (
-  value: number | string | undefined,
+  value: number | string | undefined | null,
   currency: "PKR" | "SAR" | "EUR" | "JPY" | "USD" | "INR" | null = "PKR",
   format: "en-PK" | "en-US" | "de-DE" | "ja-JP" | "en-IN" = "en-PK"
 ): string => {
-  // @ts-ignore
-  if(!value) { return ; }
-  if (typeof value == 'string'){value=Number(value);}
+  // Handle null, undefined, empty string, or invalid values
+  if (value === null || value === undefined || value === '') {
+    return "Rs. 0";
+  }
+  if (typeof value === 'string') {
+    value = Number(value);
+  }
+  // Handle NaN or non-finite values
+  if (isNaN(value) || !isFinite(value)) {
+    return "Rs. 0";
+  }
 
   // Round to whole number - no decimal places
   const wholeValue = Math.round(value);

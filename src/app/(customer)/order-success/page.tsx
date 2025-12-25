@@ -307,7 +307,7 @@ export default function OrderSuccessPage() {
               Your order has been successfully placed
             </p>
             <p className="text-lg text-gray-500">
-              Order Number: <span className="font-semibold text-primary">{orderData.tracking_number}</span>
+              Order #: <span className="font-semibold text-primary">{orderData.tracking_number}</span>
             </p>
             <p className="text-sm text-gray-500 mt-2">
               We've sent a confirmation email to your registered email address
@@ -330,7 +330,7 @@ export default function OrderSuccessPage() {
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
-                  <p className="text-gray-600 mt-1">Tracking Number: {orderData.tracking_number}</p>
+                  <p className="text-gray-600 mt-1">Order #: {orderData.tracking_number}</p>
                   <p className="text-sm text-gray-500">Placed on {formatDate(orderData.created_at)}</p>
                 </div>
                 <div className="mt-4 lg:mt-0 flex flex-col sm:flex-row gap-3">

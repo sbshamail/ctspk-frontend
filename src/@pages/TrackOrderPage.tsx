@@ -335,16 +335,12 @@ const TrackOrderPage = () => {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Order #{orderData.id}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Order #{orderData.tracking_number}</h2>
                     <p className="text-gray-600">
                       Placed on {formatDate(orderData.created_at)}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 mt-4 lg:mt-0">
-                    <div className="text-center sm:text-right">
-                      <div className="text-sm text-gray-600">Tracking Number</div>
-                      <div className="font-mono font-bold text-primary">{orderData.tracking_number}</div>
-                    </div>
                     <div className="text-center sm:text-right">
                       <div className="text-sm text-gray-600">Total Amount</div>
                       <div className="font-bold text-lg text-gray-900">{currencyFormatter(orderData.total)}</div>
@@ -421,10 +417,10 @@ const TrackOrderPage = () => {
                       label: 'Out for Delivery', 
                       date: orderData.order_status_history.order_out_for_delivery_date 
                     },
-                    { 
-                      key: 'order_completed_date', 
-                      label: 'Delivered', 
-                      date: orderData.order_status_history.order_completed_date 
+                    {
+                      key: 'order_completed_date',
+                      label: 'Completed',
+                      date: orderData.order_status_history.order_completed_date
                     }
                   ].map((step, index) => (
                     <div key={step.key} className="flex items-start gap-4">

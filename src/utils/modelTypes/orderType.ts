@@ -134,6 +134,7 @@ export interface OrderRead extends TimeStampReadModel {
 export interface OrderReadNested extends OrderRead {
   order_products: OrderProductRead[];
   order_status_history?: OrderStatusRead;
+  order_review_id?: number | null;
 }
 
 // API Response Types

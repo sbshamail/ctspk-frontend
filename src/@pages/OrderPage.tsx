@@ -22,7 +22,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Star } from "lucide-react";
 import { isReviewEnabled } from "@/lib/useSettings";
-import { formatOrderId, getOrderStatusLabel } from "@/utils/helper";
+import { getOrderStatusLabel } from "@/utils/helper";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -54,6 +54,7 @@ export default function OrdersPage() {
   const [globalFilter, setGlobalFilter] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<string | null>(null);
   const [toDate, setToDate] = useState<string | null>(null);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string | null>(null);
 
   // Cancel dialog states
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -82,11 +83,20 @@ export default function OrdersPage() {
     return undefined;
   }, [fromDate, toDate]);
 
+  // Build columnFilters for order status
+  const columnFilters = useMemo(() => {
+    if (orderStatusFilter) {
+      return [["order_status", orderStatusFilter]] as [string, string | number | boolean][];
+    }
+    return undefined;
+  }, [orderStatusFilter]);
+
   const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({
     page,
     limit,
     searchTerm: globalFilter || undefined,
     dateRange,
+    columnFilters,
   });
 
   const orders = data?.data ?? [];
@@ -222,30 +232,17 @@ export default function OrdersPage() {
       className: "w-[60px] text-center",
     },
     {
-      title: "Order Info",
-      accessor: "id",
+      title: "Order #",
+      accessor: "tracking_number",
       render: ({ cell, row }) => {
-        const formattedId = formatOrderId(cell, row.created_at);
         return (
           <div className="space-y-1">
-            <div>
-              <span className="text-xs text-muted-foreground">Order #</span>
-              <Link
-                href={`/order/${cell}`}
-                className="block text-primary hover:underline font-medium text-sm"
-              >
-                {formattedId}
-              </Link>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Tracking #</span>
-              <Link
-                href={`/track-order?tracking=${row.tracking_number}`}
-                className="block text-primary hover:underline font-medium text-xs"
-              >
-                {row.tracking_number}
-              </Link>
-            </div>
+            <Link
+              href={`/order/${row.id}`}
+              className="text-primary hover:underline font-medium text-sm"
+            >
+              {cell}
+            </Link>
           </div>
         );
       },
@@ -337,7 +334,7 @@ export default function OrdersPage() {
                 openReviewDialog(row);
               }}
             >
-              Review
+              {row.order_review_id && row.order_review_id > 0 ? 'View Review' : 'Review'}
             </Button>
           )}
 
@@ -358,10 +355,47 @@ export default function OrdersPage() {
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
+  // Order status options for filter
+  const orderStatusOptions = [
+    { value: "all", label: "All Statuses" },
+    { value: OrderStatusEnum.PENDING, label: "Pending" },
+    { value: OrderStatusEnum.PROCESSING, label: "Processing" },
+    { value: OrderStatusEnum.PACKED, label: "Packed" },
+    { value: OrderStatusEnum.AT_DISTRIBUTION_CENTER, label: "At Distribution Center" },
+    { value: OrderStatusEnum.AT_LOCAL_FACILITY, label: "At Local Facility" },
+    { value: OrderStatusEnum.OUT_FOR_DELIVERY, label: "Out for Delivery" },
+    { value: OrderStatusEnum.COMPLETED, label: "Completed" },
+    { value: OrderStatusEnum.CANCELLED, label: "Cancelled" },
+    { value: OrderStatusEnum.REFUNDED, label: "Refunded" },
+  ];
+
   return (
     <Screen className="py-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="text-2xl font-semibold">My Orders</h1>
+
+        {/* Order Status Filter */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Filter by Status:</span>
+          <Select
+            value={orderStatusFilter || "all"}
+            onValueChange={(value) => {
+              setOrderStatusFilter(value === "all" ? null : value);
+              setPage(1); // Reset to first page when filter changes
+            }}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              {orderStatusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (
@@ -489,11 +523,10 @@ function CancelOrderDialog({
           {order && (
             <div className="border rounded-lg p-4 bg-gray-50">
               <h4 className="font-medium mb-2">Order Details</h4>
-              <p><strong>Tracking #:</strong> {order.tracking_number}</p>
+              <p><strong>Order #:</strong> {order.tracking_number}</p>
               <p><strong>Customer:</strong> {order.customer_name}</p>
-              <p><strong>Total:</strong> {order.total} PKR</p>
-              <p><strong>Status:</strong> {order.order_status}</p>
-              <p><strong>Fulfillment ID:</strong> {order.fullfillment_id || "Not assigned"}</p>
+              <p><strong>Total:</strong> Rs. {Math.round(order.total || 0)}</p>
+              <p><strong>Status:</strong> {getOrderStatusLabel(order.order_status)}</p>
             </div>
           )}
 
@@ -689,8 +722,7 @@ function ReturnOrderDialog({
           {order && (
             <div className="border rounded-lg p-4 bg-gray-50">
               <h4 className="font-medium mb-2">Order Details</h4>
-              <p><strong>Order #:</strong> {formatOrderId(order.id, order.created_at)}</p>
-              <p><strong>Tracking #:</strong> {order.tracking_number}</p>
+              <p><strong>Order #:</strong> {order.tracking_number}</p>
               <p><strong>Customer:</strong> {order.customer_name}</p>
               <p><strong>Total:</strong> Rs. {Math.round(order.total || 0)}</p>
               <p><strong>Status:</strong> {getOrderStatusLabel(order.order_status)}</p>
@@ -842,6 +874,14 @@ function OrderReviewDialog({
   const fetchExistingReview = async () => {
     if (!order) return;
 
+    // Check if order has a review (order_review_id > 0)
+    if (!order.order_review_id || order.order_review_id <= 0) {
+      // No review exists - show the form
+      setExistingReview(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const accessToken = getAccessToken();
@@ -850,7 +890,8 @@ function OrderReviewDialog({
         return;
       }
 
-      const response = await fetch(getApiUrl(`/order-review/create/${order.id}`), {
+      // Call the correct API endpoint for fetching existing review
+      const response = await fetch(getApiUrl(`/order-review/order/${order.id}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -866,7 +907,7 @@ function OrderReviewDialog({
           setExistingReview(null);
         }
       } else {
-        // No review exists - that's fine
+        // No review exists - show the form
         setExistingReview(null);
       }
     } catch (error) {
@@ -1033,7 +1074,7 @@ function OrderReviewDialog({
         {/* Order Info */}
         <div className="border rounded-lg p-4 bg-gray-50 mb-4">
           <h4 className="font-medium mb-2">Order Details</h4>
-          <p><strong>Tracking #:</strong> {order.tracking_number}</p>
+          <p><strong>Order #:</strong> {order.tracking_number}</p>
           <p><strong>Total:</strong> Rs. {Math.round(order.total || 0)}</p>
           <p><strong>Date:</strong> {formatDate(order.created_at)}</p>
         </div>
