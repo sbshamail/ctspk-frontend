@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+ecosystem.config.js
+pm2.png
+deploy.py
