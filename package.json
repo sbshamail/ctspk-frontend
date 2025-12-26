@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack --no-lint",
     "start": "next start",
+    "test": "echo \"No tests configured\"",
     "gitpush": "git add . && git commit -m \"update\" && git push origin main"
   },
   "dependencies": {
