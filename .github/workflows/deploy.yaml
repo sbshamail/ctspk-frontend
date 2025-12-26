@@ -29,6 +29,8 @@ jobs:
           nvm use default
 
           pnpm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.ctspk.com
 
       - name: Restart PM2
         run: |
