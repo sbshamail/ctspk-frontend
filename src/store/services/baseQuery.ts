@@ -81,6 +81,10 @@ export const baseQueryWithReauth: (
             const data = refreshResult.data as any;
             const newAccessToken = data.access_token || data.data?.access_token;
             const newRefreshToken = data.refresh_token || data.data?.refresh_token;
+           
+            const newExp = data.exp || data.data?.exp;
+            const user = data.user || data.data?.user;
+
 
             if (newAccessToken) {
               // Update access token in cookie
@@ -96,14 +100,21 @@ export const baseQueryWithReauth: (
                   sameSite: "Strict",
                 });
               }
-
+              if (newExp) {
+                Cookies.set("user_session_exp", newExp, {
+                  secure: true,
+                  sameSite: "Strict",
+                });
+              }
               // Update Redux state if auth slice exists
-              if ((api.getState() as any).auth) {
+              const authState = (api.getState() as any).auth;
+              if (authState) {
                 api.dispatch({
                   type: "auth/updateToken",
                   payload: {
                     access_token: newAccessToken,
                     refresh_token: newRefreshToken,
+                    user_session_exp: newExp || authState?.user_session_exp,
                   },
                 });
               }

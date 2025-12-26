@@ -29,6 +29,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCart } from "@/context/cartContext";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 // Create a complete checkout schema from scratch
 const checkoutSchema = z.object({
@@ -39,7 +48,7 @@ const checkoutSchema = z.object({
   zip: z.string().optional().default(""),
   country: z.string().optional().default("Pakistan"),
   phone: z.string().min(1, "Phone number is required"),
-  delivery_time: z.string().min(1, "Delivery time is required"), // 🔴 NEW: Added delivery time field
+  delivery_time: z.string().min(1, "Delivery time is required"),
   billing_address: z.object({
     street: z.string().min(1, "Street address is required"),
     city: z.string().min(1, "City is required"),
@@ -113,8 +122,14 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [isLoadingTaxShipping, setIsLoadingTaxShipping] = useState(true);
-  const [deliveryTimes, setDeliveryTimes] = useState<any[]>([]); // 🔴 NEW: Delivery times state
-  const [isLoadingDeliveryTimes, setIsLoadingDeliveryTimes] = useState(true); // 🔴 NEW: Loading state for delivery times
+  const [deliveryTimes, setDeliveryTimes] = useState<any[]>([]);
+  const [isLoadingDeliveryTimes, setIsLoadingDeliveryTimes] = useState(true);
+  // Initialize with tomorrow's date as default
+  const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  });
 
   // Fetch addresses if user is authenticated
   useEffect(() => {
@@ -123,114 +138,87 @@ export default function CheckoutPage() {
     }
   }, [isAuth, user?.id]);
 
-  // Fetch tax, shipping classes, and delivery times
+  // Load tax, shipping classes, and delivery times from localStorage
   useEffect(() => {
-    fetchTaxAndShippingClasses();
-    fetchDeliveryTimes(); // 🔴 NEW: Fetch delivery times
+    loadSettingsFromLocalStorage();
   }, []);
 
-  const fetchTaxAndShippingClasses = async () => {
+  const loadSettingsFromLocalStorage = () => {
     try {
       setIsLoadingTaxShipping(true);
-
-      // Step 1: Get tax class ID from settings
-      const taxIdRes = await fetchApi({
-        url: "settings/value/taxClass?language=en",
-        method: "GET",
-      });
-
-      // Step 2: Get shipping class ID from settings
-      const shippingIdRes = await fetchApi({
-        url: "settings/value/shippingClass?language=en",
-        method: "GET",
-      });
-
-      let taxClassData = null;
-      let shippingClassData = null;
-
-      // Step 3: If tax ID exists, fetch the actual tax object
-      if (taxIdRes?.success === 1 && taxIdRes.data) {
-        const taxId = taxIdRes.data;
-        try {
-          const taxRes = await fetchApi({
-            url: `tax/read/${taxId}`,
-            method: "GET",
-          });
-          if (taxRes?.success === 1) {
-            taxClassData = taxRes.data;
-          }
-        } catch (taxError) {
-          console.error("Failed to fetch tax class details:", taxError);
-        }
-      }
-
-      // Step 4: If shipping ID exists, fetch the actual shipping object
-      if (shippingIdRes?.success === 1 && shippingIdRes.data) {
-        const shippingId = shippingIdRes.data;
-        try {
-          const shippingRes = await fetchApi({
-            url: `shipping/read/${shippingId}`,
-            method: "GET",
-          });
-          if (shippingRes?.success === 1) {
-            shippingClassData = shippingRes.data;
-          }
-        } catch (shippingError) {
-          console.error(
-            "Failed to fetch shipping class details:",
-            shippingError
-          );
-        }
-      }
-
-      setTaxClass(taxClassData);
-      setShippingClass(shippingClassData);
-    } catch (error) {
-      console.error("Failed to fetch tax/shipping classes:", error);
-    } finally {
-      setIsLoadingTaxShipping(false);
-    }
-  };
-
-  // 🔴 NEW: Fetch delivery times from API
-  const fetchDeliveryTimes = async () => {
-    try {
       setIsLoadingDeliveryTimes(true);
-      const res = await fetchApi({
-        url: "settings/value/deliveryTime?language=en",
-        method: "GET",
-      });
 
-      if (res?.success === 1 && res.data) {
-        // If data is an array, use it directly
-        if (Array.isArray(res.data)) {
-          setDeliveryTimes(res.data);
+      let loadedTaxClass = null;
+      let loadedShippingClass = null;
+
+      // Get siteSettings from localStorage
+      const siteSettingsStr = localStorage.getItem("siteSettings");
+
+      if (siteSettingsStr) {
+        const siteSettings = JSON.parse(siteSettingsStr);
+
+        // Get taxClass from siteSettings
+        if (siteSettings.taxClass) {
+          loadedTaxClass = siteSettings.taxClass;
         }
-        // If data is a string, try to parse it as JSON
-        else if (typeof res.data === "string") {
-          try {
-            const parsedData = JSON.parse(res.data);
-            setDeliveryTimes(Array.isArray(parsedData) ? parsedData : []);
-          } catch {
+
+        // Get shippingClass from siteSettings
+        if (siteSettings.shippingClass) {
+          loadedShippingClass = siteSettings.shippingClass;
+        }
+
+        // Get deliveryTime from siteSettings
+        if (siteSettings.deliveryTime) {
+          const deliveryTimeData = siteSettings.deliveryTime;
+          if (Array.isArray(deliveryTimeData)) {
+            setDeliveryTimes(deliveryTimeData);
+          } else if (typeof deliveryTimeData === "string") {
+            try {
+              const parsedData = JSON.parse(deliveryTimeData);
+              setDeliveryTimes(Array.isArray(parsedData) ? parsedData : []);
+            } catch {
+              setDeliveryTimes([]);
+            }
+          } else {
             setDeliveryTimes([]);
           }
         }
-        // If data is an object with deliveryTime array
-        else if (
-          res.data.deliveryTime &&
-          Array.isArray(res.data.deliveryTime)
-        ) {
-          setDeliveryTimes(res.data.deliveryTime);
-        } else {
-          setDeliveryTimes([]);
+      }
+
+      // Fallback: Check for separately stored taxClass and shippingClass
+      if (!loadedTaxClass) {
+        const taxClassStr = localStorage.getItem("taxClass");
+        if (taxClassStr) {
+          try {
+            loadedTaxClass = JSON.parse(taxClassStr);
+          } catch {
+            console.error("Failed to parse taxClass from localStorage");
+          }
         }
-      } else {
-        setDeliveryTimes([]);
+      }
+
+      if (!loadedShippingClass) {
+        const shippingClassStr = localStorage.getItem("shippingClass");
+        if (shippingClassStr) {
+          try {
+            loadedShippingClass = JSON.parse(shippingClassStr);
+          } catch {
+            console.error("Failed to parse shippingClass from localStorage");
+          }
+        }
+      }
+
+      // Set the state
+      if (loadedTaxClass) {
+        setTaxClass(loadedTaxClass);
+      }
+      if (loadedShippingClass) {
+        setShippingClass(loadedShippingClass);
       }
     } catch (error) {
-      console.error("Failed to fetch delivery times:", error);
-      setDeliveryTimes([]);
+      console.error("Failed to load settings from localStorage:", error);
     } finally {
+      setIsLoadingTaxShipping(false);
       setIsLoadingDeliveryTimes(false);
     }
   };
@@ -281,7 +269,7 @@ export default function CheckoutPage() {
       zip: "",
       country: "Pakistan",
       phone: user?.phone_no || "",
-      delivery_time: "", // 🔴 NEW: Default delivery time
+      delivery_time: "",
       billing_address: {
         street: "",
         city: "",
@@ -331,13 +319,17 @@ export default function CheckoutPage() {
     }
   }, [addresses, user, setValue]);
 
-  // ✅ Set first delivery time as default when delivery times are loaded
+  // Set first delivery time as default when delivery times are loaded
   useEffect(() => {
-    if (deliveryTimes.length > 0 && !watch("delivery_time")) {
+    if (deliveryTimes.length > 0) {
       const firstDeliveryTime = deliveryTimes[0];
-      setValue("delivery_time", firstDeliveryTime.title || `slot-0`);
+      // Combine title + description for the value
+      const displayValue = firstDeliveryTime.description
+        ? `${firstDeliveryTime.title} - ${firstDeliveryTime.description}`
+        : firstDeliveryTime.title;
+      setValue("delivery_time", displayValue || `slot-0`);
     }
-  }, [deliveryTimes, setValue, watch]);
+  }, [deliveryTimes, setValue]);
 
   // Auto-fill shipping address from billing address when checkbox is unchecked
   useEffect(() => {
@@ -573,20 +565,14 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 🔴 NEW: Validate delivery time is selected
+    // Validate delivery time is selected
     if (!values.delivery_time) {
-      setServerError("Please select a delivery time");
+      setServerError("Please select a delivery time slot");
       return;
     }
 
-    // Format delivery_time as: "Day Month Year + Dropdown Value"
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const formattedDate = tomorrow.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    // Format delivery_time as: "Selected Date + Time Slot"
+    const formattedDate = format(selectedDeliveryDate, "EEEE, MMMM d, yyyy");
     const formattedDeliveryTime = `${formattedDate} - ${values.delivery_time}`;
 
     const orderData = {
@@ -629,12 +615,13 @@ export default function CheckoutPage() {
         variation_option_id: item.variation_option_id || null,
       })),
       // Required fields for backend calculation
-      shipping_id: shippingClass?.id,
-      tax_id: taxClass?.id,
+      // Handle both cases: when it's an object with .id or when it's just the ID directly
+      shipping_id: typeof shippingClass === 'object' ? shippingClass?.id : shippingClass,
+      tax_id: typeof taxClass === 'object' ? taxClass?.id : taxClass,
       coupon_id: appliedCoupon?.id || null,
       customer_contact: values.phone,
       customer_id: user?.id || null,
-      // 🔴 NEW: Add delivery time with formatted date
+      // Delivery time: Selected Date + Time Slot
       delivery_time: formattedDeliveryTime,
     };
 
@@ -1009,12 +996,44 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* 🔴 NEW: Delivery Time Selection */}
+              {/* Delivery Date and Time Selection */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Delivery Time *</h3>
-                <div className="space-y-2">
-                  {/* Show estimated delivery date */}
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                <h3 className="text-lg font-semibold mb-4">Delivery Date & Time *</h3>
+                <div className="space-y-4">
+                  {/* Date Picker */}
+                  <div>
+                    <Label className="block text-sm font-medium mb-2">
+                      Select Delivery Date
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(selectedDeliveryDate, "EEEE, MMMM d, yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDeliveryDate}
+                          onSelect={(date) => date && setSelectedDeliveryDate(date)}
+                          disabled={(date) => {
+                            // Disable past dates and today
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            return date <= today;
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Show selected delivery date info */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <div className="flex items-center space-x-2">
                       <svg
                         className="w-5 h-5 text-green-600"
@@ -1031,65 +1050,59 @@ export default function CheckoutPage() {
                       </svg>
                       <div>
                         <p className="text-sm font-medium text-green-900">
-                          Estimated Delivery:{" "}
-                          {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString(
-                            "en-US",
-                            {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
+                          Delivery Date: {format(selectedDeliveryDate, "EEEE, MMMM d, yyyy")}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {isLoadingDeliveryTimes ? (
-                    <div className="text-center py-4">
-                      <p>Loading delivery times...</p>
-                    </div>
-                  ) : deliveryTimes.length > 0 ? (
-                    <Select
-                      value={watch("delivery_time")}
-                      onValueChange={(value) =>
-                        setValue("delivery_time", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a delivery time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {deliveryTimes.map((timeSlot, index) => (
-                          <SelectItem
-                            key={index}
-                            value={timeSlot.title || `slot-${index}`}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {timeSlot.title}
-                              </span>
-                              {timeSlot.description && (
-                                <span className="text-sm text-muted-foreground">
-                                  {timeSlot.description}
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="text-center py-4 text-muted-foreground">
-                      <p>No delivery times available</p>
-                    </div>
-                  )}
-                  {errors.delivery_time && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.delivery_time.message}
-                    </p>
-                  )}
+                  {/* Time Slot Selection */}
+                  <div>
+                    <Label className="block text-sm font-medium mb-2">
+                      Select Delivery Time Slot
+                    </Label>
+                    {isLoadingDeliveryTimes ? (
+                      <div className="text-center py-4">
+                        <p>Loading delivery times...</p>
+                      </div>
+                    ) : deliveryTimes.length > 0 ? (
+                      <Select
+                        value={watch("delivery_time")}
+                        onValueChange={(value) =>
+                          setValue("delivery_time", value)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a delivery time slot" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deliveryTimes.map((timeSlot, index) => {
+                            // Combine title + description for the value
+                            const displayValue = timeSlot.description
+                              ? `${timeSlot.title} - ${timeSlot.description}`
+                              : timeSlot.title;
+                            return (
+                              <SelectItem
+                                key={index}
+                                value={displayValue || `slot-${index}`}
+                              >
+                                {displayValue}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p>No delivery times available</p>
+                      </div>
+                    )}
+                    {errors.delivery_time && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.delivery_time.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

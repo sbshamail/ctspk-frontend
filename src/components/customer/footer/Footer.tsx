@@ -6,7 +6,7 @@ import Image from "next/image";
 import { DesktopBottomBar } from "./DesktopBottomBar";
 import { MobileBottomBar } from "./MobileBottomBar";
 import { useSelection } from "@/lib/useSelection";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SiginModal from "@/components/modals/auth/SiginModal";
 // Define types for the link items
 interface FooterLink {
@@ -21,12 +21,17 @@ interface FooterSection {
 
 const Footer = () => {
   const [openSiginModal, setOpenSiginModal] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const { data: auth, isLoading } = useSelection("auth");
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const renderLink = (item: FooterLink) => {
     if (item.link === "special://signin") {
-      // Don't show Sign In if authenticated or still loading
-      if (auth || isLoading) {
+      // Don't show Sign In if authenticated, still loading, or not yet mounted
+      if (!hasMounted || auth || isLoading) {
         return null;
       }
       return (
@@ -175,10 +180,10 @@ const Footer = () => {
                   </h4>
                   <ul className="space-y-3">
                     {section.links.map((item, linkIndex) => {
-                      // Skip rendering Sign In link if user is authenticated or loading
+                      // Skip rendering Sign In link if not mounted, authenticated, or loading
                       if (
                         item.link === "special://signin" &&
-                        (auth || isLoading)
+                        (!hasMounted || auth || isLoading)
                       ) {
                         return null;
                       }

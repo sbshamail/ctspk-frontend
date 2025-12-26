@@ -7,18 +7,23 @@ import { cn } from "@/lib/utils";
 import { useSelection } from "@/lib/useSelection";
 import { Truck, Bell } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AuthHeaderDropdown from "../dropdown/AuthHeaderDropdown";
 import { useGetUnreadCountQuery } from "@/store/services/notificationApi";
 import { Badge } from "@/components/ui/badge";
 export default function Topbar() {
   const [openSiginModal, setOpenSiginModal] = useState(false);
   const [openRegisterModal, setOpenRegisterModal] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const { data: auth, isLoading } = useSelection("auth");
   const { data: unreadCountData } = useGetUnreadCountQuery(undefined, {
     skip: !auth, // Only fetch if user is logged in
     pollingInterval: 30000, // Poll every 30 seconds
   });
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const unreadCount = unreadCountData?.data?.unread_count || 0;
 
@@ -78,7 +83,7 @@ export default function Topbar() {
                       <>
                         <Link href="/notifications" className="relative hover:text-primary transition-colors">
                           <Bell className="w-6 h-6" />
-                          {unreadCount > 0 && (
+                          {hasMounted && unreadCount > 0 && (
                             <Badge
                               variant="destructive"
                               className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
