@@ -48,12 +48,12 @@ export const ShadDialog: React.FC<ReusableModalProps> = ({
 
       <DialogContent
         className={cn(
-          " max-h-[90vh] max-w-3xl overflow-y-auto rounded-2xl shadow-lg p-0",
+          "max-w-md sm:max-w-lg",
           className
         )}
       >
         {(title || description) && (
-          <DialogHeader className="p-6 border-b border-border">
+          <DialogHeader className="pr-8">
             {title && <DialogTitle>{title}</DialogTitle>}
             {description && (
               <DialogDescription>{description}</DialogDescription>
@@ -61,10 +61,10 @@ export const ShadDialog: React.FC<ReusableModalProps> = ({
           </DialogHeader>
         )}
 
-        <div className="p-6">{children}</div>
+        <div className="py-2">{children}</div>
 
         {footer && (
-          <DialogFooter className="p-6 border-t border-border">
+          <DialogFooter className="pt-4 border-t border-border">
             {footer}
           </DialogFooter>
         )}

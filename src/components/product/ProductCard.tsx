@@ -76,7 +76,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
         <Card className=" cursor-pointer p-0 ">
           <div>
             <div className="relative transition duration-300">
-              <ProductImage image={image} alt={name} className="min-h-56" />
+              <ProductImage image={image} alt={name} className="min-h-36 sm:min-h-48 md:min-h-56" />
               {/* Tags */}
 
               <div className="absolute  left-0 top-0 mt-3">
@@ -104,23 +104,23 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
                 </div>
               </div>
             </div>
-            <div className="p-2">
+            <div className="p-1 min-[360px]:p-1.5 sm:p-2">
               {/* Shop Name */}
               {props.shop?.name && (
-                <div className="flex items-center gap-1 mb-2">
-                  <Store className="w-3 h-3 text-gray-400" />
-                  <span className="text-xs text-gray-500 truncate">
+                <div className="flex items-center gap-0.5 min-[360px]:gap-1 mb-0.5 min-[360px]:mb-1 sm:mb-2">
+                  <Store className="w-2 h-2 min-[360px]:w-2.5 min-[360px]:h-2.5 sm:w-3 sm:h-3 text-gray-400" />
+                  <span className="text-[8px] min-[360px]:text-[10px] sm:text-xs text-gray-500 truncate">
                     {props.shop.name}
                   </span>
                 </div>
               )}
 
-              <h2 className="m-0 p-0 text-sm font-medium line-clamp-1 h-5 ">
+              <h2 className="m-0 p-0 text-[10px] min-[360px]:text-xs sm:text-sm font-medium line-clamp-1 h-3.5 min-[360px]:h-4 sm:h-5">
                 {titleSubstring(name)}
               </h2>
-              <div className="w-full flex items-center justify-between ">
-                <div className="w-full flex flex-col mt-2 space-y-2">
-                  <div>
+              <div className="w-full flex items-center justify-between">
+                <div className="w-full flex flex-col mt-0.5 min-[360px]:mt-1 sm:mt-2 space-y-0.5 min-[360px]:space-y-1 sm:space-y-2">
+                  <div className="hidden sm:block">
                     <StarRating
                       averageRating={rating}
                       disabled
@@ -132,7 +132,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
                   <div className="w-full flex justify-between">
                     {isVariableProduct && hasVariations ? (
                       <div className="flex flex-col">
-                        <span className="text-foreground/80 font-semibold">
+                        <span className="text-foreground/80 font-semibold text-[10px] min-[360px]:text-xs sm:text-sm">
                           {minPrice === maxPrice
                             ? currencyFormatter(minPrice)
                             : `${currencyFormatter(minPrice)} - ${currencyFormatter(maxPrice)}`}
@@ -143,6 +143,7 @@ const ProductCard = ({ showPercentage, Tags, CartButton, ...props }: Props) => {
                         price={price}
                         salePrice={hasValidSalePrice ? sale_price : undefined}
                         showPercentage={showPercentage}
+                        className="text-[10px] min-[360px]:text-xs sm:text-sm"
                       />
                     )}
                   </div>

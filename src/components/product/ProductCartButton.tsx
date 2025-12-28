@@ -121,7 +121,7 @@ export const ProductCartButton: FC<Props> = ({
           }}
           maxQuantity={maxStock}
           minQuantity={0}
-          size="sm"
+          size="xs"
         />
       </div>
     );
@@ -139,8 +139,8 @@ export const ProductCartButton: FC<Props> = ({
           children
         ) : (
           <div className="relative">
-            <div className="p-1.5 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors border border-primary/20">
-              <Plus className="w-5 h-5" />
+            <div className="p-1 sm:p-1.5 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors border border-primary/20">
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
             </div>
           </div>
         )}

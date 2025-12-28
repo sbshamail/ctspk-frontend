@@ -89,13 +89,12 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
                     className="relative pl-0 cursor-pointer group"
                     onClick={() => handleSlideClick(slide)}
                   >
-                    <div className="relative mx-auto max-w-full aspect-[3/1] bg-cover bg-center rounded-xl overflow-hidden shadow-2xl">
-                      {/* Background Image with Overlay */}
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                        style={{
-                          backgroundImage: `url(${slide.image.original})`,
-                        }}
+                    <div className="relative mx-auto max-w-full rounded-xl overflow-hidden shadow-2xl">
+                      {/* Background Image */}
+                      <img
+                        src={slide.image.original}
+                        alt={slide.name || "Banner"}
+                        className="w-full h-auto max-h-[150px] sm:max-h-[220px] md:max-h-[300px] lg:max-h-[350px] object-contain transition-transform duration-700 group-hover:scale-105"
                       />
 
                       {/* Gradient Overlay */}
@@ -109,11 +108,11 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
 
                       {/* Content Overlay */}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center max-w-4xl px-6 sm:px-8 lg:px-12">
+                        <div className="text-center max-w-4xl px-2 sm:px-6 lg:px-12">
                           {/* Main Title */}
                           <h1
                             className={cn(
-                              "text-4xl sm:text-5xl font-bold mb-6 leading-tight text-balance transition-all duration-500 group-hover:scale-105 bg-card/50 rounded-lg text-secondary-foreground p-2 px-4",
+                              "text-[10px] min-[360px]:text-xs sm:text-lg md:text-2xl lg:text-4xl font-bold mb-1 sm:mb-3 md:mb-5 leading-tight text-balance transition-all duration-500 group-hover:scale-105 bg-card/50 rounded text-secondary-foreground p-0.5 sm:p-1 md:p-2 px-1 sm:px-3",
                               slide.theme === "dark" && "text-white",
                               slide.titleClass
                             )}
@@ -121,10 +120,10 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
                             {slide.name}
                           </h1>
 
-                          {/* Description */}
+                          {/* Description - Hidden on small mobile */}
                           <p
                             className={cn(
-                              "text-lg sm:text-xl lg:text-2xl mb-8 mx-auto leading-relaxed text-pretty transition-all duration-500 bg-card/50 rounded-lg text-secondary-foreground",
+                              "text-[8px] min-[360px]:text-[10px] sm:text-sm md:text-base lg:text-xl mb-2 sm:mb-4 md:mb-6 mx-auto leading-relaxed text-pretty transition-all duration-500 bg-card/50 rounded text-secondary-foreground hidden min-[360px]:block",
                               slide.theme === "dark" && "text-white/90",
                               slide.descriptionClass
                             )}
@@ -134,16 +133,16 @@ export default function HeroSection({ data }: { data: SlideData[] }) {
 
                           {slide.buttonText && (
                             <Button
-                              size="lg"
+                              size="sm"
                               className={cn(
-                                "text-lg px-8 py-6 rounded-full font-semibold transition-all duration-300 group-hover:scale-110 shadow-xl",
+                                "text-[8px] min-[360px]:text-[10px] sm:text-xs md:text-sm px-2 min-[360px]:px-3 sm:px-5 md:px-6 py-1 min-[360px]:py-1.5 sm:py-2 md:py-3 h-auto rounded-full font-semibold transition-all duration-300 group-hover:scale-110 shadow-lg",
                                 slide.theme === "dark" &&
                                   "bg-white text-black hover:bg-white/90 hover:shadow-white/20"
                               )}
                               onClick={(e) => handleButtonClick(slide, e)}
                             >
                               {slide.buttonText}
-                              <ChevronRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+                              <ChevronRight className="ml-0.5 sm:ml-1 w-2 h-2 min-[360px]:w-2.5 min-[360px]:h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" />
                             </Button>
                           )}
                         </div>

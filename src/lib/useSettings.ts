@@ -171,3 +171,48 @@ export function isProductReviewEnabled(): boolean {
   const isProductReview = getSetting("isProductReview");
   return isProductReview === true;
 }
+
+// Helper function to check if review popup is enabled
+export function isReviewPopupEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  const enableReviewPopup = getSetting("enableReviewPopup");
+  return enableReviewPopup === true;
+}
+
+// Helper function to get ReturnItemDays setting
+export function getReturnItemDays(): number {
+  if (typeof window === "undefined") return 0;
+  const days = getSetting("ReturnItemDays");
+  return typeof days === "number" ? days : 0;
+}
+
+// Helper function to get OrderReviewDays setting
+export function getOrderReviewDays(): number {
+  if (typeof window === "undefined") return 0;
+  const days = getSetting("OrderReviewDays");
+  return typeof days === "number" ? days : 0;
+}
+
+// Helper function to check if action is within allowed days from completed date
+export function isWithinAllowedDays(completedDate: string | null | undefined, allowedDays: number): boolean {
+  if (!completedDate || allowedDays <= 0) return false;
+
+  const completed = new Date(completedDate);
+  const deadline = new Date(completed);
+  deadline.setDate(deadline.getDate() + allowedDays);
+
+  const currentDate = new Date();
+  return deadline > currentDate;
+}
+
+// Helper function to check if return is allowed based on completed date and ReturnItemDays
+export function isReturnAllowed(completedDate: string | null | undefined): boolean {
+  const returnItemDays = getReturnItemDays();
+  return isWithinAllowedDays(completedDate, returnItemDays);
+}
+
+// Helper function to check if review is allowed based on completed date and OrderReviewDays
+export function isOrderReviewAllowed(completedDate: string | null | undefined): boolean {
+  const orderReviewDays = getOrderReviewDays();
+  return isWithinAllowedDays(completedDate, orderReviewDays);
+}

@@ -13,7 +13,7 @@ type Props = {
 };
 const CustomerLayout = ({ children }: Props) => {
   return (
-    <div>
+    <div className="pb-16 lg:pb-0">
       <Suspense fallback={<LayoutSkeleton header={true} />}>
         <Header />
       </Suspense>

@@ -11,7 +11,7 @@ const page = async () => {
 
   return (
     <div className="mt-4">
-      <div className="flex flex-col lg:gap-12 gap-8">
+      <div className="flex flex-col lg:gap-4 gap-4">
         {bannerData?.length > 0 && <HeroSection data={bannerData} />}
         <ProductSlider
           autoplay={false}

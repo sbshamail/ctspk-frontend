@@ -186,25 +186,25 @@ const CartPage = () => {
         }
 
         return (
-          <div className="flex items-center space-x-3">
-            <div className="w-16 h-16 bg-muted rounded flex items-center justify-center overflow-hidden">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-muted rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
               {displayImage ? (
                 <Image
                   src={displayImage}
                   alt={name}
                   width={64}
                   height={64}
-                  className="object-cover"
+                  className="object-cover w-full h-full"
                 />
               ) : (
-                <span className="text-xs text-muted-foreground">No image</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">No image</span>
               )}
             </div>
-            <div className="flex-1">
-              <h2 className="font-medium text-sm">{name}</h2>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-medium text-xs sm:text-sm line-clamp-2">{name}</h2>
               {variationText && (
                 <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                     {variationText}
                   </p>
                 </div>

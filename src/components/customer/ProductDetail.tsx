@@ -10,7 +10,7 @@ import { QuantitySelector } from "@/components/ui/QuantitySelector";
 import StarRating from "@/components/starRating";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isRatingEnabled, isReviewEnabled } from "@/lib/useSettings";
+import { isRatingEnabled, isReviewPopupEnabled, isProductReviewEnabled } from "@/lib/useSettings";
 
 // Review interface
 interface ReviewUser {
@@ -110,9 +110,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const [showReviews, setShowReviews] = useState(false);
 
   // Check settings on mount
+  // Reviews section shows when enableReviewPopup=true AND isProductReview=true
   useEffect(() => {
     setShowRatings(isRatingEnabled());
-    setShowReviews(isReviewEnabled());
+    setShowReviews(isReviewPopupEnabled() && isProductReviewEnabled());
   }, []);
 
   const { add, cart, update } = useCart();
@@ -388,7 +389,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
         {/* Product Info */}
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{product.name}</h1>
 
             {/* Rating and Review Count - Only show if ratings are enabled */}
             {showRatings && (
@@ -417,17 +418,17 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Price */}
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-primary">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <span className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">
               {currencyFormatter(displayPrice)}
             </span>
             {product.sale_price && product.sale_price > 0 && (
-              <span className="text-lg text-gray-500 line-through">
+              <span className="text-sm sm:text-base md:text-lg text-gray-500 line-through">
                 {currencyFormatter(product.price)}
               </span>
             )}
             {product.sale_price && product.sale_price > 0 && (
-              <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-semibold">
+              <span className="bg-red-100 text-red-600 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm font-semibold">
                 Save {Math.round(((product.price - product.sale_price) / product.price) * 100)}%
               </span>
             )}
@@ -549,7 +550,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
       <div className="mt-16 border-t pt-12">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
+            <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Customer Reviews</h2>
             {reviews.length > 0 && (
               <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
                 {reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'}

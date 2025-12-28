@@ -98,10 +98,10 @@ const Footer = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
               <div className="relative">
                 <div className="newsletter-content max-w-lg">
-                  <h2 className="mb-6 text-2xl md:text-3xl lg:text-4xl font-bold leading-snug">
+                  <h2 className="mb-4 sm:mb-6 text-base min-[360px]:text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold leading-snug">
                     Make your online shop experience easier with our mobile app
                   </h2>
-                  <p className="mb-10 text-muted-foreground">
+                  <p className="mb-6 sm:mb-10 text-xs min-[360px]:text-sm sm:text-base text-muted-foreground">
                     Gher Tak makes online grocery shopping fast and easy. Get
                     groceries delivered and order the best of the season right
                     here.
@@ -175,7 +175,7 @@ const Footer = () => {
               {/* Footer Links */}
               {footerSections.map((section, index) => (
                 <div key={index}>
-                  <h4 className="font-semibold text-lg lg:text-xl mb-4">
+                  <h4 className="font-semibold text-sm min-[360px]:text-base sm:text-lg lg:text-xl mb-2 sm:mb-4">
                     {section.title}
                   </h4>
                   <ul className="space-y-3">
@@ -208,7 +208,7 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Add the SiginModal component here */}
+      {/* Sign In Modal for footer links */}
       <SiginModal open={openSiginModal} setOpen={setOpenSiginModal} />
     </footer>
   );

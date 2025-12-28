@@ -21,7 +21,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Star } from "lucide-react";
-import { isReviewEnabled } from "@/lib/useSettings";
+import { isReviewEnabled, isReviewPopupEnabled, isReturnAllowed, isOrderReviewAllowed } from "@/lib/useSettings";
 import { getOrderStatusLabel } from "@/utils/helper";
 
 // Helper function to get access token from cookies
@@ -71,6 +71,13 @@ export default function OrdersPage() {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [selectedReviewOrder, setSelectedReviewOrder] = useState<OrderReadNested | null>(null);
   const [showReviews, setShowReviews] = useState(true);
+  const [reviewPopupEnabled, setReviewPopupEnabled] = useState(false);
+
+  // Check settings on mount
+  useEffect(() => {
+    setShowReviews(isReviewEnabled());
+    setReviewPopupEnabled(isReviewPopupEnabled());
+  }, []);
 
   // Build dateRange for API (fromDate/toDate are in yyyy-MM-dd format from InputDateField)
   const dateRange = useMemo(() => {
@@ -110,16 +117,25 @@ export default function OrdersPage() {
            order.order_status !== OrderStatusEnum.REFUNDED;
   };
 
-  // Check if order can be returned (completed/delivered orders)
+  // Check if order can be returned (completed/delivered orders within ReturnItemDays)
   const canReturnOrder = (order: OrderReadNested) => {
     const completedStatuses = [OrderStatusEnum.COMPLETED, "delivered"];
-    return completedStatuses.includes(order.order_status) &&
-           order.payment_status !== PaymentStatusEnum.REVERSAL;
+    if (!completedStatuses.includes(order.order_status) || order.payment_status === PaymentStatusEnum.REVERSAL) {
+      return false;
+    }
+    // Check if within allowed return days
+    const completedDate = order.order_status_history?.order_completed_date;
+    return isReturnAllowed(completedDate);
   };
 
-  // Check if order can be reviewed (completed orders only)
+  // Check if order can be reviewed (completed orders within OrderReviewDays)
   const canReviewOrder = (order: OrderReadNested) => {
-    return order.order_status === OrderStatusEnum.COMPLETED;
+    if (order.order_status !== OrderStatusEnum.COMPLETED) {
+      return false;
+    }
+    // Check if within allowed review days
+    const completedDate = order.order_status_history?.order_completed_date;
+    return isOrderReviewAllowed(completedDate);
   };
 
   // Open review dialog
@@ -323,8 +339,8 @@ export default function OrdersPage() {
             </Button>
           )}
 
-          {/* Review Order Button - Only show for completed orders */}
-          {showReviews && canReviewOrder(row) && (
+          {/* Review Order Button - Show when enableReviewPopup is true and within allowed days */}
+          {reviewPopupEnabled && canReviewOrder(row) && (
             <Button
               variant="outline"
               size="sm"

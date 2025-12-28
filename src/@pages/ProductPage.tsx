@@ -134,7 +134,7 @@ const ProductPage = () => {
             </div>
           </div>
 
-          <div className="w-full grid  grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5 gap-4">
+          <div className="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 3xl:grid-cols-5 gap-2 sm:gap-4">
             <ProductInfiniteScroll
               defaultLimit={defaultLimit}
               data={result}

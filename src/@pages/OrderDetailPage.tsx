@@ -23,7 +23,7 @@ import { useState, useEffect } from "react";
 import { OrderReadNested, OrderStatusEnum, OrderProductRead, PaymentStatusEnum } from "@/utils/modelTypes/orderType";
 import { toast } from "sonner";
 import { OrderInvoice } from "@/components/invoice/OrderInvoice";
-import { isRatingEnabled, isReviewEnabled } from "@/lib/useSettings";
+import { isRatingEnabled, isReviewEnabled, isReviewPopupEnabled, isProductReviewEnabled, isReturnAllowed, isOrderReviewAllowed } from "@/lib/useSettings";
 
 // Helper function to get access token from cookies
 const getAccessToken = () => {
@@ -84,11 +84,15 @@ export default function OrderDetailPage({ id }: { id: string }) {
   // Settings state for ratings and reviews visibility
   const [showRatings, setShowRatings] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
+  const [reviewPopupEnabled, setReviewPopupEnabled] = useState(false);
+  const [productReviewEnabled, setProductReviewEnabled] = useState(false);
 
   // Check settings on mount
   useEffect(() => {
     setShowRatings(isRatingEnabled());
     setShowReviews(isReviewEnabled());
+    setReviewPopupEnabled(isReviewPopupEnabled());
+    setProductReviewEnabled(isProductReviewEnabled());
   }, []);
 
   if (isLoading) return <OrderSkeleton />;
@@ -104,26 +108,24 @@ export default function OrderDetailPage({ id }: { id: string }) {
            order.order_status !== OrderStatusEnum.REFUNDED;
   };
 
-  // Check if order can be returned (completed/delivered orders)
+  // Check if order can be returned (completed/delivered orders within ReturnItemDays)
   const canReturnOrder = () => {
     const completedStatuses = [OrderStatusEnum.COMPLETED, "delivered"];
-    return completedStatuses.includes(order.order_status) &&
-           order.payment_status !== PaymentStatusEnum.REVERSAL;
+    if (!completedStatuses.includes(order.order_status) || order.payment_status === PaymentStatusEnum.REVERSAL) {
+      return false;
+    }
+    // Check if within allowed return days
+    const completedDate = order.order_status_history?.order_completed_date;
+    return isReturnAllowed(completedDate);
   };
 
-  // Check if product can be reviewed
+  // Check if product can be reviewed (within OrderReviewDays)
   const canReviewProduct = (orderProduct: OrderProductRead) => {
     if (order.order_status !== OrderStatusEnum.COMPLETED) return false;
-    
-    // Check if 15 days have passed since order completion
+
+    // Check if within allowed review days
     const completedDate = order.order_status_history?.order_completed_date;
-    if (completedDate) {
-      const fifteenDaysAgo = new Date();
-      fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-      return new Date(completedDate) > fifteenDaysAgo;
-    }
-    
-    return false;
+    return isOrderReviewAllowed(completedDate);
   };
 
   // Handle order cancellation
@@ -574,8 +576,8 @@ export default function OrderDetailPage({ id }: { id: string }) {
                 </Button>
               )}
 
-              {/* Review Order Button - show for completed orders */}
-              {order.order_status === OrderStatusEnum.COMPLETED && showReviews && (
+              {/* Review Order Button - show when enableReviewPopup is true and within allowed days */}
+              {reviewPopupEnabled && canReviewProduct(order.order_products[0]) && (
                 <Button
                   variant="outline"
                   size="sm"

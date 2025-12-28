@@ -8,8 +8,9 @@ interface Props {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   trigger?: React.ReactNode;
+  showTrigger?: boolean;
 }
-const RegisterModal = ({ open, setOpen, trigger }: Props) => {
+const RegisterModal = ({ open, setOpen, trigger, showTrigger = false }: Props) => {
   const [siginModal, setSiginModal] = React.useState(false);
   const close = () => {
     setOpen(false);
@@ -17,39 +18,39 @@ const RegisterModal = ({ open, setOpen, trigger }: Props) => {
   useEffect(() => {
     setSiginModal(false);
   }, []);
+
+  // Don't render trigger button when modal is controlled externally
+  const triggerElement = showTrigger
+    ? trigger || (
+        <button className="hover:text-primary transition-colors cursor-pointer">
+          Register
+        </button>
+      )
+    : undefined;
+
   if (siginModal) {
     return <SiginModal open={siginModal} setOpen={setSiginModal} />;
   }
   return (
-    <div>
-      <div className="">
-        <ShadDialog
-          open={open}
-          onOpenChange={setOpen}
-          title="Register new account"
-          trigger={
-            trigger || (
-              <button className="hover:text-primary transition-colors cursor-pointer">
-                Register
-              </button>
-            )
-          }
+    <ShadDialog
+      open={open}
+      onOpenChange={setOpen}
+      title="Register new account"
+      trigger={triggerElement}
+    >
+      <RegisterForm close={close} setSiginModal={setSiginModal} />
+      <p className="text-center text-sm text-muted-foreground mt-4">
+        Already have an account?{" "}
+        <button
+          className="text-primary hover:underline cursor-pointer"
+          onClick={() => {
+            setSiginModal(true);
+          }}
         >
-          <RegisterForm close={close} setSiginModal={setSiginModal} />
-          <p className="text-center text-sm text-muted-foreground mt-4">
-            Already have an account?{" "}
-            <button
-              className="text-primary hover:underline cursor-pointer"
-              onClick={() => {
-                setSiginModal(true); // 👈 open SignIn modal
-              }}
-            >
-              Sign in
-            </button>
-          </p>
-        </ShadDialog>
-      </div>
-    </div>
+          Sign in
+        </button>
+      </p>
+    </ShadDialog>
   );
 };
 

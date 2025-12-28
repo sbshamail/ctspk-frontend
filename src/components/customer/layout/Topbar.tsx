@@ -73,11 +73,8 @@ export default function Topbar() {
                         <SiginModal
                           open={openSiginModal}
                           setOpen={setOpenSiginModal}
+                          showTrigger={true}
                         />
-                        {/* <RegisterModal
-                          open={openRegisterModal}
-                          setOpen={setOpenRegisterModal}
-                        /> */}
                       </>
                     ) : (
                       <>

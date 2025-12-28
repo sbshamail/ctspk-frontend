@@ -50,10 +50,37 @@ export function MiniCart() {
     );
   };
 
+  // Helper function to get the effective price for a product
+  const getEffectivePrice = (product: any): number => {
+    return product.sale_price && product.sale_price > 0
+      ? product.sale_price
+      : (product.price || 0);
+  };
+
+  // Helper function to get the actual unit price for a cart item (includes variation price)
+  const getItemUnitPrice = (item: any): number => {
+    // For variable products, check if variation has its own price
+    if (item.variation_option_id && item.product.variation_options) {
+      const variation = item.product.variation_options.find(
+        (v: any) => v.id === item.variation_option_id
+      );
+      if (variation) {
+        const variationSalePrice = parseFloat(variation.sale_price || "0") || 0;
+        const variationPrice = parseFloat(variation.price || "0") || 0;
+        if (variationSalePrice > 0) {
+          return variationSalePrice;
+        }
+        return variationPrice;
+      }
+    }
+    // Fallback to product's effective price
+    return getEffectivePrice(item.product);
+  };
+
   // Calculate subtotal
   const subtotal = useMemo(() => {
     return cart.reduce((total, item) => {
-      const price = item.product.sale_price || item.product.price;
+      const price = getItemUnitPrice(item);
       return total + price * item.quantity;
     }, 0);
   }, [cart]);
@@ -187,10 +214,8 @@ export function MiniCart() {
                       )
                     : null;
 
-                  // Use variation price if available, otherwise product price
-                  const price = selectedVariation
-                    ? parseFloat(selectedVariation.sale_price || selectedVariation.price)
-                    : (item.product.sale_price || item.product.price);
+                  // Use the helper function for consistent price calculation
+                  const price = getItemUnitPrice(item);
 
                   // Use variation image if available
                   const variationImage = selectedVariation?.image;
@@ -257,7 +282,7 @@ export function MiniCart() {
                               handleDecrease(item.product.id, item.quantity, item.variation_option_id)
                             }
                             minQuantity={0}
-                            size="sm"
+                            size="xs"
                           />
 
                           {/* Wishlist Button - only show if user is logged in */}

@@ -65,31 +65,28 @@ const ProductSlider = ({
   return (
     <Screen>
       <div className={cn("flex justify-between items-center mb-4", className)}>
-        <h3 className="text-2xl lg:text-3xl font-bold text-secondary-foreground">
+        <h3 className="text-sm min-[360px]:text-base sm:text-xl md:text-2xl lg:text-3xl font-bold text-secondary-foreground">
           {title}
         </h3>
 
         {/* ✅ Custom nav + status */}
-        <div className="flex items-center gap-4">
-          {/* <span className="text-sm text-muted-foreground">
-            {current} / {count}
-          </span> */}
-          <div className="flex gap-2">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex gap-1 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="h-10 w-10 p-0"
+              className="h-7 w-7 sm:h-10 sm:w-10 p-0"
               onClick={() => api?.scrollPrev()}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="h-10 w-10 p-0"
+              className="h-7 w-7 sm:h-10 sm:w-10 p-0"
               onClick={() => api?.scrollNext()}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>

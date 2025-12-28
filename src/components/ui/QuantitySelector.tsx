@@ -9,7 +9,7 @@ interface QuantitySelectorProps {
   onDecrease: () => void;
   maxQuantity?: number;
   minQuantity?: number;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   disabled?: boolean;
   showStock?: boolean;
   stockCount?: number;
@@ -27,6 +27,12 @@ export const QuantitySelector: FC<QuantitySelectorProps> = ({
   stockCount,
 }) => {
   const sizeClasses = {
+    xs: {
+      container: "gap-0.5 px-0.5 py-0.5",
+      button: "w-5 h-5",
+      icon: "w-2.5 h-2.5",
+      text: "min-w-[1rem] text-[10px]",
+    },
     sm: {
       container: "gap-1 px-1 py-0.5",
       button: "w-6 h-6",

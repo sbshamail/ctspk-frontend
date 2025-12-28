@@ -386,15 +386,38 @@ const WishlistItemCard = ({
 
     setIsAddingToCart(true);
     try {
+      // Ensure price values are numbers
+      const productPrice = Number(item.product.price) || 0;
+      const productSalePrice = Number(item.product.sale_price) || null;
+
+      // Create a properly formatted product object for the cart
+      const cartProduct = {
+        id: item.product.id,
+        name: item.product.name,
+        price: productPrice,
+        sale_price: productSalePrice && productSalePrice > 0 ? productSalePrice : null,
+        image: {
+          original: item.product.image?.original || "",
+          thumbnail: item.product.image?.thumbnail || "",
+        },
+      };
+
       // Add to cart
       await onAddToCart({
-        product: item.product,
+        product: cartProduct,
         shop_id: item.product.shop_id,
         quantity: 1,
+        variation_option_id: item.variation_option_id || null,
       });
+
+      toast.success("Item added to cart!");
+
       // Remove from wishlist after successfully adding to cart
-      onRemove(item.id);
-      toast.success("Item moved to cart!");
+      try {
+        await onRemove(item.id);
+      } catch (removeError) {
+        console.error("Failed to remove from wishlist:", removeError);
+      }
     } catch (error) {
       toast.error("Failed to add item to cart");
     } finally {
