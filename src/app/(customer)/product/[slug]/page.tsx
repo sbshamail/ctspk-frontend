@@ -6,17 +6,18 @@ import { BreadcrumbSimple } from "@/components/breadCrumb/BreadcrumbSimple";
 import { notFound } from "next/navigation";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default async function page({ params }: ProductPageProps) {
+  const { slug } = await params;
   let product;
-  
+
   try {
     product = await fetchApi({
-      url: `product/read/${params.slug}`,
+      url: `product/read/${slug}`,
       options: { cache: "no-store" },
     });
 
