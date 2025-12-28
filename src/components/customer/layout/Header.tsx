@@ -40,28 +40,30 @@ export const MainHeader = ({ y = 0, mounted = false, onMenuOpen }: MainHeaderPro
         >
           <div className="w-full sm:px-0">
             <div className="flex items-center justify-between">
-              {/* Mobile Menu Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden mr-2"
-                onClick={onMenuOpen}
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
+              {/* Left Section: Mobile Menu + Logo */}
+              <div className="flex items-center min-w-[150px]">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="lg:hidden mr-2"
+                  onClick={onMenuOpen}
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+                <MainLogo />
+              </div>
 
-              {/* Logo */}
-              <MainLogo />
-
-              {/* Search Bar - Hidden on mobile */}
-              <div className="hidden md:block flex-1">
-                <Suspense fallback={<LayoutSkeleton header={true} />}>
-                  <MainSearchbar />
-                </Suspense>
+              {/* Search Bar - Centered */}
+              <div className="hidden md:flex flex-1 justify-center px-4">
+                <div className="w-full max-w-xl">
+                  <Suspense fallback={<LayoutSkeleton header={true} />}>
+                    <MainSearchbar />
+                  </Suspense>
+                </div>
               </div>
 
               {/* Right Actions */}
-              <div className="flex items-center gap-4 text-base">
+              <div className="flex items-center justify-end gap-4 text-base min-w-[150px]">
                 <Link href="/product" className="hover:underline transition hidden sm:block">
                   All Products
                 </Link>
