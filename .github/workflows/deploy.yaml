@@ -28,6 +28,8 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use default
 
+          export NODE_OPTIONS="--max-old-space-size=4096"
+
           pnpm run build
         env:
           NEXT_PUBLIC_API_URL: https://api.ctspk.com
