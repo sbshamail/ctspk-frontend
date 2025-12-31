@@ -11,13 +11,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { setReducer } from "@/store/common/action-reducer";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 // Types
 import MainTable, { ColumnType } from "@/components/table/MainTable";
 import { CartItemType } from "@/utils/modelTypes";
 import { currencyFormatter } from "@/utils/helper";
 import { ProductFavorite } from "@/components/product/ProductFavorite";
 import { QuantitySelector } from "@/components/ui/QuantitySelector";
+import { fetchApi } from "@/action/fetchApi";
 
 const breadcrumbData = [
   { link: "/", name: "Home" },
@@ -102,6 +103,105 @@ const CartPage = () => {
     true
   );
 
+  // Shipping and Tax state
+  const [shippingData, setShippingData] = useState<any>(null);
+  const [taxData, setTaxData] = useState<any>(null);
+  const [isLoadingShipping, setIsLoadingShipping] = useState(true);
+  const [isLoadingTax, setIsLoadingTax] = useState(true);
+  const [shippingError, setShippingError] = useState(false);
+  const [taxError, setTaxError] = useState(false);
+
+  // Free shipping settings from siteSettings
+  const [freeShippingEnabled, setFreeShippingEnabled] = useState(false);
+  const [freeShippingAmount, setFreeShippingAmount] = useState(0);
+  const [minimumOrderAmount, setMinimumOrderAmount] = useState(0);
+
+  // Load settings from localStorage and fetch shipping/tax data from API
+  useEffect(() => {
+    const loadSettingsAndFetchData = async () => {
+      try {
+        // Get siteSettings from localStorage
+        const siteSettingsStr = localStorage.getItem("siteSettings");
+
+        if (!siteSettingsStr) {
+          setShippingError(true);
+          setTaxError(true);
+          setIsLoadingShipping(false);
+          setIsLoadingTax(false);
+          return;
+        }
+
+        const siteSettings = JSON.parse(siteSettingsStr);
+
+        // Load free shipping settings
+        if (siteSettings.freeShipping !== undefined) {
+          setFreeShippingEnabled(siteSettings.freeShipping === true || siteSettings.freeShipping === "true");
+        }
+        if (siteSettings.freeShippingAmount !== undefined) {
+          setFreeShippingAmount(parseFloat(siteSettings.freeShippingAmount) || 0);
+        }
+        if (siteSettings.minimumOrderAmount !== undefined) {
+          setMinimumOrderAmount(parseFloat(siteSettings.minimumOrderAmount) || 0);
+        }
+
+        // Get shippingClass ID and fetch shipping data
+        const shippingClassId = siteSettings.shippingClass?.id || siteSettings.shippingClass;
+        if (shippingClassId) {
+          try {
+            const shippingRes = await fetchApi({
+              url: `shipping/read/${shippingClassId}`,
+              method: "GET",
+            });
+            if (shippingRes?.success === 1 && shippingRes.data) {
+              setShippingData(shippingRes.data);
+              setShippingError(false);
+            } else {
+              setShippingError(true);
+            }
+          } catch (error) {
+            console.error("Failed to fetch shipping data:", error);
+            setShippingError(true);
+          }
+        } else {
+          setShippingError(true);
+        }
+        setIsLoadingShipping(false);
+
+        // Get taxClass ID and fetch tax data
+        const taxClassId = siteSettings.taxClass?.id || siteSettings.taxClass;
+        if (taxClassId) {
+          try {
+            const taxRes = await fetchApi({
+              url: `tax/read/${taxClassId}`,
+              method: "GET",
+            });
+            if (taxRes?.success === 1 && taxRes.data) {
+              setTaxData(taxRes.data);
+              setTaxError(false);
+            } else {
+              setTaxError(true);
+            }
+          } catch (error) {
+            console.error("Failed to fetch tax data:", error);
+            setTaxError(true);
+          }
+        } else {
+          setTaxError(true);
+        }
+        setIsLoadingTax(false);
+
+      } catch (error) {
+        console.error("Failed to load settings from localStorage:", error);
+        setShippingError(true);
+        setTaxError(true);
+        setIsLoadingShipping(false);
+        setIsLoadingTax(false);
+      }
+    };
+
+    loadSettingsAndFetchData();
+  }, []);
+
   // Calculate totals for ALL products
   const totalItems = useMemo(() => cart.length, [cart]);
 
@@ -158,10 +258,63 @@ const CartPage = () => {
     }, 0);
   }, [cart]);
 
-  // Calculate final total after discounts
-  const finalTotal = useMemo(() => {
+  // Calculate final total after discounts (product amount - product discount)
+  const productTotal = useMemo(() => {
     return totalAmount - totalSavings;
   }, [totalAmount, totalSavings]);
+
+  // Calculate base shipping cost (before free shipping discount)
+  const baseShippingCost = useMemo(() => {
+    if (!shippingData) return 0;
+
+    const shippingAmount = parseFloat(shippingData.amount) || 0;
+
+    if (shippingData.type === "fixed") {
+      return shippingAmount;
+    } else if (shippingData.type === "percentage") {
+      return (totalAmount * shippingAmount) / 100;
+    } else if (shippingData.type === "free_shipping") {
+      return 0;
+    }
+    return 0;
+  }, [shippingData, totalAmount]);
+
+  // Check if free shipping discount is applicable
+  const isFreeShippingApplicable = useMemo(() => {
+    return freeShippingEnabled && productTotal >= minimumOrderAmount;
+  }, [freeShippingEnabled, productTotal, minimumOrderAmount]);
+
+  // Calculate the free shipping discount amount
+  const freeShippingDiscount = useMemo(() => {
+    if (!isFreeShippingApplicable) return 0;
+    // If freeShippingAmount >= baseShippingCost, discount = full shipping (shipping becomes 0)
+    // If freeShippingAmount < baseShippingCost, discount = freeShippingAmount
+    return Math.min(freeShippingAmount, baseShippingCost);
+  }, [isFreeShippingApplicable, freeShippingAmount, baseShippingCost]);
+
+  // Calculate final shipping cost (after free shipping discount)
+  const shippingCost = useMemo(() => {
+    return baseShippingCost - freeShippingDiscount;
+  }, [baseShippingCost, freeShippingDiscount]);
+
+  // Calculate tax amount
+  const taxAmount = useMemo(() => {
+    if (!taxData) return 0;
+
+    const taxRate = parseFloat(taxData.rate) || 0;
+    // Tax is applied on: productTotal (subtotal - product discount)
+    return (productTotal * taxRate) / 100;
+  }, [taxData, productTotal]);
+
+  // Calculate grand total (productTotal + shipping + tax)
+  const finalTotal = useMemo(() => {
+    return productTotal + shippingCost + taxAmount;
+  }, [productTotal, shippingCost, taxAmount]);
+
+  // Check if checkout should be disabled
+  const isCheckoutDisabled = useMemo(() => {
+    return shippingError || taxError || isLoadingShipping || isLoadingTax;
+  }, [shippingError, taxError, isLoadingShipping, isLoadingTax]);
 
   // ####################
   // -> Table Columns Start
@@ -441,10 +594,73 @@ const CartPage = () => {
                 </div>
               )}
 
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
-              </div>
+              {/* Shipping Section */}
+              {isLoadingShipping ? (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Shipping</span>
+                  <span>Loading...</span>
+                </div>
+              ) : shippingError ? (
+                <div className="flex justify-between text-sm text-red-500">
+                  <span>Shipping</span>
+                  <span>Error loading</span>
+                </div>
+              ) : (
+                <>
+                  {/* Base shipping cost with strikethrough if discount applied */}
+                  <div className="flex justify-between text-sm">
+                    <span>Shipping {shippingData?.name && `(${shippingData.name})`}</span>
+                    <span className={freeShippingDiscount > 0 ? "line-through text-muted-foreground" : "font-medium"}>
+                      {shippingCost === 0 && freeShippingDiscount === 0 ? "Free" : currencyFormatter(baseShippingCost)}
+                    </span>
+                  </div>
+                  {/* Free shipping discount line */}
+                  {freeShippingDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Free Shipping Discount</span>
+                      <span>-{currencyFormatter(freeShippingDiscount)}</span>
+                    </div>
+                  )}
+                  {/* Remaining shipping after discount */}
+                  {freeShippingDiscount > 0 && shippingCost > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Remaining Shipping</span>
+                      <span className="font-medium">{currencyFormatter(shippingCost)}</span>
+                    </div>
+                  )}
+                  {/* Free shipping achieved */}
+                  {freeShippingDiscount > 0 && shippingCost === 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Final Shipping</span>
+                      <span className="font-semibold">FREE</span>
+                    </div>
+                  )}
+                  {/* Show how much more to get free shipping */}
+                  {freeShippingEnabled && !isFreeShippingApplicable && minimumOrderAmount > 0 && (
+                    <div className="text-xs text-blue-600">
+                      Add {currencyFormatter(minimumOrderAmount - productTotal)} more to get free shipping discount!
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Tax Section */}
+              {isLoadingTax ? (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Tax</span>
+                  <span>Loading...</span>
+                </div>
+              ) : taxError ? (
+                <div className="flex justify-between text-sm text-red-500">
+                  <span>Tax</span>
+                  <span>Error loading</span>
+                </div>
+              ) : taxData && taxAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Tax {taxData?.name && `(${taxData.name} - ${taxData.rate}%)`}</span>
+                  <span className="font-medium">{currencyFormatter(taxAmount)}</span>
+                </div>
+              )}
 
               <div className="flex justify-between border-t pt-3 font-semibold text-lg">
                 <span>Total</span>
@@ -454,14 +670,26 @@ const CartPage = () => {
               {totalSavings > 0 && (
                 <div className="bg-green-50 border border-green-200 p-3 rounded text-center">
                   <p className="text-sm text-green-700">
-                    🎉 You're saving <span className="font-bold">{currencyFormatter(totalSavings)}</span> on this order!
+                    You're saving <span className="font-bold">{currencyFormatter(totalSavings)}</span> on this order!
+                  </p>
+                </div>
+              )}
+
+              {/* Error message when checkout is disabled */}
+              {(shippingError || taxError) && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded text-center">
+                  <p className="text-sm text-red-700">
+                    Unable to load {shippingError && "shipping"}{shippingError && taxError && " and "}{taxError && "tax"} information. Please refresh the page.
                   </p>
                 </div>
               )}
 
               <Link href="/checkout">
-                <Button className="w-full bg-primary text-white">
-                  Proceed To Checkout →
+                <Button
+                  className="w-full bg-primary text-white"
+                  disabled={isCheckoutDisabled}
+                >
+                  {isLoadingShipping || isLoadingTax ? "Loading..." : "Proceed To Checkout →"}
                 </Button>
               </Link>
             </div>

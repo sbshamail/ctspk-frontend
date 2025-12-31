@@ -124,6 +124,13 @@ export default function CheckoutPage() {
   const [isLoadingTaxShipping, setIsLoadingTaxShipping] = useState(true);
   const [deliveryTimes, setDeliveryTimes] = useState<any[]>([]);
   const [isLoadingDeliveryTimes, setIsLoadingDeliveryTimes] = useState(true);
+  // Free shipping settings from siteSettings
+  const [freeShippingEnabled, setFreeShippingEnabled] = useState(false);
+  const [freeShippingAmount, setFreeShippingAmount] = useState(0);
+  const [minimumOrderAmount, setMinimumOrderAmount] = useState(0);
+  // API error states
+  const [shippingError, setShippingError] = useState(false);
+  const [taxError, setTaxError] = useState(false);
   // Initialize with tomorrow's date as default
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(() => {
     const tomorrow = new Date();
@@ -138,88 +145,108 @@ export default function CheckoutPage() {
     }
   }, [isAuth, user?.id]);
 
-  // Load tax, shipping classes, and delivery times from localStorage
+  // Load settings from localStorage and fetch shipping/tax data from API
   useEffect(() => {
-    loadSettingsFromLocalStorage();
+    loadSettingsAndFetchData();
   }, []);
 
-  const loadSettingsFromLocalStorage = () => {
+  const loadSettingsAndFetchData = async () => {
     try {
       setIsLoadingTaxShipping(true);
       setIsLoadingDeliveryTimes(true);
 
-      let loadedTaxClass = null;
-      let loadedShippingClass = null;
-
       // Get siteSettings from localStorage
       const siteSettingsStr = localStorage.getItem("siteSettings");
 
-      if (siteSettingsStr) {
-        const siteSettings = JSON.parse(siteSettingsStr);
+      if (!siteSettingsStr) {
+        setShippingError(true);
+        setTaxError(true);
+        setIsLoadingTaxShipping(false);
+        setIsLoadingDeliveryTimes(false);
+        return;
+      }
 
-        // Get taxClass from siteSettings
-        if (siteSettings.taxClass) {
-          loadedTaxClass = siteSettings.taxClass;
-        }
+      const siteSettings = JSON.parse(siteSettingsStr);
 
-        // Get shippingClass from siteSettings
-        if (siteSettings.shippingClass) {
-          loadedShippingClass = siteSettings.shippingClass;
-        }
-
-        // Get deliveryTime from siteSettings
-        if (siteSettings.deliveryTime) {
-          const deliveryTimeData = siteSettings.deliveryTime;
-          if (Array.isArray(deliveryTimeData)) {
-            setDeliveryTimes(deliveryTimeData);
-          } else if (typeof deliveryTimeData === "string") {
-            try {
-              const parsedData = JSON.parse(deliveryTimeData);
-              setDeliveryTimes(Array.isArray(parsedData) ? parsedData : []);
-            } catch {
-              setDeliveryTimes([]);
-            }
-          } else {
+      // Get deliveryTime from siteSettings
+      if (siteSettings.deliveryTime) {
+        const deliveryTimeData = siteSettings.deliveryTime;
+        if (Array.isArray(deliveryTimeData)) {
+          setDeliveryTimes(deliveryTimeData);
+        } else if (typeof deliveryTimeData === "string") {
+          try {
+            const parsedData = JSON.parse(deliveryTimeData);
+            setDeliveryTimes(Array.isArray(parsedData) ? parsedData : []);
+          } catch {
             setDeliveryTimes([]);
           }
+        } else {
+          setDeliveryTimes([]);
         }
       }
+      setIsLoadingDeliveryTimes(false);
 
-      // Fallback: Check for separately stored taxClass and shippingClass
-      if (!loadedTaxClass) {
-        const taxClassStr = localStorage.getItem("taxClass");
-        if (taxClassStr) {
-          try {
-            loadedTaxClass = JSON.parse(taxClassStr);
-          } catch {
-            console.error("Failed to parse taxClass from localStorage");
+      // Get free shipping settings from siteSettings
+      if (siteSettings.freeShipping !== undefined) {
+        setFreeShippingEnabled(siteSettings.freeShipping === true || siteSettings.freeShipping === "true");
+      }
+      if (siteSettings.freeShippingAmount !== undefined) {
+        setFreeShippingAmount(parseFloat(siteSettings.freeShippingAmount) || 0);
+      }
+      if (siteSettings.minimumOrderAmount !== undefined) {
+        setMinimumOrderAmount(parseFloat(siteSettings.minimumOrderAmount) || 0);
+      }
+
+      // Get shippingClass ID and fetch shipping data from API
+      const shippingClassId = siteSettings.shippingClass?.id || siteSettings.shippingClass;
+      if (shippingClassId) {
+        try {
+          const shippingRes = await fetchApi({
+            url: `shipping/read/${shippingClassId}`,
+            method: "GET",
+          });
+          if (shippingRes?.success === 1 && shippingRes.data) {
+            setShippingClass(shippingRes.data);
+            setShippingError(false);
+          } else {
+            setShippingError(true);
           }
+        } catch (error) {
+          console.error("Failed to fetch shipping data:", error);
+          setShippingError(true);
         }
+      } else {
+        setShippingError(true);
       }
 
-      if (!loadedShippingClass) {
-        const shippingClassStr = localStorage.getItem("shippingClass");
-        if (shippingClassStr) {
-          try {
-            loadedShippingClass = JSON.parse(shippingClassStr);
-          } catch {
-            console.error("Failed to parse shippingClass from localStorage");
+      // Get taxClass ID and fetch tax data from API
+      const taxClassId = siteSettings.taxClass?.id || siteSettings.taxClass;
+      if (taxClassId) {
+        try {
+          const taxRes = await fetchApi({
+            url: `tax/read/${taxClassId}`,
+            method: "GET",
+          });
+          if (taxRes?.success === 1 && taxRes.data) {
+            setTaxClass(taxRes.data);
+            setTaxError(false);
+          } else {
+            setTaxError(true);
           }
+        } catch (error) {
+          console.error("Failed to fetch tax data:", error);
+          setTaxError(true);
         }
+      } else {
+        setTaxError(true);
       }
 
-      // Set the state
-      if (loadedTaxClass) {
-        setTaxClass(loadedTaxClass);
-      }
-      if (loadedShippingClass) {
-        setShippingClass(loadedShippingClass);
-      }
     } catch (error) {
-      console.error("Failed to load settings from localStorage:", error);
+      console.error("Failed to load settings:", error);
+      setShippingError(true);
+      setTaxError(true);
     } finally {
       setIsLoadingTaxShipping(false);
-      setIsLoadingDeliveryTimes(false);
     }
   };
 
@@ -407,11 +434,11 @@ export default function CheckoutPage() {
     );
   }, [cart]);
 
-  // Calculate shipping cost
-  const shippingCost = useMemo(() => {
+  // Calculate base shipping cost (before free shipping discount)
+  const baseShippingCost = useMemo(() => {
     if (!shippingClass) return 0;
 
-    const shippingAmount = parseFloat(shippingClass.amount) || 0; // 🔴 FIX: Added null check
+    const shippingAmount = parseFloat(shippingClass.amount) || 0;
 
     if (shippingClass.type === "fixed") {
       return shippingAmount;
@@ -422,6 +449,29 @@ export default function CheckoutPage() {
     }
     return 0;
   }, [shippingClass, subtotal]);
+
+  // Calculate the order total for free shipping eligibility (product amount - product discount)
+  const orderTotalForFreeShipping = useMemo(() => {
+    return subtotal - productDiscount;
+  }, [subtotal, productDiscount]);
+
+  // Check if free shipping discount is applicable
+  const isFreeShippingApplicable = useMemo(() => {
+    return freeShippingEnabled && orderTotalForFreeShipping >= minimumOrderAmount;
+  }, [freeShippingEnabled, orderTotalForFreeShipping, minimumOrderAmount]);
+
+  // Calculate the free shipping discount amount
+  const freeShippingDiscount = useMemo(() => {
+    if (!isFreeShippingApplicable) return 0;
+    // If freeShippingAmount >= baseShippingCost, discount = full shipping (shipping becomes 0)
+    // If freeShippingAmount < baseShippingCost, discount = freeShippingAmount
+    return Math.min(freeShippingAmount, baseShippingCost);
+  }, [isFreeShippingApplicable, freeShippingAmount, baseShippingCost]);
+
+  // Calculate final shipping cost (after free shipping discount)
+  const shippingCost = useMemo(() => {
+    return baseShippingCost - freeShippingDiscount;
+  }, [baseShippingCost, freeShippingDiscount]);
 
   // Calculate coupon discount with minimum cart amount validation
   // ✅ IMPORTANT: Coupon is applied BEFORE tax calculation
@@ -480,26 +530,36 @@ export default function CheckoutPage() {
   // Get shipping display information
   const getShippingInfo = () => {
     if (!shippingClass) {
-      return { text: "Calculating...", amount: 0, isFree: false };
+      return { text: "Calculating...", amount: 0, isFree: false, baseAmount: 0, discount: 0 };
     }
 
+    // If shipping type is free_shipping, shipping is completely free
     if (shippingClass.type === "free_shipping") {
-      return { text: "Free Shipping", amount: 0, isFree: true };
-    } else if (shippingClass.type === "fixed") {
+      return { text: "Free Shipping", amount: 0, isFree: true, baseAmount: 0, discount: 0 };
+    }
+
+    // Check if free shipping discount makes shipping completely free
+    const isFreeAfterDiscount = shippingCost === 0 && baseShippingCost > 0 && isFreeShippingApplicable;
+
+    if (shippingClass.type === "fixed") {
       return {
         text: `Shipping: ${shippingClass.name}`,
-        amount: parseFloat(shippingClass.amount) || 0,
-        isFree: false,
+        amount: shippingCost,
+        isFree: isFreeAfterDiscount,
+        baseAmount: baseShippingCost,
+        discount: freeShippingDiscount,
       };
     } else if (shippingClass.type === "percentage") {
       return {
         text: `Shipping: ${shippingClass.name} (${shippingClass.amount}%)`,
-        amount: (subtotal * parseFloat(shippingClass.amount)) / 100,
-        isFree: false,
+        amount: shippingCost,
+        isFree: isFreeAfterDiscount,
+        baseAmount: baseShippingCost,
+        discount: freeShippingDiscount,
       };
     }
 
-    return { text: "Standard Shipping", amount: 0, isFree: false };
+    return { text: "Standard Shipping", amount: 0, isFree: false, baseAmount: 0, discount: 0 };
   };
 
   const shippingInfo = getShippingInfo();
@@ -709,12 +769,12 @@ export default function CheckoutPage() {
             </CardHeader>
             <CardContent className="space-y-8">
               {/* Shipping Information Banner */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className={`border rounded-lg p-4 ${shippingInfo.isFree || shippingInfo.discount > 0 ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 p-2 rounded-full">
+                    <div className={`p-2 rounded-full ${shippingInfo.isFree || shippingInfo.discount > 0 ? 'bg-green-100' : 'bg-blue-100'}`}>
                       <svg
-                        className="w-5 h-5 text-blue-600"
+                        className={`w-5 h-5 ${shippingInfo.isFree || shippingInfo.discount > 0 ? 'text-green-600' : 'text-blue-600'}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -728,23 +788,36 @@ export default function CheckoutPage() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-blue-900">
+                      <h3 className={`font-semibold ${shippingInfo.isFree || shippingInfo.discount > 0 ? 'text-green-900' : 'text-blue-900'}`}>
                         {shippingInfo.isFree
-                          ? "🎉 Free Shipping!"
+                          ? "Free Shipping!"
+                          : shippingInfo.discount > 0
+                          ? "Shipping Discount Applied!"
                           : "Shipping Information"}
                       </h3>
-                      <p className="text-blue-700 text-sm">
+                      <p className={`text-sm ${shippingInfo.isFree || shippingInfo.discount > 0 ? 'text-green-700' : 'text-blue-700'}`}>
                         {shippingInfo.isFree
                           ? "Your order qualifies for free shipping!"
-                          : `${shippingInfo.text} - ${currencyFormatter(
-                              shippingInfo.amount
-                            )}`}
+                          : shippingInfo.discount > 0
+                          ? `${shippingInfo.text} - ${currencyFormatter(shippingInfo.amount)} (You save ${currencyFormatter(shippingInfo.discount)})`
+                          : `${shippingInfo.text} - ${currencyFormatter(shippingInfo.amount)}`}
                       </p>
+                      {/* Show minimum order info if not eligible for free shipping */}
+                      {freeShippingEnabled && !isFreeShippingApplicable && minimumOrderAmount > 0 && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Add {currencyFormatter(minimumOrderAmount - orderTotalForFreeShipping)} more to get free shipping discount!
+                        </p>
+                      )}
                     </div>
                   </div>
                   {shippingInfo.isFree && (
                     <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                       FREE
+                    </span>
+                  )}
+                  {shippingInfo.discount > 0 && !shippingInfo.isFree && (
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      DISCOUNT
                     </span>
                   )}
                 </div>
@@ -1209,11 +1282,11 @@ export default function CheckoutPage() {
               <Separator />
 
               {/* Shipping Information Display */}
-              <div className="bg-gray-50 rounded-lg p-3">
+              <div className={`rounded-lg p-3 ${shippingError ? 'bg-red-50' : 'bg-gray-50'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <svg
-                      className="w-4 h-4 text-gray-600"
+                      className={`w-4 h-4 ${shippingError ? 'text-red-600' : 'text-gray-600'}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -1228,18 +1301,37 @@ export default function CheckoutPage() {
                     <span className="text-sm font-medium">Shipping</span>
                   </div>
                   <div className="text-right">
-                    <div
-                      className={`text-sm font-semibold ${
-                        shippingInfo.isFree ? "text-green-600" : ""
-                      }`}
-                    >
-                      {shippingInfo.isFree
-                        ? "FREE"
-                        : currencyFormatter(shippingInfo.amount)}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {shippingInfo.text}
-                    </div>
+                    {isLoadingTaxShipping ? (
+                      <div className="text-sm text-muted-foreground">Loading...</div>
+                    ) : shippingError ? (
+                      <div className="text-sm text-red-500">Error loading</div>
+                    ) : (
+                      <>
+                        {/* Show original price struck through if there's a discount */}
+                        {shippingInfo.discount > 0 && (
+                          <div className="text-xs text-muted-foreground line-through">
+                            {currencyFormatter(shippingInfo.baseAmount)}
+                          </div>
+                        )}
+                        <div
+                          className={`text-sm font-semibold ${
+                            shippingInfo.isFree || shippingInfo.discount > 0 ? "text-green-600" : ""
+                          }`}
+                        >
+                          {shippingInfo.isFree
+                            ? "FREE"
+                            : currencyFormatter(shippingInfo.amount)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {shippingInfo.text}
+                        </div>
+                        {shippingInfo.discount > 0 && !shippingInfo.isFree && (
+                          <div className="text-xs text-green-600 mt-1">
+                            Saved {currencyFormatter(shippingInfo.discount)}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1360,7 +1452,18 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {taxClass && taxAmount > 0 && (
+                {/* Tax Section */}
+                {isLoadingTaxShipping ? (
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span>Tax</span>
+                    <span>Loading...</span>
+                  </div>
+                ) : taxError ? (
+                  <div className="flex items-center justify-between text-red-500">
+                    <span>Tax</span>
+                    <span>Error loading</span>
+                  </div>
+                ) : taxClass && taxAmount > 0 && (
                   <div className="flex items-center justify-between">
                     <span>
                       Tax{" "}
@@ -1371,28 +1474,53 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {shippingCost > 0 && (
-                  <div className="flex items-center justify-between">
+                {/* Shipping Section */}
+                {isLoadingTaxShipping ? (
+                  <div className="flex items-center justify-between text-muted-foreground">
                     <span>Shipping</span>
-                    <span
-                      className={
-                        appliedCoupon?.type === "free_shipping"
-                          ? "line-through text-gray-400"
-                          : ""
-                      }
-                    >
-                      {currencyFormatter(shippingCost)}
-                    </span>
+                    <span>Loading...</span>
                   </div>
+                ) : shippingError ? (
+                  <div className="flex items-center justify-between text-red-500">
+                    <span>Shipping</span>
+                    <span>Error loading</span>
+                  </div>
+                ) : (
+                  <>
+                    {/* Shipping with base cost and discount display */}
+                    {baseShippingCost > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span>Shipping</span>
+                        <span
+                          className={
+                            (appliedCoupon?.type === "free_shipping" || freeShippingDiscount > 0)
+                              ? "line-through text-gray-400"
+                              : ""
+                          }
+                        >
+                          {currencyFormatter(baseShippingCost)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Show free shipping discount from siteSettings */}
+                    {freeShippingDiscount > 0 && (
+                      <div className="flex items-center justify-between text-green-600">
+                        <span>Free Shipping Discount</span>
+                        <span>-{currencyFormatter(freeShippingDiscount)}</span>
+                      </div>
+                    )}
+
+                    {/* Show remaining shipping cost after discount if partial */}
+                    {freeShippingDiscount > 0 && shippingCost > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Remaining Shipping</span>
+                        <span>{currencyFormatter(shippingCost)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* Show free shipping message when coupon type is free_shipping */}
-                {appliedCoupon?.type === "free_shipping" && shippingCost > 0 && (
-                  <div className="flex items-center justify-between text-green-600">
-                    <span>Free Shipping Applied</span>
-                    <span>-{currencyFormatter(shippingCost)}</span>
-                  </div>
-                )}
               </div>
 
               <Separator />
@@ -1497,6 +1625,15 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* Error message when APIs fail */}
+              {(shippingError || taxError) && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded text-center">
+                  <p className="text-sm text-red-700">
+                    Unable to load {shippingError && "shipping"}{shippingError && taxError && " and "}{taxError && "tax"} information. Please refresh the page.
+                  </p>
+                </div>
+              )}
+
               {/* Place Order Button */}
               <Button
                 onClick={handleSubmit(onSubmit)}
@@ -1505,13 +1642,17 @@ export default function CheckoutPage() {
                   isSubmitting ||
                   finalTotal <= 0 ||
                   isLoadingTaxShipping ||
-                  isLoadingDeliveryTimes
+                  isLoadingDeliveryTimes ||
+                  shippingError ||
+                  taxError
                 }
                 size="lg"
                 type="button"
               >
                 {isSubmitting
                   ? "Processing..."
+                  : isLoadingTaxShipping
+                  ? "Loading..."
                   : `Place Order - ${currencyFormatter(finalTotal)}`}
               </Button>
             </CardContent>
