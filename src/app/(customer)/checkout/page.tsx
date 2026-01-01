@@ -131,6 +131,11 @@ export default function CheckoutPage() {
   // API error states
   const [shippingError, setShippingError] = useState(false);
   const [taxError, setTaxError] = useState(false);
+
+  // Wallet state
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
+  const [isLoadingWallet, setIsLoadingWallet] = useState(false);
   // Initialize with tomorrow's date as default
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(() => {
     const tomorrow = new Date();
@@ -142,8 +147,31 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (isAuth && user?.id) {
       fetchAddresses();
+      fetchWalletBalance();
     }
   }, [isAuth, user?.id]);
+
+  // Fetch wallet balance
+  const fetchWalletBalance = async () => {
+    if (!isAuth) return;
+
+    setIsLoadingWallet(true);
+    try {
+      const res = await fetchApi({
+        url: "wallet/balance",
+        method: "GET",
+      });
+
+      if (res?.success === 1 && res.data) {
+        setWalletBalance(res.data.balance || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch wallet balance:", error);
+      setWalletBalance(0);
+    } finally {
+      setIsLoadingWallet(false);
+    }
+  };
 
   // Load settings from localStorage and fetch shipping/tax data from API
   useEffect(() => {
@@ -518,12 +546,30 @@ export default function CheckoutPage() {
     return minCartAmount === 0 || subtotal >= minCartAmount;
   }, [appliedCoupon, subtotal]);
 
-  // Calculate final total
+  // Calculate final total (order total before wallet deduction)
   const finalTotal = useMemo(() => {
     return (
       subtotal - productDiscount - couponDiscount + shippingCost + taxAmount
     );
   }, [subtotal, productDiscount, couponDiscount, shippingCost, taxAmount]);
+
+  // Calculate wallet amount to use (minimum of wallet balance and order total)
+  const walletAmountToUse = useMemo(() => {
+    if (!useWallet || walletBalance <= 0) return 0;
+    return Math.min(walletBalance, finalTotal);
+  }, [useWallet, walletBalance, finalTotal]);
+
+  // Calculate remaining wallet balance after this order
+  const remainingWalletBalance = useMemo(() => {
+    if (!useWallet) return walletBalance;
+    return Math.max(0, walletBalance - finalTotal);
+  }, [useWallet, walletBalance, finalTotal]);
+
+  // Calculate paid total (amount to pay after wallet deduction)
+  const paidTotal = useMemo(() => {
+    if (!useWallet) return finalTotal;
+    return Math.max(0, finalTotal - walletAmountToUse);
+  }, [useWallet, finalTotal, walletAmountToUse]);
 
   const totalItems = useMemo(() => cart?.length || 0, [cart]);
 
@@ -683,6 +729,9 @@ export default function CheckoutPage() {
       customer_id: user?.id || null,
       // Delivery time: Selected Date + Time Slot
       delivery_time: formattedDeliveryTime,
+      // Wallet payment fields
+      use_wallet: useWallet && walletAmountToUse > 0,
+      wallet_amount: useWallet ? walletAmountToUse : 0,
     };
 
     console.log("Submitting order data:", orderData);
@@ -1523,12 +1572,75 @@ export default function CheckoutPage() {
 
               </div>
 
+              {/* Wallet Section - Only show for logged in users with wallet balance */}
+              {isAuth && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold">Use Wallet Balance</h3>
+                    {isLoadingWallet ? (
+                      <div className="text-sm text-muted-foreground">Loading wallet...</div>
+                    ) : walletBalance > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="use-wallet"
+                            checked={useWallet}
+                            onCheckedChange={(checked) => setUseWallet(checked as boolean)}
+                          />
+                          <Label htmlFor="use-wallet" className="text-sm cursor-pointer">
+                            Use wallet balance ({currencyFormatter(walletBalance)} available)
+                          </Label>
+                        </div>
+
+                        {useWallet && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-green-700">Wallet amount to use:</span>
+                              <span className="font-semibold text-green-700">
+                                -{currencyFormatter(walletAmountToUse)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Remaining wallet balance:</span>
+                              <span className="font-medium text-gray-700">
+                                {currencyFormatter(remainingWalletBalance)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        No wallet balance available
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
               <Separator />
 
+              {/* Order Total (before wallet) */}
               <div className="flex items-center justify-between font-bold text-lg">
-                <span>Total</span>
+                <span>Order Total</span>
                 <span>{currencyFormatter(finalTotal)}</span>
               </div>
+
+              {/* Show wallet deduction and paid total when wallet is used */}
+              {useWallet && walletAmountToUse > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-green-600">
+                    <span>Wallet Deduction</span>
+                    <span>-{currencyFormatter(walletAmountToUse)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between font-bold text-lg text-primary">
+                    <span>Amount to Pay</span>
+                    <span>{currencyFormatter(paidTotal)}</span>
+                  </div>
+                </>
+              )}
 
               {/* Payment Options */}
               <div className="payment">
@@ -1653,6 +1765,8 @@ export default function CheckoutPage() {
                   ? "Processing..."
                   : isLoadingTaxShipping
                   ? "Loading..."
+                  : useWallet && walletAmountToUse > 0
+                  ? `Place Order - ${currencyFormatter(paidTotal)}`
                   : `Place Order - ${currencyFormatter(finalTotal)}`}
               </Button>
             </CardContent>
