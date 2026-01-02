@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  <rect width="120" height="40" rx="4" fill="#00457C"/>
+  <text x="10" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">PayFast</text>
+  <circle cx="100" cy="20" r="10" fill="#00A4E4"/>
+  <path d="M96 20 L100 24 L106 16" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

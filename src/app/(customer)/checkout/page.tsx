@@ -38,6 +38,10 @@ import {
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { usePayFast } from "@/hooks/usePayFast";
+import { useEasyPaisa } from "@/hooks/useEasyPaisa";
+import { useJazzCash } from "@/hooks/useJazzCash";
+import { OTPVerificationModal } from "@/components/OTPVerificationModal";
 
 // Create a complete checkout schema from scratch
 const checkoutSchema = z.object({
@@ -48,6 +52,7 @@ const checkoutSchema = z.object({
   zip: z.string().optional().default(""),
   country: z.string().optional().default("Pakistan"),
   phone: z.string().min(1, "Phone number is required"),
+  mobile_wallet_number: z.string().optional().default(""), // For EasyPaisa/JazzCash
   delivery_time: z.string().min(1, "Delivery time is required"),
   billing_address: z.object({
     street: z.string().min(1, "Street address is required"),
@@ -136,6 +141,49 @@ export default function CheckoutPage() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
   const [isLoadingWallet, setIsLoadingWallet] = useState(false);
+
+  // PayFast hook
+  const { isLoaded: isPayFastLoaded, isProcessing: isPayFastProcessing, initiatePayment: initiatePayFastPayment, error: payFastError } = usePayFast();
+
+  // EasyPaisa hook
+  const {
+    isProcessing: isEasyPaisaProcessing,
+    awaitingOTP: isEasyPaisaAwaitingOTP,
+    transactionId: easyPaisaTransactionId,
+    error: easyPaisaError,
+    initiatePayment: initiateEasyPaisaPayment,
+    verifyOTP: verifyEasyPaisaOTP,
+    resetState: resetEasyPaisaState,
+    resetError: resetEasyPaisaError,
+  } = useEasyPaisa();
+
+  // JazzCash hook
+  const {
+    isProcessing: isJazzCashProcessing,
+    awaitingOTP: isJazzCashAwaitingOTP,
+    transactionId: jazzCashTransactionId,
+    error: jazzCashError,
+    initiatePayment: initiateJazzCashPayment,
+    verifyOTP: verifyJazzCashOTP,
+    resetState: resetJazzCashState,
+    resetError: resetJazzCashError,
+  } = useJazzCash();
+
+  // OTP Modal state
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otpPaymentMethod, setOtpPaymentMethod] = useState<'easypaisa' | 'jazzcash'>('easypaisa');
+  const [pendingOrderData, setPendingOrderData] = useState<any>(null);
+  const [mobileWalletNumber, setMobileWalletNumber] = useState("");
+
+  // Payment success state - to handle order creation retry without re-payment
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [completedPaymentData, setCompletedPaymentData] = useState<{
+    paymentId: string;
+    paymentResponse: any;
+    orderData: any;
+  } | null>(null);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
   // Initialize with tomorrow's date as default
   const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<Date>(() => {
     const tomorrow = new Date();
@@ -324,6 +372,7 @@ export default function CheckoutPage() {
       zip: "",
       country: "Pakistan",
       phone: user?.phone_no || "",
+      mobile_wallet_number: "",
       delivery_time: "",
       billing_address: {
         street: "",
@@ -660,8 +709,130 @@ export default function CheckoutPage() {
     toast.success("Coupon removed");
   };
 
+  // Helper function to create order after successful payment
+  const createOrderAfterPayment = async (orderData: any, paymentId?: string, paymentResponse?: any) => {
+    setIsCreatingOrder(true);
+    setServerError(null);
+
+    try {
+      const orderDataWithPayment = {
+        ...orderData,
+        payment_status: paymentId ? "success" : "cash-on-delivery",
+        payment_id: paymentId || null,
+        payment_response: paymentResponse || null, // Include full payment response
+      };
+
+      const res = await fetchApi({
+        url: "order/cartcreate",
+        method: "POST",
+        data: orderDataWithPayment,
+      });
+
+      if (res?.success) {
+        // Order created successfully - clear everything and redirect
+        const trackingNumber = res.data?.tracking_number;
+        setPaymentCompleted(false);
+        setCompletedPaymentData(null);
+        setIsCreatingOrder(false);
+        await clear();
+        if (trackingNumber) {
+          router.push(`/order-success?tracking=${trackingNumber}`);
+        } else {
+          toast.success("Order placed successfully!");
+          router.push("/");
+        }
+        return { success: true };
+      } else {
+        // Order creation failed - keep payment data for retry
+        setIsCreatingOrder(false);
+        if (paymentId) {
+          // Save payment data so user can retry without re-paying
+          setPaymentCompleted(true);
+          setCompletedPaymentData({
+            paymentId,
+            paymentResponse,
+            orderData,
+          });
+        }
+        setServerError(res?.detail || "Failed to create order. Please try again.");
+        return { success: false, error: res?.detail };
+      }
+    } catch (err) {
+      console.error("Order creation error:", err);
+      setIsCreatingOrder(false);
+      // Save payment data for retry on network error
+      if (paymentId) {
+        setPaymentCompleted(true);
+        setCompletedPaymentData({
+          paymentId,
+          paymentResponse,
+          orderData,
+        });
+      }
+      setServerError("Failed to create order. Please check your connection and try again.");
+      return { success: false, error: "Network error" };
+    }
+  };
+
+  // Handle OTP verification for EasyPaisa/JazzCash
+  const handleOTPVerify = async (otp: string) => {
+    if (!pendingOrderData) return;
+
+    let result;
+    if (otpPaymentMethod === 'easypaisa') {
+      result = await verifyEasyPaisaOTP(otp);
+    } else {
+      result = await verifyJazzCashOTP(otp);
+    }
+
+    if (result.success) {
+      setShowOTPModal(false);
+      toast.success("Payment successful!");
+
+      // Build payment response object
+      const paymentResponse = {
+        gateway: otpPaymentMethod,
+        transactionId: result.transactionId,
+        transactionStatus: result.transactionStatus,
+        message: result.message,
+        responseCode: 'responseCode' in result ? result.responseCode : undefined,
+        errorCode: 'errorCode' in result ? result.errorCode : undefined,
+        verifiedAt: new Date().toISOString(),
+      };
+
+      // Create order with payment ID and full payment response
+      await createOrderAfterPayment(pendingOrderData, result.transactionId || 'verified', paymentResponse);
+      setPendingOrderData(null);
+      resetEasyPaisaState();
+      resetJazzCashState();
+    }
+    // Error is already shown by the modal via the hook's error state
+  };
+
+  // Handle OTP modal close
+  const handleOTPModalClose = () => {
+    setShowOTPModal(false);
+    setPendingOrderData(null);
+    resetEasyPaisaState();
+    resetJazzCashState();
+    setServerError("Payment was cancelled. Please try again.");
+  };
+
   const onSubmit = async (values: z.infer<typeof checkoutSchema>) => {
     const billingAddress = values.billing_address;
+    setServerError(null);
+
+    // ========== RETRY ORDER CREATION (Payment already completed) ==========
+    // If payment was already successful but order creation failed, just retry order creation
+    if (paymentCompleted && completedPaymentData) {
+      console.log("Retrying order creation with existing payment data...");
+      await createOrderAfterPayment(
+        completedPaymentData.orderData,
+        completedPaymentData.paymentId,
+        completedPaymentData.paymentResponse
+      );
+      return;
+    }
 
     // Validate required billing fields
     if (!billingAddress.street || !billingAddress.city) {
@@ -675,6 +846,15 @@ export default function CheckoutPage() {
     if (!values.delivery_time) {
       setServerError("Please select a delivery time slot");
       return;
+    }
+
+    // Validate mobile wallet number for EasyPaisa/JazzCash
+    if (selectedPayment === "easypaisa" || selectedPayment === "jazzcash") {
+      const walletNumber = values.mobile_wallet_number || mobileWalletNumber;
+      if (!walletNumber || !/^03[0-9]{9}$/.test(walletNumber.replace(/[^0-9]/g, ''))) {
+        setServerError("Please enter a valid mobile wallet number (03XXXXXXXXX) for payment.");
+        return;
+      }
     }
 
     // Format delivery_time as: "Selected Date + Time Slot"
@@ -721,49 +901,120 @@ export default function CheckoutPage() {
         variation_option_id: item.variation_option_id || null,
       })),
       // Required fields for backend calculation
-      // Handle both cases: when it's an object with .id or when it's just the ID directly
       shipping_id: typeof shippingClass === 'object' ? shippingClass?.id : shippingClass,
       tax_id: typeof taxClass === 'object' ? taxClass?.id : taxClass,
       coupon_id: appliedCoupon?.id || null,
       customer_contact: values.phone,
       customer_id: user?.id || null,
-      // Delivery time: Selected Date + Time Slot
       delivery_time: formattedDeliveryTime,
-      // Wallet payment fields
       use_wallet: useWallet && walletAmountToUse > 0,
       wallet_amount: useWallet ? walletAmountToUse : 0,
     };
 
-    console.log("Submitting order data:", orderData);
+    console.log("Submitting order with payment method:", selectedPayment);
 
     try {
-      const res = await fetchApi({
-        url: "order/cartcreate",
-        method: "POST",
-        data: orderData,
-      });
-
-      if (res?.success) {
-        // Clear the entire cart after successful order
-        await clear();
-
-        // Get tracking number from response
-        const trackingNumber = res.data?.tracking_number;
-
-        if (trackingNumber) {
-          // Redirect to order success page with tracking number
-          router.push(`/order-success?tracking=${trackingNumber}`);
-        } else {
-          // Fallback: show success message and redirect to home
-          toast.success(res.detail || "Order placed successfully!");
-          router.push("/");
-        }
-      } else {
-        setServerError(res?.detail || "Something went wrong.");
+      // ========== CASH ON DELIVERY ==========
+      // Create order directly without payment
+      if (selectedPayment === "cash_on_delivery") {
+        await createOrderAfterPayment(orderData);
+        return;
       }
+
+      // ========== PAYFAST ==========
+      // Initiate payment first, create order only on success
+      if (selectedPayment === "payfast") {
+        // Generate a temporary order ID for PayFast
+        const tempOrderId = `PF${Date.now()}`;
+
+        const paymentResult = await initiatePayFastPayment({
+          orderId: tempOrderId,
+          amount: paidTotal,
+          itemName: `Order Payment`,
+          itemDescription: `${cart?.length} item(s)`,
+          customerEmail: values.email,
+          customerFirstName: values.name.split(' ')[0],
+          customerLastName: values.name.split(' ').slice(1).join(' ') || values.name.split(' ')[0],
+          customerPhone: values.phone,
+        });
+
+        if (paymentResult.success) {
+          // Payment successful - NOW create order
+          toast.success("Payment successful!");
+
+          // Build payment response object for PayFast
+          const paymentResponse = {
+            gateway: 'payfast',
+            transactionId: tempOrderId,
+            transactionStatus: 'SUCCESS',
+            message: paymentResult.message,
+            completedAt: new Date().toISOString(),
+          };
+
+          await createOrderAfterPayment(orderData, tempOrderId, paymentResponse);
+        } else {
+          // Payment failed or cancelled
+          setServerError(paymentResult.message || "Payment was not completed. Please try again.");
+        }
+        return;
+      }
+
+      // ========== EASYPAISA ==========
+      // Initiate payment, show OTP modal, create order on success
+      if (selectedPayment === "easypaisa") {
+        const walletNumber = values.mobile_wallet_number || mobileWalletNumber;
+        setMobileWalletNumber(walletNumber);
+
+        const paymentResult = await initiateEasyPaisaPayment({
+          orderId: `EP${Date.now()}`,
+          amount: paidTotal,
+          mobileNumber: walletNumber,
+          customerEmail: values.email,
+          customerName: values.name,
+        });
+
+        if (paymentResult.success) {
+          // Payment initiated, show OTP modal
+          setPendingOrderData(orderData);
+          setOtpPaymentMethod('easypaisa');
+          setShowOTPModal(true);
+        } else {
+          // Payment initiation failed
+          setServerError(paymentResult.error || "Failed to initiate payment. Please try again.");
+        }
+        return;
+      }
+
+      // ========== JAZZCASH ==========
+      // Initiate payment, show OTP modal, create order on success
+      if (selectedPayment === "jazzcash") {
+        const walletNumber = values.mobile_wallet_number || mobileWalletNumber;
+        setMobileWalletNumber(walletNumber);
+
+        const paymentResult = await initiateJazzCashPayment({
+          orderId: `JC${Date.now()}`,
+          amount: paidTotal,
+          mobileNumber: walletNumber,
+          customerEmail: values.email,
+          customerName: values.name,
+          description: `Order Payment - ${cart?.length} item(s)`,
+        });
+
+        if (paymentResult.success) {
+          // Payment initiated, show OTP modal
+          setPendingOrderData(orderData);
+          setOtpPaymentMethod('jazzcash');
+          setShowOTPModal(true);
+        } else {
+          // Payment initiation failed
+          setServerError(paymentResult.error || "Failed to initiate payment. Please try again.");
+        }
+        return;
+      }
+
     } catch (err) {
-      console.error("Order submission error:", err);
-      setServerError("Network error. Please try again.");
+      console.error("Payment/Order error:", err);
+      setServerError("An error occurred. Please try again.");
     }
   };
 
@@ -778,8 +1029,43 @@ export default function CheckoutPage() {
     );
   }
 
+  // Check if any payment is processing
+  const isAnyPaymentProcessing = isPayFastProcessing || isEasyPaisaProcessing || isJazzCashProcessing;
+
   return (
     <Screen>
+      {/* Payment Processing Overlay */}
+      {isAnyPaymentProcessing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg text-center max-w-sm mx-4">
+            <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Processing Payment</h3>
+            <p className="text-sm text-gray-600">
+              {isPayFastProcessing && (
+                <>
+                  Please complete the payment in the PayFast popup window.
+                  <br />
+                  Do not close this page.
+                </>
+              )}
+              {isEasyPaisaProcessing && "Processing your EasyPaisa payment..."}
+              {isJazzCashProcessing && "Processing your JazzCash payment..."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={showOTPModal}
+        onClose={handleOTPModalClose}
+        onVerify={handleOTPVerify}
+        isLoading={isEasyPaisaProcessing || isJazzCashProcessing}
+        error={otpPaymentMethod === 'easypaisa' ? easyPaisaError : jazzCashError}
+        paymentMethod={otpPaymentMethod}
+        mobileNumber={mobileWalletNumber}
+      />
+
       <main className="mt-10">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Checkout Form */}
@@ -1652,20 +1938,24 @@ export default function CheckoutPage() {
                       required
                       type="radio"
                       name="payment_option"
-                      id="creditCard"
-                      checked={selectedPayment === "credit_card"}
-                      onChange={() => setSelectedPayment("credit_card")}
+                      id="payfast"
+                      checked={selectedPayment === "payfast"}
+                      onChange={() => setSelectedPayment("payfast")}
+                      disabled={!isPayFastLoaded}
                     />
                     <label
                       className="form-check-label flex items-center"
-                      htmlFor="creditCard"
+                      htmlFor="payfast"
                     >
                       <img
-                        src="/assets/imgs/card-icon.png"
-                        className="mr-2 w-6 h-6"
-                        alt=""
+                        src="/assets/imgs/payfast-logo.svg"
+                        className="mr-2 h-5 w-auto"
+                        alt="PayFast"
                       />
-                      Credit/Debit card
+                      Pay with Card
+                      {!isPayFastLoaded && (
+                        <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
+                      )}
                     </label>
                   </div>
                   <div className="custome-radio flex items-center space-x-2">
@@ -1735,6 +2025,27 @@ export default function CheckoutPage() {
                     </label>
                   </div>
                 </div>
+
+                {/* Mobile Wallet Number Input for EasyPaisa/JazzCash */}
+                {(selectedPayment === "easypaisa" || selectedPayment === "jazzcash") && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                    <Label htmlFor="mobile_wallet_number" className="block text-sm font-medium mb-2">
+                      {selectedPayment === "easypaisa" ? "EasyPaisa" : "JazzCash"} Mobile Number *
+                    </Label>
+                    <Input
+                      id="mobile_wallet_number"
+                      type="tel"
+                      placeholder="03XXXXXXXXX"
+                      {...register("mobile_wallet_number")}
+                      onChange={(e) => setMobileWalletNumber(e.target.value)}
+                      className="w-full"
+                      maxLength={11}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter your registered {selectedPayment === "easypaisa" ? "EasyPaisa" : "JazzCash"} mobile number. You will receive an OTP to confirm payment.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Error message when APIs fail */}
@@ -1746,28 +2057,58 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* Payment Success Notice - Show when payment done but order creation pending/failed */}
+              {paymentCompleted && completedPaymentData && (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 text-green-700 mb-2">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="font-semibold">Payment Successful!</span>
+                  </div>
+                  <p className="text-sm text-green-600">
+                    Your payment has been received. Click the button below to complete your order.
+                  </p>
+                </div>
+              )}
+
               {/* Place Order Button */}
               <Button
                 onClick={handleSubmit(onSubmit)}
                 className="w-full mt-2"
                 disabled={
                   isSubmitting ||
+                  isAnyPaymentProcessing ||
+                  isCreatingOrder ||
                   finalTotal <= 0 ||
                   isLoadingTaxShipping ||
                   isLoadingDeliveryTimes ||
                   shippingError ||
-                  taxError
+                  taxError ||
+                  (selectedPayment === "payfast" && !isPayFastLoaded && !paymentCompleted)
                 }
                 size="lg"
                 type="button"
               >
-                {isSubmitting
-                  ? "Processing..."
-                  : isLoadingTaxShipping
-                  ? "Loading..."
-                  : useWallet && walletAmountToUse > 0
-                  ? `Place Order - ${currencyFormatter(paidTotal)}`
-                  : `Place Order - ${currencyFormatter(finalTotal)}`}
+                {isCreatingOrder ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Creating Order...
+                  </span>
+                ) : isSubmitting || isAnyPaymentProcessing ? (
+                  "Processing Payment..."
+                ) : isLoadingTaxShipping ? (
+                  "Loading..."
+                ) : paymentCompleted && completedPaymentData ? (
+                  "Complete Order"
+                ) : useWallet && walletAmountToUse > 0 ? (
+                  `Place Order - ${currencyFormatter(paidTotal)}`
+                ) : (
+                  `Place Order - ${currencyFormatter(finalTotal)}`
+                )}
               </Button>
             </CardContent>
           </Card>
