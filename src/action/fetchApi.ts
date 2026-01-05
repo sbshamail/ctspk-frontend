@@ -58,7 +58,30 @@ export const fetchApi = async ({
 
     if (!response.ok) {
       console.log(`API error: ${response.status} - ${response.statusText}`);
-      return null;
+      // Try to parse error response body for detailed error message
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorJson = await response.json();
+          return {
+            success: 0,
+            error: true,
+            status: response.status,
+            statusText: response.statusText,
+            detail: errorJson.detail || errorJson.message || errorJson.error || `Error: ${response.status} - ${response.statusText}`,
+            data: errorJson,
+          };
+        }
+      } catch (parseError) {
+        console.log("Error parsing error response:", parseError);
+      }
+      return {
+        success: 0,
+        error: true,
+        status: response.status,
+        statusText: response.statusText,
+        detail: `Error: ${response.status} - ${response.statusText}`,
+      };
     }
 
     // Try to parse JSON safely
@@ -73,6 +96,15 @@ export const fetchApi = async ({
     return response.text();
   } catch (error) {
     console.log("fetchApi error:", error);
-    return null;
+    const errorMessage = error instanceof Error ? error.message : "Network error occurred";
+    return {
+      success: 0,
+      error: true,
+      status: 0,
+      statusText: "Network Error",
+      detail: errorMessage === "Failed to fetch"
+        ? "Unable to connect to server. Please check your internet connection and try again."
+        : errorMessage,
+    };
   }
 };

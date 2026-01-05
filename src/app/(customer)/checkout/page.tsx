@@ -728,7 +728,8 @@ export default function CheckoutPage() {
         data: orderDataWithPayment,
       });
 
-      if (res?.success) {
+      // Handle successful order creation (success: 1 or success: true)
+      if (res?.success === 1 || res?.success === true) {
         // Order created successfully - clear everything and redirect
         const trackingNumber = res.data?.tracking_number;
         setPaymentCompleted(false);
@@ -743,7 +744,7 @@ export default function CheckoutPage() {
         }
         return { success: true };
       } else {
-        // Order creation failed - keep payment data for retry
+        // Order creation failed - parse error response properly
         setIsCreatingOrder(false);
         if (paymentId) {
           // Save payment data so user can retry without re-paying
@@ -754,8 +755,25 @@ export default function CheckoutPage() {
             orderData,
           });
         }
-        setServerError(res?.detail || "Failed to create order. Please try again.");
-        return { success: false, error: res?.detail };
+
+        // Parse error message from response
+        let errorMessage = "Failed to create order. Please try again.";
+        if (res?.detail) {
+          errorMessage = res.detail;
+        } else if (res?.message) {
+          errorMessage = res.message;
+        } else if (res?.error && typeof res.error === 'string') {
+          errorMessage = res.error;
+        } else if (res?.data?.detail) {
+          errorMessage = res.data.detail;
+        } else if (res?.data?.message) {
+          errorMessage = res.data.message;
+        } else if (res?.status && res?.statusText) {
+          errorMessage = `Server error (${res.status}): ${res.statusText}`;
+        }
+
+        setServerError(errorMessage);
+        return { success: false, error: errorMessage };
       }
     } catch (err) {
       console.error("Order creation error:", err);
@@ -769,8 +787,11 @@ export default function CheckoutPage() {
           orderData,
         });
       }
-      setServerError("Failed to create order. Please check your connection and try again.");
-      return { success: false, error: "Network error" };
+      const errorMessage = err instanceof Error
+        ? err.message
+        : "Failed to create order. Please check your connection and try again.";
+      setServerError(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -1073,13 +1094,6 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle className="text-2xl font-bold">Checkout</CardTitle>
               <p className="text-muted-foreground">Complete your purchase</p>
-
-              {/* Server Error Display */}
-              {serverError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {serverError}
-                </div>
-              )}
 
               {!isAuth && (
                 <div className="flex items-center space-x-2">
@@ -2110,6 +2124,21 @@ export default function CheckoutPage() {
                   `Place Order - ${currencyFormatter(finalTotal)}`
                 )}
               </Button>
+
+              {/* Server Error Display - Below Place Order Button */}
+              {serverError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mt-3">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <div className="flex-1">
+                      <p className="font-medium">Order Failed</p>
+                      <p className="text-sm mt-1">{serverError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
