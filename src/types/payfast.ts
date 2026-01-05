@@ -17,10 +17,18 @@ export interface PayFastPaymentData {
 }
 
 export interface PayFastResponse {
-  success: boolean;
+  success: boolean | number;
   uuid?: string;
+  detail?: string;
   error?: string;
   paymentData?: Record<string, string>;
+  data?: {
+    accessToken?: string;
+    transactionId?: string;
+    merchantId?: string;
+    amount?: string;
+    response?: Record<string, any>;
+  };
 }
 
 export interface PayFastCallbackResult {

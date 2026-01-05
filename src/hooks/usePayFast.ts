@@ -74,9 +74,14 @@ export function usePayFast() {
 
       const result: PayFastResponse = await response.json();
 
-      if (!result.success || !result.uuid) {
+      // Check for success (can be boolean true or number 1)
+      const isSuccess = result.success === true || result.success === 1;
+      // Get token from uuid (legacy) or data.accessToken (new API format)
+      const paymentToken = result.uuid || result.data?.accessToken;
+
+      if (!isSuccess || !paymentToken) {
         setIsProcessing(false);
-        const errorMessage = result.error || 'Failed to initialize payment';
+        const errorMessage = result.error || result.detail || 'Failed to initialize payment';
         setError(errorMessage);
         return { success: false, message: errorMessage };
       }
@@ -84,7 +89,7 @@ export function usePayFast() {
       // Step 2: Open PayFast onsite payment modal
       return new Promise((resolve) => {
         window.payfast_do_onsite_payment(
-          { uuid: result.uuid! },
+          { uuid: paymentToken },
           (paymentResult: boolean) => {
             setIsProcessing(false);
             if (paymentResult === true) {
