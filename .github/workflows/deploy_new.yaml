@@ -17,13 +17,12 @@ jobs:
       - name: Install Dependencies
         run: |
 
-          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-
+          export PATH="$HOME/.local/share/pnpm:$PATH"
           pnpm install --frozen-lockfile
 
       - name: Build Next.js
         run: |
-          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PATH="$HOME/.local/share/pnpm:$PATH"
           export NODE_OPTIONS="--max-old-space-size=4096"
 
           pnpm run build
@@ -32,6 +31,6 @@ jobs:
 
       - name: Restart PM2
         run: |
-          echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+          export PATH="$HOME/.local/share/pnpm:$PATH"
           pm2 describe next-app > /dev/null 2>&1 \
               && pm2 describe next-app \ || pm2 start "pnpm start -p 3001" --name "next-app"
