@@ -33,4 +33,5 @@ jobs:
       - name: Restart PM2
         run: |
           echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-          pm2 restart next-app || pm2 start npm --name "next-app" -- start
+          pm2 describe next-app > /dev/null 2>&1 \
+              && pm2 describe next-app \ || pm2 start "pnpm start -p 3001" --name "next-app"
