@@ -22,24 +22,18 @@ interface PaymentRequestBody {
   customerFirstName: string;
   customerLastName: string;
   customerPhone?: string;
-  trackingNumber?: string; // For return URL after payment
+  trackingNumber?: string; // For return URL after payment - REQUIRED for order tracking
 }
 
 function generateSignatureString(data: Record<string, string>, passphrase?: string): string {
-  // PayFast signature - fields must be in this exact order
+  // PayFast signature - minimal fields with URL encoding
   const fieldOrder = [
     'merchant_id',
     'merchant_key',
     'return_url',
     'cancel_url',
-    'notify_url',
-    'name_first',
-    'name_last',
-    'email_address',
-    'm_payment_id',
     'amount',
     'item_name',
-    'item_description',
   ];
 
   const pfOutput: string[] = [];
@@ -47,7 +41,7 @@ function generateSignatureString(data: Record<string, string>, passphrase?: stri
   for (const key of fieldOrder) {
     if (key in data && data[key] !== undefined && data[key] !== null && data[key] !== '') {
       const value = String(data[key]).trim();
-      // URL encode and replace %20 with +
+      // URL encode and convert spaces to +
       const encoded = encodeURIComponent(value).replace(/%20/g, '+');
       pfOutput.push(`${key}=${encoded}`);
     }
@@ -57,8 +51,7 @@ function generateSignatureString(data: Record<string, string>, passphrase?: stri
 
   // Append passphrase (required for sandbox)
   if (passphrase && passphrase.trim()) {
-    const encodedPassphrase = encodeURIComponent(passphrase.trim()).replace(/%20/g, '+');
-    getString += `&passphrase=${encodedPassphrase}`;
+    getString += `&passphrase=${encodeURIComponent(passphrase.trim()).replace(/%20/g, '+')}`;
   }
 
   return getString;
@@ -85,49 +78,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get return URLs from environment or use defaults
-    const baseReturnUrl = process.env.NEXT_PUBLIC_PAYFAST_RETURN_URL ||
-                          `${process.env.NEXT_PUBLIC_WEBSITE_URL}/order-success`;
-    const baseCancelUrl = process.env.NEXT_PUBLIC_PAYFAST_CANCEL_URL ||
-                          `${process.env.NEXT_PUBLIC_WEBSITE_URL}/payment-cancelled`;
+    // Build return/cancel URLs - keep them clean (no query params) for signature compatibility
+    // Tracking is handled via localStorage - ensure domain matches where you're testing!
+    const returnUrl = process.env.NEXT_PUBLIC_PAYFAST_RETURN_URL ||
+                      `${process.env.NEXT_PUBLIC_WEBSITE_URL}/order-success`;
+    const cancelUrl = process.env.NEXT_PUBLIC_PAYFAST_CANCEL_URL ||
+                      `${process.env.NEXT_PUBLIC_WEBSITE_URL}/payment-cancelled`;
 
-    // Add tracking number to URLs if provided
-    const returnUrl = body.trackingNumber
-      ? `${baseReturnUrl}?tracking=${body.trackingNumber}`
-      : baseReturnUrl;
-    const cancelUrl = body.trackingNumber
-      ? `${baseCancelUrl}?tracking=${body.trackingNumber}`
-      : baseCancelUrl;
-    const notifyUrl = process.env.NEXT_PUBLIC_PAYFAST_NOTIFY_URL ||
-                      `${process.env.NEXT_PUBLIC_API_URL}/payment/payfast/ipn`;
+    console.log('Return URL:', returnUrl);
+    console.log('Cancel URL:', cancelUrl);
+    console.log('Tracking number (stored in localStorage):', body.trackingNumber || 'none');
 
-    // Build payment data object - include all fields in correct order
+    // Build payment data object - minimal fields that work
     const paymentData: Record<string, string> = {
       merchant_id: PAYFAST_MERCHANT_ID,
       merchant_key: PAYFAST_MERCHANT_KEY,
       return_url: returnUrl,
       cancel_url: cancelUrl,
-      notify_url: notifyUrl,
-      email_address: body.customerEmail,
-      m_payment_id: body.orderId,
       amount: body.amount.toFixed(2),
-      item_name: body.itemName.substring(0, 100),
+      item_name: body.itemName.substring(0, 100).replace(/[^a-zA-Z0-9 ]/g, ''), // Alphanumeric only
     };
-
-    // Add optional fields if they have values
-    if (body.customerFirstName?.trim()) {
-      paymentData.name_first = body.customerFirstName.trim();
-    }
-    if (body.customerLastName?.trim()) {
-      paymentData.name_last = body.customerLastName.trim();
-    }
-    if (body.itemDescription?.trim()) {
-      paymentData.item_description = body.itemDescription.trim().substring(0, 255);
-    }
 
     // Generate signature
     const signatureString = generateSignatureString(paymentData, PAYFAST_PASSPHRASE);
     paymentData.signature = crypto.createHash('md5').update(signatureString).digest('hex');
+
+    // Debug logging
+    console.log('=== PAYFAST DEBUG ===');
+    console.log('Signature string:', signatureString);
+    console.log('Generated signature:', paymentData.signature);
+    console.log('Passphrase used:', PAYFAST_PASSPHRASE ? 'YES' : 'NO');
+    console.log('=====================');
 
     // SANDBOX MODE: Use redirect flow (onsite doesn't work in sandbox)
     if (PAYFAST_SANDBOX) {

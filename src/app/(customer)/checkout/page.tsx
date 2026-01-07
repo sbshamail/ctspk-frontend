@@ -983,12 +983,30 @@ export default function CheckoutPage() {
           if (res?.success === 1 || res?.success === true) {
             const trackingNumber = res.data?.tracking_number;
 
+            // Debug: Log the full response to understand what's coming back
+            console.log('=== PAYFAST ORDER CREATION DEBUG ===');
+            console.log('Full API response:', JSON.stringify(res, null, 2));
+            console.log('Tracking number extracted:', trackingNumber);
+
+            // Store tracking number in localStorage for retrieval after PayFast redirect
+            if (trackingNumber) {
+              localStorage.setItem('payfast_pending_tracking', trackingNumber);
+              console.log('Tracking number stored in localStorage:', trackingNumber);
+              // Also store order ID as backup
+              if (res.data?.id) {
+                localStorage.setItem('payfast_pending_order_id', String(res.data.id));
+              }
+            } else {
+              console.error('WARNING: No tracking number in response!', res.data);
+            }
+            console.log('=====================================');
+
             // Clear cart since order is created
             await clear();
 
             setIsCreatingOrder(false);
 
-            // Now initiate PayFast redirect with tracking number
+            // Now initiate PayFast redirect - pass tracking number for return URL
             const paymentResult = await initiatePayFastPayment({
               orderId: tempOrderId,
               amount: paidTotal,
@@ -1004,6 +1022,7 @@ export default function CheckoutPage() {
             // If we reach here, redirect failed
             if (!paymentResult.success) {
               setServerError(paymentResult.message || "Payment was not completed. Please try again.");
+              localStorage.removeItem('payfast_pending_tracking');
             }
           } else {
             setIsCreatingOrder(false);
@@ -1811,24 +1830,24 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span>Actual Price</span>
-                  <span>{currencyFormatter(subtotal)}</span>
+                  <span>{currencyFormatter(mounted ? subtotal : 0)}</span>
                 </div>
 
-                {productDiscount > 0 && (
+                {mounted && productDiscount > 0 && (
                   <div className="flex items-center justify-between text-green-600">
                     <span>Discount</span>
                     <span>-{currencyFormatter(productDiscount)}</span>
                   </div>
                 )}
 
-                {appliedCoupon && couponDiscount > 0 && (
+                {mounted && appliedCoupon && couponDiscount > 0 && (
                   <div className="flex items-center justify-between text-green-600">
                     <span>Coupon ({appliedCoupon.code})</span>
                     <span>-{currencyFormatter(couponDiscount)}</span>
                   </div>
                 )}
 
-                {appliedCoupon && !isCouponApplicable && (
+                {mounted && appliedCoupon && !isCouponApplicable && (
                   <div className="flex items-center justify-between text-yellow-600 text-sm">
                     <span>Coupon not applicable</span>
                     <span className="text-xs">
@@ -1962,11 +1981,11 @@ export default function CheckoutPage() {
               {/* Order Total (before wallet) */}
               <div className="flex items-center justify-between font-bold text-lg">
                 <span>Order Total</span>
-                <span>{currencyFormatter(finalTotal)}</span>
+                <span>{currencyFormatter(mounted ? finalTotal : 0)}</span>
               </div>
 
               {/* Show wallet deduction and paid total when wallet is used */}
-              {useWallet && walletAmountToUse > 0 && (
+              {mounted && useWallet && walletAmountToUse > 0 && (
                 <>
                   <div className="flex items-center justify-between text-green-600">
                     <span>Wallet Deduction</span>

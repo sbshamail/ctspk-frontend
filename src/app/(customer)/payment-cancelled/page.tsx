@@ -29,17 +29,35 @@ interface OrderData {
 export default function PaymentCancelledPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const trackingNumber = searchParams.get("tracking");
+  const urlTrackingNumber = searchParams.get("tracking");
 
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check URL first, then localStorage (for PayFast redirect)
+    let tracking = urlTrackingNumber;
+
+    if (!tracking && typeof window !== 'undefined') {
+      tracking = localStorage.getItem('payfast_pending_tracking');
+      if (tracking) {
+        // Clean up localStorage after retrieving
+        localStorage.removeItem('payfast_pending_tracking');
+      }
+    }
+
+    setTrackingNumber(tracking);
+
+    if (!tracking) {
+      setLoading(false);
+    }
+  }, [urlTrackingNumber]);
 
   useEffect(() => {
     if (trackingNumber) {
       fetchOrderDetails();
-    } else {
-      setLoading(false);
     }
   }, [trackingNumber]);
 

@@ -91,14 +91,8 @@ export function usePayFast() {
           'merchant_key',
           'return_url',
           'cancel_url',
-          'notify_url',
-          'name_first',
-          'name_last',
-          'email_address',
-          'm_payment_id',
           'amount',
           'item_name',
-          'item_description',
           'signature',
         ];
 

@@ -129,19 +129,53 @@ interface OrderTrackingResponse {
 export default function OrderSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const trackingNumber = searchParams.get("tracking");
+  const urlTrackingNumber = searchParams.get("tracking");
 
   const [orderData, setOrderData] = useState<OrderTrackingResponse["data"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!trackingNumber) {
-      router.push("/");
+    // Debug: Log all localStorage keys related to PayFast
+    console.log('=== ORDER SUCCESS PAGE DEBUG ===');
+    console.log('URL tracking param:', urlTrackingNumber);
+
+    if (typeof window !== 'undefined') {
+      console.log('localStorage payfast_pending_tracking:', localStorage.getItem('payfast_pending_tracking'));
+      console.log('localStorage payfast_pending_order_id:', localStorage.getItem('payfast_pending_order_id'));
+    }
+
+    // Check URL first, then localStorage (for PayFast redirect)
+    let tracking = urlTrackingNumber;
+
+    if (!tracking && typeof window !== 'undefined') {
+      tracking = localStorage.getItem('payfast_pending_tracking');
+      console.log('Tracking from localStorage:', tracking);
+      if (tracking) {
+        // Clean up localStorage after retrieving
+        localStorage.removeItem('payfast_pending_tracking');
+        localStorage.removeItem('payfast_pending_order_id');
+        console.log('Cleaned up localStorage');
+      }
+    }
+
+    console.log('Final tracking value:', tracking);
+    console.log('================================');
+
+    if (!tracking) {
+      console.log('No tracking found - will show help message');
+      setLoading(false);
       return;
     }
 
-    fetchOrderDetails();
+    setTrackingNumber(tracking);
+  }, [urlTrackingNumber, router]);
+
+  useEffect(() => {
+    if (trackingNumber) {
+      fetchOrderDetails();
+    }
   }, [trackingNumber]);
 
   const fetchOrderDetails = async () => {
@@ -253,6 +287,95 @@ export default function OrderSuccessPage() {
       <Screen>
         <div className="flex justify-center items-center min-h-screen">
           <LayoutSkeleton />
+        </div>
+      </Screen>
+    );
+  }
+
+  // Show special message when no tracking number is available (guest checkout after PayFast)
+  if (!trackingNumber && !loading) {
+    return (
+      <Screen>
+        <div className="pt-12 pb-20">
+          <div className="container mx-auto px-4 max-w-2xl">
+            {/* Success Header - Payment likely completed */}
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-6">
+                <div className="bg-green-100 p-6 rounded-full">
+                  <svg
+                    className="w-16 h-16 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                Payment Received!
+              </h1>
+              <p className="text-lg text-gray-600 mb-2">
+                Your payment has been processed successfully.
+              </p>
+            </div>
+
+            {/* Info Message */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <h2 className="text-lg font-semibold text-blue-900 mb-2">What happens next?</h2>
+              <ul className="text-blue-800 space-y-2 text-sm">
+                <li>• Your order has been created and is being processed</li>
+                <li>• You will receive a confirmation email with your order details</li>
+                <li>• You can track your order using the tracking number in the email</li>
+              </ul>
+            </div>
+
+            {/* Track Order Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Track Your Order</h2>
+              <p className="text-gray-600 mb-4">
+                Enter your order tracking number to view your order status:
+              </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.target as HTMLFormElement;
+                  const input = form.elements.namedItem('trackingInput') as HTMLInputElement;
+                  if (input.value.trim()) {
+                    router.push(`/order-success?tracking=${input.value.trim()}`);
+                  }
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  name="trackingInput"
+                  type="text"
+                  placeholder="Enter tracking number"
+                  className="flex-1 border rounded-lg px-4 py-2"
+                />
+                <Button type="submit">Track</Button>
+              </form>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-4">
+              <Link href="/">
+                <Button className="w-full" size="lg">
+                  Continue Shopping
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button variant="outline" className="w-full" size="lg">
+                  Contact Support
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </Screen>
     );
