@@ -15,19 +15,26 @@ jobs:
           clean: false
 
       - name: Setup pnpm
-        run: npm install -g pnpm
+        run: |
+          source ~/.nvm/nvm.sh
+          npm install -g pnpm
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          source ~/.nvm/nvm.sh
+          pnpm install --frozen-lockfile
 
       - name: Build Next.js
-        run: pnpm run build
+        run: |
+          source ~/.nvm/nvm.sh
+          pnpm run build
         env:
           NEXT_PUBLIC_API_URL: https://api.ctspk.com
           NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Restart PM2
         run: |
+          source ~/.nvm/nvm.sh
           pm2 describe next-app > /dev/null 2>&1 \
             && pm2 restart next-app \
             || pm2 start "pnpm start -p 3001" --name "next-app"
