@@ -24,21 +24,43 @@ interface PaymentRequestBody {
   customerPhone?: string;
 }
 
-function generateSignature(data: Record<string, string>, passphrase?: string): string {
-  // Create parameter string (alphabetically sorted, URL encoded)
-  const sortedKeys = Object.keys(data).sort();
-  const paramString = sortedKeys
-    .filter(key => data[key] !== '' && data[key] !== undefined)
-    .map(key => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
-    .join('&');
+function generateSignatureString(data: Record<string, string>, passphrase?: string): string {
+  // PayFast signature - fields must be in this exact order
+  const fieldOrder = [
+    'merchant_id',
+    'merchant_key',
+    'return_url',
+    'cancel_url',
+    'notify_url',
+    'name_first',
+    'name_last',
+    'email_address',
+    'm_payment_id',
+    'amount',
+    'item_name',
+    'item_description',
+  ];
 
-  // Add passphrase if provided and not empty
-  const stringToHash = passphrase && passphrase.trim()
-    ? `${paramString}&passphrase=${encodeURIComponent(passphrase)}`
-    : paramString;
+  const pfOutput: string[] = [];
 
-  // Generate MD5 hash
-  return crypto.createHash('md5').update(stringToHash).digest('hex');
+  for (const key of fieldOrder) {
+    if (key in data && data[key] !== undefined && data[key] !== null && data[key] !== '') {
+      const value = String(data[key]).trim();
+      // URL encode and replace %20 with +
+      const encoded = encodeURIComponent(value).replace(/%20/g, '+');
+      pfOutput.push(`${key}=${encoded}`);
+    }
+  }
+
+  let getString = pfOutput.join('&');
+
+  // Append passphrase (required for sandbox)
+  if (passphrase && passphrase.trim()) {
+    const encodedPassphrase = encodeURIComponent(passphrase.trim()).replace(/%20/g, '+');
+    getString += `&passphrase=${encodedPassphrase}`;
+  }
+
+  return getString;
 }
 
 export async function POST(request: NextRequest) {
@@ -70,33 +92,40 @@ export async function POST(request: NextRequest) {
     const notifyUrl = process.env.NEXT_PUBLIC_PAYFAST_NOTIFY_URL ||
                       `${process.env.NEXT_PUBLIC_API_URL}/payfast/ipn`;
 
-    // Build payment data object
+    // Build payment data object - include all fields in correct order
     const paymentData: Record<string, string> = {
       merchant_id: PAYFAST_MERCHANT_ID,
       merchant_key: PAYFAST_MERCHANT_KEY,
       return_url: returnUrl,
       cancel_url: cancelUrl,
       notify_url: notifyUrl,
-      name_first: body.customerFirstName || '',
-      name_last: body.customerLastName || '',
       email_address: body.customerEmail,
       m_payment_id: body.orderId,
       amount: body.amount.toFixed(2),
-      item_name: body.itemName.substring(0, 100), // PayFast limit
+      item_name: body.itemName.substring(0, 100),
     };
 
-    // Add optional item description
-    if (body.itemDescription) {
-      paymentData.item_description = body.itemDescription.substring(0, 255);
+    // Add optional fields if they have values
+    if (body.customerFirstName?.trim()) {
+      paymentData.name_first = body.customerFirstName.trim();
     }
-
-    // Add optional phone
-    if (body.customerPhone) {
-      paymentData.cell_number = body.customerPhone.replace(/[^0-9]/g, '');
+    if (body.customerLastName?.trim()) {
+      paymentData.name_last = body.customerLastName.trim();
+    }
+    if (body.itemDescription?.trim()) {
+      paymentData.item_description = body.itemDescription.trim().substring(0, 255);
     }
 
     // Generate signature
-    paymentData.signature = generateSignature(paymentData, PAYFAST_PASSPHRASE);
+    const signatureString = generateSignatureString(paymentData, PAYFAST_PASSPHRASE);
+    paymentData.signature = crypto.createHash('md5').update(signatureString).digest('hex');
+
+    // Debug logging
+    console.log('=== PAYFAST DEBUG ===');
+    console.log('Signature string:', signatureString);
+    console.log('Generated signature:', paymentData.signature);
+    console.log('Payment data:', JSON.stringify(paymentData, null, 2));
+    console.log('=====================');
 
     // SANDBOX MODE: Use redirect flow (onsite doesn't work in sandbox)
     if (PAYFAST_SANDBOX) {

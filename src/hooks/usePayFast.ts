@@ -85,13 +85,32 @@ export function usePayFast() {
         form.method = 'POST';
         form.action = result.redirectUrl;
 
-        // Add all payment data as hidden fields
-        Object.entries(result.paymentData).forEach(([key, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = value as string;
-          form.appendChild(input);
+        // PayFast requires fields in this exact order
+        const fieldOrder = [
+          'merchant_id',
+          'merchant_key',
+          'return_url',
+          'cancel_url',
+          'notify_url',
+          'name_first',
+          'name_last',
+          'email_address',
+          'm_payment_id',
+          'amount',
+          'item_name',
+          'item_description',
+          'signature',
+        ];
+
+        // Add payment data as hidden fields in the correct order
+        fieldOrder.forEach((key) => {
+          if (key in result.paymentData && result.paymentData[key]) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = result.paymentData[key] as string;
+            form.appendChild(input);
+          }
         });
 
         document.body.appendChild(form);

@@ -111,6 +111,7 @@ export default function CheckoutPage() {
   const isAuth = !!auth?.user?.id;
   const { refetchCart, cart, removeSelected, clear } = useCart();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const { user } = auth || {};
   const [shipToDifferentAddress, setShipToDifferentAddress] = useState(false);
   const [checkoutAsGuest, setCheckoutAsGuest] = useState(!isAuth);
@@ -190,6 +191,11 @@ export default function CheckoutPage() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow;
   });
+
+  // Set mounted state for hydration safety
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch addresses if user is authenticated
   useEffect(() => {
@@ -1535,7 +1541,7 @@ export default function CheckoutPage() {
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {totalItems} item{totalItems !== 1 ? "s" : ""} in cart
+                {mounted ? totalItems : 0} item{(mounted ? totalItems : 0) !== 1 ? "s" : ""} in cart
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1545,7 +1551,7 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {cart?.map((item, index) => {
+              {mounted && cart?.map((item, index) => {
                 const {
                   product: { name, image, id },
                   quantity,
