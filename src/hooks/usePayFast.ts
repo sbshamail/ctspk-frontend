@@ -2,16 +2,24 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { PayFastPaymentData, PayFastResponse, PayFastCallbackResult } from '@/types/payfast';
-import { API_URL } from '../../config';
+
+// Check if we're in sandbox mode (redirect) or production (onsite modal)
+const isSandbox = process.env.NEXT_PUBLIC_PAYFAST_SANDBOX === 'true';
 
 export function usePayFast() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load PayFast engine.js script
+  // Load PayFast engine.js script only in production mode (onsite modal)
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // In sandbox mode, we use redirect - no script needed
+    if (isSandbox) {
+      setIsLoaded(true);
+      return;
+    }
 
     // Check if script is already loaded
     if (document.getElementById('payfast-engine')) {
@@ -21,21 +29,7 @@ export function usePayFast() {
       return;
     }
 
-    // Development mock for testing (PayFast Onsite doesn't work in sandbox)
-    if (process.env.NODE_ENV === 'development') {
-      window.payfast_do_onsite_payment = (options, callback) => {
-        console.log('Mock PayFast payment initiated:', options);
-        // Simulate payment modal and success after 2 seconds
-        setTimeout(() => {
-          console.log('Mock PayFast payment completed');
-          callback?.(true);
-        }, 2000);
-      };
-      setIsLoaded(true);
-      return;
-    }
-
-    // Load PayFast script in production
+    // Load PayFast script for production onsite modal
     const script = document.createElement('script');
     script.id = 'payfast-engine';
     script.src = 'https://www.payfast.co.za/onsite/engine.js';
@@ -65,8 +59,8 @@ export function usePayFast() {
     setError(null);
 
     try {
-      // Step 1: Get payment identifier (UUID) from backend API
-      const response = await fetch(`${API_URL}/payment/payfast/create-payment`, {
+      // Step 1: Get payment data from backend API
+      const response = await fetch(`/api/payfast/create-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paymentData),
@@ -74,32 +68,78 @@ export function usePayFast() {
 
       const result: PayFastResponse = await response.json();
 
-      // Check for success (can be boolean true or number 1)
+      // Check for success
       const isSuccess = result.success === true || result.success === 1;
-      // Get token from uuid (legacy) or data.accessToken (new API format)
-      const paymentToken = result.uuid || result.data?.accessToken;
 
-      if (!isSuccess || !paymentToken) {
+      if (!isSuccess) {
         setIsProcessing(false);
         const errorMessage = result.error || result.detail || 'Failed to initialize payment';
         setError(errorMessage);
         return { success: false, message: errorMessage };
       }
 
-      // Step 2: Open PayFast onsite payment modal
-      return new Promise((resolve) => {
-        window.payfast_do_onsite_payment(
-          { uuid: paymentToken },
-          (paymentResult: boolean) => {
-            setIsProcessing(false);
-            if (paymentResult === true) {
-              resolve({ success: true, message: 'Payment completed successfully' });
-            } else {
-              resolve({ success: false, message: 'Payment was cancelled or failed' });
+      // SANDBOX MODE: Redirect to PayFast payment page
+      if (result.mode === 'redirect' && result.redirectUrl && result.paymentData) {
+        // Create a form and submit it to redirect to PayFast
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = result.redirectUrl;
+
+        // Add all payment data as hidden fields
+        Object.entries(result.paymentData).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value as string;
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+
+        // Return pending since we're redirecting
+        return { success: true, message: 'Redirecting to PayFast...' };
+      }
+
+      // PRODUCTION MODE: Open PayFast onsite payment modal
+      if (result.mode === 'onsite' && result.uuid) {
+        return new Promise((resolve) => {
+          window.payfast_do_onsite_payment(
+            { uuid: result.uuid },
+            (paymentResult: boolean) => {
+              setIsProcessing(false);
+              if (paymentResult === true) {
+                resolve({ success: true, message: 'Payment completed successfully' });
+              } else {
+                resolve({ success: false, message: 'Payment was cancelled or failed' });
+              }
             }
-          }
-        );
-      });
+          );
+        });
+      }
+
+      // Fallback for legacy response format (uuid without mode)
+      const paymentToken = result.uuid || result.data?.accessToken;
+      if (paymentToken) {
+        return new Promise((resolve) => {
+          window.payfast_do_onsite_payment(
+            { uuid: paymentToken },
+            (paymentResult: boolean) => {
+              setIsProcessing(false);
+              if (paymentResult === true) {
+                resolve({ success: true, message: 'Payment completed successfully' });
+              } else {
+                resolve({ success: false, message: 'Payment was cancelled or failed' });
+              }
+            }
+          );
+        });
+      }
+
+      setIsProcessing(false);
+      setError('Invalid payment response');
+      return { success: false, message: 'Invalid payment response' };
+
     } catch (err) {
       setIsProcessing(false);
       const errorMessage = err instanceof Error ? err.message : 'Payment processing failed';
@@ -115,6 +155,7 @@ export function usePayFast() {
   return {
     isLoaded,
     isProcessing,
+    isSandbox,
     error,
     initiatePayment,
     resetError,

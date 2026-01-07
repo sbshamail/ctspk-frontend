@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Development mode: Return mock response (before checking credentials)
-    if (process.env.NODE_ENV === 'development') {
+    const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_NODE_ENV === 'development';
+    if (isDevelopment) {
       console.log('JazzCash Mock - Verifying OTP:', { transactionId: body.transactionId, otp });
 
       // Simulate API delay

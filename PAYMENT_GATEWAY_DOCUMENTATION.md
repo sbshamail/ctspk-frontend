@@ -61,7 +61,7 @@ User clicks "Place Order"
 
 ### 1. PayFast Create Payment
 
-**Endpoint:** `POST /payment/payfast/create-payment`
+**Endpoint:** `POST /api/payfast/create-payment`
 
 **Purpose:** Generate a payment UUID from PayFast for the onsite payment modal.
 

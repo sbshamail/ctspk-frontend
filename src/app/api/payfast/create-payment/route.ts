@@ -3,8 +3,15 @@ import crypto from 'crypto';
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID;
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY || process.env.PAYFAST_SECURED_KEY;
-const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE || process.env.PAYFAST_SECURED_KEY;
-const PAYFAST_URL = 'https://www.payfast.co.za/onsite/process';
+const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE;
+// Only use sandbox if explicitly set - onsite payments don't work in sandbox
+const PAYFAST_SANDBOX = process.env.PAYFAST_SANDBOX === 'true';
+
+// Different URLs for sandbox vs production
+const PAYFAST_ONSITE_URL = 'https://www.payfast.co.za/onsite/process';
+const PAYFAST_REDIRECT_URL = PAYFAST_SANDBOX
+  ? 'https://sandbox.payfast.co.za/eng/process'
+  : 'https://www.payfast.co.za/eng/process';
 
 interface PaymentRequestBody {
   orderId: string;
@@ -25,8 +32,8 @@ function generateSignature(data: Record<string, string>, passphrase?: string): s
     .map(key => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, '+')}`)
     .join('&');
 
-  // Add passphrase if provided
-  const stringToHash = passphrase
+  // Add passphrase if provided and not empty
+  const stringToHash = passphrase && passphrase.trim()
     ? `${paramString}&passphrase=${encodeURIComponent(passphrase)}`
     : paramString;
 
@@ -91,13 +98,24 @@ export async function POST(request: NextRequest) {
     // Generate signature
     paymentData.signature = generateSignature(paymentData, PAYFAST_PASSPHRASE);
 
-    // Request payment identifier (UUID) from PayFast
+    // SANDBOX MODE: Use redirect flow (onsite doesn't work in sandbox)
+    if (PAYFAST_SANDBOX) {
+      return NextResponse.json({
+        success: true,
+        mode: 'redirect',
+        redirectUrl: PAYFAST_REDIRECT_URL,
+        paymentData: paymentData,
+      });
+    }
+
+    // PRODUCTION MODE: Use onsite modal
     const formData = new URLSearchParams(paymentData).toString();
 
-    const response = await fetch(PAYFAST_URL, {
+    const response = await fetch(PAYFAST_ONSITE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
       },
       body: formData,
     });
@@ -109,9 +127,11 @@ export async function POST(request: NextRequest) {
     try {
       result = JSON.parse(responseText);
     } catch {
-      console.error('PayFast response not JSON:', responseText);
+      console.error('PayFast response not JSON. URL:', PAYFAST_ONSITE_URL);
+      console.error('Response status:', response.status);
+      console.error('Response text:', responseText.substring(0, 500));
       return NextResponse.json(
-        { success: false, error: 'Invalid response from payment gateway' },
+        { success: false, error: 'Invalid response from payment gateway. Please check PayFast credentials.' },
         { status: 500 }
       );
     }
@@ -119,6 +139,7 @@ export async function POST(request: NextRequest) {
     if (result.uuid) {
       return NextResponse.json({
         success: true,
+        mode: 'onsite',
         uuid: result.uuid,
       });
     } else {

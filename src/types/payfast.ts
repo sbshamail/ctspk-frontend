@@ -18,7 +18,9 @@ export interface PayFastPaymentData {
 
 export interface PayFastResponse {
   success: boolean | number;
+  mode?: 'redirect' | 'onsite';
   uuid?: string;
+  redirectUrl?: string;
   detail?: string;
   error?: string;
   paymentData?: Record<string, string>;

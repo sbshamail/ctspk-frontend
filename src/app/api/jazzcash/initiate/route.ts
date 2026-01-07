@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
     const txnRefNo = `T${txnDateTime}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
     // Development mode: Return mock response (before checking credentials)
-    if (process.env.NODE_ENV === 'development') {
+    const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_NODE_ENV === 'development';
+    if (isDevelopment) {
       console.log('JazzCash Mock - Initiating payment:', {
         orderId: body.orderId,
         amount: body.amount,
