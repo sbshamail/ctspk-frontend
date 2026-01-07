@@ -103,9 +103,10 @@ export function usePayFast() {
 
       // PRODUCTION MODE: Open PayFast onsite payment modal
       if (result.mode === 'onsite' && result.uuid) {
+        const uuid = result.uuid;
         return new Promise((resolve) => {
           window.payfast_do_onsite_payment(
-            { uuid: result.uuid },
+            { uuid },
             (paymentResult: boolean) => {
               setIsProcessing(false);
               if (paymentResult === true) {
