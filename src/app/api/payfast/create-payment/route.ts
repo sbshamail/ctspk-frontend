@@ -22,6 +22,7 @@ interface PaymentRequestBody {
   customerFirstName: string;
   customerLastName: string;
   customerPhone?: string;
+  trackingNumber?: string; // For return URL after payment
 }
 
 function generateSignatureString(data: Record<string, string>, passphrase?: string): string {
@@ -85,12 +86,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Get return URLs from environment or use defaults
-    const returnUrl = process.env.NEXT_PUBLIC_PAYFAST_RETURN_URL ||
-                      `${process.env.NEXT_PUBLIC_WEBSITE_URL}/order-success`;
-    const cancelUrl = process.env.NEXT_PUBLIC_PAYFAST_CANCEL_URL ||
-                      `${process.env.NEXT_PUBLIC_WEBSITE_URL}/checkout`;
+    const baseReturnUrl = process.env.NEXT_PUBLIC_PAYFAST_RETURN_URL ||
+                          `${process.env.NEXT_PUBLIC_WEBSITE_URL}/order-success`;
+    const baseCancelUrl = process.env.NEXT_PUBLIC_PAYFAST_CANCEL_URL ||
+                          `${process.env.NEXT_PUBLIC_WEBSITE_URL}/payment-cancelled`;
+
+    // Add tracking number to URLs if provided
+    const returnUrl = body.trackingNumber
+      ? `${baseReturnUrl}?tracking=${body.trackingNumber}`
+      : baseReturnUrl;
+    const cancelUrl = body.trackingNumber
+      ? `${baseCancelUrl}?tracking=${body.trackingNumber}`
+      : baseCancelUrl;
     const notifyUrl = process.env.NEXT_PUBLIC_PAYFAST_NOTIFY_URL ||
-                      `${process.env.NEXT_PUBLIC_API_URL}/payfast/ipn`;
+                      `${process.env.NEXT_PUBLIC_API_URL}/payment/payfast/ipn`;
 
     // Build payment data object - include all fields in correct order
     const paymentData: Record<string, string> = {
@@ -119,13 +128,6 @@ export async function POST(request: NextRequest) {
     // Generate signature
     const signatureString = generateSignatureString(paymentData, PAYFAST_PASSPHRASE);
     paymentData.signature = crypto.createHash('md5').update(signatureString).digest('hex');
-
-    // Debug logging
-    console.log('=== PAYFAST DEBUG ===');
-    console.log('Signature string:', signatureString);
-    console.log('Generated signature:', paymentData.signature);
-    console.log('Payment data:', JSON.stringify(paymentData, null, 2));
-    console.log('=====================');
 
     // SANDBOX MODE: Use redirect flow (onsite doesn't work in sandbox)
     if (PAYFAST_SANDBOX) {

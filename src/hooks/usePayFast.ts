@@ -103,12 +103,13 @@ export function usePayFast() {
         ];
 
         // Add payment data as hidden fields in the correct order
+        const paymentData = result.paymentData;
         fieldOrder.forEach((key) => {
-          if (key in result.paymentData && result.paymentData[key]) {
+          if (paymentData && key in paymentData && paymentData[key]) {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = key;
-            input.value = result.paymentData[key] as string;
+            input.value = paymentData[key] as string;
             form.appendChild(input);
           }
         });

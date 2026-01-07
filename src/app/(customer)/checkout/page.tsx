@@ -949,39 +949,71 @@ export default function CheckoutPage() {
       }
 
       // ========== PAYFAST ==========
-      // Initiate payment first, create order only on success
+      // For redirect flow: Create order FIRST, then redirect to PayFast
       if (selectedPayment === "payfast") {
-        // Generate a temporary order ID for PayFast
-        const tempOrderId = `PF${Date.now()}`;
+        setIsCreatingOrder(true);
 
-        const paymentResult = await initiatePayFastPayment({
-          orderId: tempOrderId,
-          amount: paidTotal,
-          itemName: `Order Payment`,
-          itemDescription: `${cart?.length} item(s)`,
-          customerEmail: values.email,
-          customerFirstName: values.name.split(' ')[0],
-          customerLastName: values.name.split(' ').slice(1).join(' ') || values.name.split(' ')[0],
-          customerPhone: values.phone,
-        });
+        try {
+          // Generate order ID for PayFast
+          const tempOrderId = `PF${Date.now()}`;
 
-        if (paymentResult.success) {
-          // Payment successful - NOW create order
-          toast.success("Payment successful!");
-
-          // Build payment response object for PayFast
+          // Build payment response object for PayFast (pending status)
           const paymentResponse = {
             gateway: 'payfast',
             transactionId: tempOrderId,
-            transactionStatus: 'SUCCESS',
-            message: paymentResult.message,
+            transactionStatus: 'PENDING',
+            message: 'Awaiting PayFast payment',
             completedAt: new Date().toISOString(),
           };
 
-          await createOrderAfterPayment(orderData, tempOrderId, paymentResponse);
-        } else {
-          // Payment failed or cancelled
-          setServerError(paymentResult.message || "Payment was not completed. Please try again.");
+          // Create order FIRST (without redirect) to get tracking number
+          const orderDataWithPayment = {
+            ...orderData,
+            payment_status: "pending",
+            payment_id: tempOrderId,
+            payment_response: paymentResponse,
+          };
+
+          const res = await fetchApi({
+            url: "order/cartcreate",
+            method: "POST",
+            data: orderDataWithPayment,
+          });
+
+          if (res?.success === 1 || res?.success === true) {
+            const trackingNumber = res.data?.tracking_number;
+
+            // Clear cart since order is created
+            await clear();
+
+            setIsCreatingOrder(false);
+
+            // Now initiate PayFast redirect with tracking number
+            const paymentResult = await initiatePayFastPayment({
+              orderId: tempOrderId,
+              amount: paidTotal,
+              itemName: `Order Payment`,
+              itemDescription: `${cart?.length} item(s)`,
+              customerEmail: values.email,
+              customerFirstName: values.name.split(' ')[0],
+              customerLastName: values.name.split(' ').slice(1).join(' ') || values.name.split(' ')[0],
+              customerPhone: values.phone,
+              trackingNumber: trackingNumber, // Pass tracking number for return URL
+            });
+
+            // If we reach here, redirect failed
+            if (!paymentResult.success) {
+              setServerError(paymentResult.message || "Payment was not completed. Please try again.");
+            }
+          } else {
+            setIsCreatingOrder(false);
+            const errorMessage = res?.detail || res?.message || "Failed to create order";
+            setServerError(errorMessage);
+          }
+        } catch (err) {
+          setIsCreatingOrder(false);
+          const errorMessage = err instanceof Error ? err.message : "Failed to create order";
+          setServerError(errorMessage);
         }
         return;
       }

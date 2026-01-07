@@ -14,6 +14,7 @@ export interface PayFastPaymentData {
   customerFirstName: string;
   customerLastName: string;
   customerPhone?: string;
+  trackingNumber?: string; // For return URL after payment
 }
 
 export interface PayFastResponse {
