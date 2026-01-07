@@ -15,9 +15,7 @@ jobs:
           clean: false
 
       - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+        run: npm install -g pnpm
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
