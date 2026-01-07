@@ -14,23 +14,22 @@ jobs:
         with:
           clean: false
 
-      - name: Install Dependencies
+      - name: Setup pnpm
         run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
-          export PATH="$HOME/.local/share/pnpm:$PATH"
-          pnpm install --frozen-lockfile
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build Next.js
-        run: |
-          export PATH="$HOME/.local/share/pnpm:$PATH"
-          export NODE_OPTIONS="--max-old-space-size=4096"
-
-          pnpm run build
+        run: pnpm run build
         env:
           NEXT_PUBLIC_API_URL: https://api.ctspk.com
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Restart PM2
         run: |
-          export PATH="$HOME/.local/share/pnpm:$PATH"
           pm2 describe next-app > /dev/null 2>&1 \
-              && pm2 describe next-app \ || pm2 start "pnpm start -p 3001" --name "next-app"
+            && pm2 restart next-app \
+            || pm2 start "pnpm start -p 3001" --name "next-app"
