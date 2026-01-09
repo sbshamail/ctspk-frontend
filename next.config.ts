@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Generate unique build ID to bust cache on each deployment
+  generateBuildId: async () => {
+    return Date.now().toString();
+  },
   images: {
     remotePatterns: [
       {

@@ -181,8 +181,17 @@ export default function OrderSuccessPage() {
 
   // Confirm payment status with backend (workaround for IPN not working)
   const confirmPaymentStatus = async (order: OrderTrackingResponse["data"]) => {
-    // Only confirm if payment is pending and gateway is payfast
-    if (order.payment_status === 'payment-pending' && order.payment_gateway === 'payfast') {
+    console.log('=== CHECKING PAYMENT CONFIRMATION ===');
+    console.log('Order payment_status:', order.payment_status);
+    console.log('Order payment_gateway:', order.payment_gateway);
+
+    // Only confirm if payment is not yet successful and gateway is payfast
+    const needsConfirmation = order.payment_status === 'payment-pending' ||
+                               order.payment_status === 'payment-processing';
+    const isPayfast = order.payment_gateway === 'payfast';
+    console.log('Needs confirmation?', needsConfirmation, '| Is PayFast?', isPayfast);
+
+    if (needsConfirmation && isPayfast) {
       try {
         console.log('=== CONFIRMING PAYMENT STATUS ===');
         const response = await fetch('/api/payfast/confirm-payment', {
@@ -211,7 +220,10 @@ export default function OrderSuccessPage() {
         console.error('Failed to confirm payment:', err);
         // Don't show error to user - IPN might still update it
       }
+    } else {
+      console.log('Skipping payment confirmation - conditions not met');
     }
+    console.log('=====================================');
   };
 
   const fetchOrderDetails = async () => {
