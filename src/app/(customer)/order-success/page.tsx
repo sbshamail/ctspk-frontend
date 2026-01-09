@@ -135,6 +135,7 @@ export default function OrderSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [trackingNumber, setTrackingNumber] = useState<string | null>(null);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
   useEffect(() => {
     // Debug: Log all localStorage keys related to PayFast
@@ -178,6 +179,41 @@ export default function OrderSuccessPage() {
     }
   }, [trackingNumber]);
 
+  // Confirm payment status with backend (workaround for IPN not working)
+  const confirmPaymentStatus = async (order: OrderTrackingResponse["data"]) => {
+    // Only confirm if payment is pending and gateway is payfast
+    if (order.payment_status === 'payment-pending' && order.payment_gateway === 'payfast') {
+      try {
+        console.log('=== CONFIRMING PAYMENT STATUS ===');
+        const response = await fetch('/api/payfast/confirm-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            trackingNumber: order.tracking_number,
+            paymentGateway: order.payment_gateway,
+          }),
+        });
+
+        const result = await response.json();
+        console.log('Payment confirmation result:', result);
+
+        if (result.success) {
+          setPaymentConfirmed(true);
+          // Refresh order data to get updated status
+          const refreshResponse = await fetch(getApiUrl(`/order/tracking/${order.tracking_number}`));
+          const refreshData: OrderTrackingResponse = await refreshResponse.json();
+          if (refreshData.success === 1) {
+            setOrderData(refreshData.data);
+          }
+        }
+        console.log('=================================');
+      } catch (err) {
+        console.error('Failed to confirm payment:', err);
+        // Don't show error to user - IPN might still update it
+      }
+    }
+  };
+
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
@@ -186,6 +222,8 @@ export default function OrderSuccessPage() {
 
       if (data.success === 1) {
         setOrderData(data.data);
+        // Try to confirm payment if pending
+        await confirmPaymentStatus(data.data);
       } else {
         setError("Order not found");
       }

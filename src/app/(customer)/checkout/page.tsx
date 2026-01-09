@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { usePayFast } from "@/hooks/usePayFast";
 import { useEasyPaisa } from "@/hooks/useEasyPaisa";
 import { useJazzCash } from "@/hooks/useJazzCash";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { OTPVerificationModal } from "@/components/OTPVerificationModal";
 
 // Create a complete checkout schema from scratch
@@ -170,6 +171,9 @@ export default function CheckoutPage() {
     resetError: resetJazzCashError,
   } = useJazzCash();
 
+  // Payment Methods from settings API
+  const { availableMethods, defaultMethodId, getMethodById, isLoading: isLoadingPaymentMethods } = usePaymentMethods();
+
   // OTP Modal state
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [otpPaymentMethod, setOtpPaymentMethod] = useState<'easypaisa' | 'jazzcash'>('easypaisa');
@@ -196,6 +200,13 @@ export default function CheckoutPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Set default payment method from config
+  useEffect(() => {
+    if (availableMethods.length > 0 && defaultMethodId) {
+      setSelectedPayment(defaultMethodId);
+    }
+  }, [availableMethods, defaultMethodId]);
 
   // Fetch addresses if user is authenticated
   useEffect(() => {
@@ -1999,123 +2010,85 @@ export default function CheckoutPage() {
                 </>
               )}
 
-              {/* Payment Options */}
+              {/* Payment Options - Dynamic from Settings API */}
               <div className="payment">
                 <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
-                <div className="payment_option space-y-3">
-                  <div className="custome-radio flex items-center space-x-2">
-                    <input
-                      className="form-check-input"
-                      required
-                      type="radio"
-                      name="payment_option"
-                      id="payfast"
-                      checked={selectedPayment === "payfast"}
-                      onChange={() => setSelectedPayment("payfast")}
-                      disabled={!isPayFastLoaded}
-                    />
-                    <label
-                      className="form-check-label flex items-center"
-                      htmlFor="payfast"
-                    >
-                      <img
-                        src="/assets/imgs/payfast-logo.svg"
-                        className="mr-2 h-5 w-auto"
-                        alt="PayFast"
-                      />
-                      Pay with Card
-                      {!isPayFastLoaded && (
-                        <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
-                      )}
-                    </label>
+                {isLoadingPaymentMethods ? (
+                  <div className="text-center py-4 text-gray-500">
+                    Loading payment methods...
                   </div>
-                  <div className="custome-radio flex items-center space-x-2">
-                    <input
-                      className="form-check-input"
-                      required
-                      type="radio"
-                      name="payment_option"
-                      id="easypaisa"
-                      checked={selectedPayment === "easypaisa"}
-                      onChange={() => setSelectedPayment("easypaisa")}
-                    />
-                    <label
-                      className="form-check-label flex items-center"
-                      htmlFor="easypaisa"
-                    >
-                      <img
-                        src="/assets/imgs/easypaisa.png"
-                        className="mr-2 w-6 h-6"
-                        alt=""
-                      />
-                      Easy Paisa
-                    </label>
-                  </div>
-                  <div className="custome-radio flex items-center space-x-2">
-                    <input
-                      className="form-check-input"
-                      required
-                      type="radio"
-                      name="payment_option"
-                      id="jazzcash"
-                      checked={selectedPayment === "jazzcash"}
-                      onChange={() => setSelectedPayment("jazzcash")}
-                    />
-                    <label
-                      className="form-check-label flex items-center"
-                      htmlFor="jazzcash"
-                    >
-                      <img
-                        src="/assets/imgs/jazzcash.png"
-                        className="mr-2 w-6 h-6"
-                        alt=""
-                      />
-                      Jazz Cash
-                    </label>
-                  </div>
-                  <div className="custome-radio flex items-center space-x-2">
-                    <input
-                      className="form-check-input"
-                      required
-                      type="radio"
-                      name="payment_option"
-                      id="cashOnDelivery"
-                      checked={selectedPayment === "cash_on_delivery"}
-                      onChange={() => setSelectedPayment("cash_on_delivery")}
-                    />
-                    <label
-                      className="form-check-label flex items-center"
-                      htmlFor="cashOnDelivery"
-                    >
-                      <img
-                        src="/assets/imgs/cash-icon.png"
-                        className="mr-2 w-6 h-6"
-                        alt=""
-                      />
-                      Cash On Delivery
-                    </label>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="payment_option space-y-3">
+                      {availableMethods.map((method) => {
+                        // Check if PayFast is still loading
+                        const isPayFastLoading = method.id === 'payfast' && !isPayFastLoaded;
 
-                {/* Mobile Wallet Number Input for EasyPaisa/JazzCash */}
-                {(selectedPayment === "easypaisa" || selectedPayment === "jazzcash") && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                    <Label htmlFor="mobile_wallet_number" className="block text-sm font-medium mb-2">
-                      {selectedPayment === "easypaisa" ? "EasyPaisa" : "JazzCash"} Mobile Number *
-                    </Label>
-                    <Input
-                      id="mobile_wallet_number"
-                      type="tel"
-                      placeholder="03XXXXXXXXX"
-                      {...register("mobile_wallet_number")}
-                      onChange={(e) => setMobileWalletNumber(e.target.value)}
-                      className="w-full"
-                      maxLength={11}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Enter your registered {selectedPayment === "easypaisa" ? "EasyPaisa" : "JazzCash"} mobile number. You will receive an OTP to confirm payment.
-                    </p>
-                  </div>
+                        return (
+                          <div key={method.id} className="custome-radio flex items-center space-x-2">
+                            <input
+                              className="form-check-input"
+                              required
+                              type="radio"
+                              name="payment_option"
+                              id={method.id}
+                              checked={selectedPayment === method.id}
+                              onChange={() => setSelectedPayment(method.id)}
+                              disabled={isPayFastLoading}
+                            />
+                            <label
+                              className="form-check-label flex items-center cursor-pointer"
+                              htmlFor={method.id}
+                            >
+                              <img
+                                src={method.image}
+                                className="mr-2 h-6 w-6 object-contain"
+                                alt={method.name}
+                              />
+                              <span>{method.name}</span>
+                              {isPayFastLoading && (
+                                <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
+                              )}
+                            </label>
+                          </div>
+                        );
+                      })}
+
+                      {/* Show message if no payment methods available */}
+                      {availableMethods.length === 0 && (
+                        <div className="text-center py-4 text-gray-500">
+                          No payment methods available. Please contact support.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mobile Wallet Number Input - Show for methods that require it */}
+                    {(() => {
+                      const selectedMethod = getMethodById(selectedPayment);
+                      if (selectedMethod?.requiresWalletNumber) {
+                        return (
+                          <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                            <Label htmlFor="mobile_wallet_number" className="block text-sm font-medium mb-2">
+                              {selectedMethod.walletNumberLabel || `${selectedMethod.name} Mobile Number`} *
+                            </Label>
+                            <Input
+                              id="mobile_wallet_number"
+                              type="tel"
+                              placeholder="03XXXXXXXXX"
+                              {...register("mobile_wallet_number")}
+                              onChange={(e) => setMobileWalletNumber(e.target.value)}
+                              className="w-full"
+                              maxLength={11}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Enter your registered {selectedMethod.name} mobile number. You will receive an OTP to confirm payment.
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </>
                 )}
               </div>
 

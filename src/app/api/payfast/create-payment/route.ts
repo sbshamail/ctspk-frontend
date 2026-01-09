@@ -26,12 +26,14 @@ interface PaymentRequestBody {
 }
 
 function generateSignatureString(data: Record<string, string>, passphrase?: string): string {
-  // PayFast signature - minimal fields with URL encoding
+  // PayFast signature - fields in required order with URL encoding
+  // notify_url is required for IPN webhook to receive payment updates
   const fieldOrder = [
     'merchant_id',
     'merchant_key',
     'return_url',
     'cancel_url',
+    'notify_url',
     'amount',
     'item_name',
   ];
@@ -78,23 +80,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build return/cancel URLs - keep them clean (no query params) for signature compatibility
+    // Build return/cancel/notify URLs - keep them clean (no query params) for signature compatibility
     // Tracking is handled via localStorage - ensure domain matches where you're testing!
     const returnUrl = process.env.NEXT_PUBLIC_PAYFAST_RETURN_URL ||
                       `${process.env.NEXT_PUBLIC_WEBSITE_URL}/order-success`;
     const cancelUrl = process.env.NEXT_PUBLIC_PAYFAST_CANCEL_URL ||
                       `${process.env.NEXT_PUBLIC_WEBSITE_URL}/payment-cancelled`;
+    // IMPORTANT: notify_url must be publicly accessible - PayFast will POST payment status here
+    const notifyUrl = process.env.NEXT_PUBLIC_PAYFAST_NOTIFY_URL ||
+                      `${process.env.NEXT_PUBLIC_API_URL}/payment/payfast/ipn`;
 
     console.log('Return URL:', returnUrl);
     console.log('Cancel URL:', cancelUrl);
+    console.log('Notify URL (IPN):', notifyUrl);
     console.log('Tracking number (stored in localStorage):', body.trackingNumber || 'none');
 
-    // Build payment data object - minimal fields that work
+    // Build payment data object - includes notify_url for IPN webhook
     const paymentData: Record<string, string> = {
       merchant_id: PAYFAST_MERCHANT_ID,
       merchant_key: PAYFAST_MERCHANT_KEY,
       return_url: returnUrl,
       cancel_url: cancelUrl,
+      notify_url: notifyUrl,
       amount: body.amount.toFixed(2),
       item_name: body.itemName.substring(0, 100).replace(/[^a-zA-Z0-9 ]/g, ''), // Alphanumeric only
     };

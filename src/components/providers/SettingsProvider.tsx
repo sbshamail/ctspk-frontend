@@ -39,6 +39,14 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
             );
           }
 
+          // Store paymentGateway in localStorage if available
+          if (settings.paymentGateway) {
+            localStorage.setItem(
+              "paymentGateway",
+              JSON.stringify(settings.paymentGateway)
+            );
+          }
+
           // Update document title
           if (settings.siteTitle) {
             document.title = settings.siteTitle;

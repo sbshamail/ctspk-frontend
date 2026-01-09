@@ -86,11 +86,13 @@ export function usePayFast() {
         form.action = result.redirectUrl;
 
         // PayFast requires fields in this exact order
+        // notify_url is required for IPN webhook
         const fieldOrder = [
           'merchant_id',
           'merchant_key',
           'return_url',
           'cancel_url',
+          'notify_url',
           'amount',
           'item_name',
           'signature',
