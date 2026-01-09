@@ -931,7 +931,9 @@ export default function CheckoutPage() {
         country: billingAddress.country,
         is_default: billingIsDefault,
       },
-      payment_gateway: selectedPayment,
+      // If wallet covers full amount, set payment_gateway to 'wallet'
+      // Otherwise use the selected payment method
+      payment_gateway: (useWallet && paidTotal === 0) ? 'wallet' : selectedPayment,
       cart: cart?.map((item) => ({
         id: item.id,
         quantity: item.quantity,
@@ -949,9 +951,20 @@ export default function CheckoutPage() {
       wallet_amount: useWallet ? walletAmountToUse : 0,
     };
 
-    console.log("Submitting order with payment method:", selectedPayment);
+    // Determine actual payment method
+    const actualPaymentMethod = (useWallet && paidTotal === 0) ? 'wallet' : selectedPayment;
+    console.log("Submitting order with payment method:", actualPaymentMethod);
+    console.log("Wallet covers full amount:", useWallet && paidTotal === 0);
 
     try {
+      // ========== WALLET ONLY (Full amount covered by wallet) ==========
+      // Create order directly without external payment
+      if (useWallet && paidTotal === 0) {
+        console.log("Full amount paid by wallet - creating order directly");
+        await createOrderAfterPayment(orderData);
+        return;
+      }
+
       // ========== CASH ON DELIVERY ==========
       // Create order directly without payment
       if (selectedPayment === "cash_on_delivery") {
